@@ -8,6 +8,7 @@ import { TaskPage } from "./components/TaskPage";
 import { MatrixPage } from "./components/MatrixPage";
 import { StatisticPage } from "./components/StatisticPage";
 import { AuthModal } from "./components/AuthModal";
+import { useAuthStore } from "./stores/useAuthStore";
 
 export default function Home() {
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "task" | "matrix" | ...
@@ -17,7 +18,12 @@ export default function Home() {
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Initialize theme from localStorage or system preference
+  // Zustand Auth Store
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // Initialize theme
   React.useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -51,12 +57,13 @@ export default function Home() {
         activeItem={activeView}
         onSelectItem={(viewId) => {
           if (viewId === "info") {
-            // Khi ấn Account Info: hiện trang đăng ký trước theo yêu cầu
+            // Khi ấn Account Info: hiện modal đăng ký/đăng nhập
             setIsAuthModalOpen(true);
             return;
           }
           if (viewId === "logout") {
-            alert("Đã đăng xuất tài khoản!");
+            logout();
+            alert("Đã đăng xuất tài khoản thành công!");
             return;
           }
           setActiveView(viewId);

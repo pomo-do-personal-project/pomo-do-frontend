@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Image from "next/image";
 import logoImg from "../logo.png";
 
+import { useAuthStore } from "../stores/useAuthStore";
+
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
@@ -23,6 +25,15 @@ export function Sidebar({
   activeItem = "dashboard",
   onSelectItem,
 }: SidebarProps) {
+  const [mounted, setMounted] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const topItems: NavItem[] = [
     { id: "dashboard", label: "Dashboard / Icon", abbr: "IC" },
@@ -31,10 +42,35 @@ export function Sidebar({
     { id: "statistic", label: "Statistics & Reports", abbr: "ST" },
   ];
 
-  const bottomItems: NavItem[] = [
-    { id: "info", label: "Account Info / Profile", abbr: "IF" },
-    { id: "logout", label: "Logout", abbr: "LO" },
-  ];
+  const isUserLoggedIn = mounted && isAuthenticated && !!user;
+
+  // Lấy 2 ký tự đầu hoặc chữ cái đầu của tên
+  const userInitials = React.useMemo(() => {
+    if (!user) return "U";
+    if (user.displayName) {
+      const parts = user.displayName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return user.displayName.slice(0, 2).toUpperCase();
+    }
+    return user.email.slice(0, 2).toUpperCase();
+  }, [user]);
+
+  const handleAccountClick = () => {
+    if (!isUserLoggedIn) {
+      // Chưa đăng nhập -> Mở modal Auth
+      onSelectItem?.("info");
+    } else {
+      // Đã đăng nhập -> Bật/tắt menu popup chứa nút Logout
+      setShowUserMenu((prev) => !prev);
+    }
+  };
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    onSelectItem?.("logout");
+  };
 
   return (
     <aside
@@ -69,7 +105,10 @@ export function Sidebar({
           return (
             <div key={item.id} className="relative group flex justify-center">
               <button
-                onClick={() => onSelectItem?.(item.id)}
+                onClick={() => {
+                  setShowUserMenu(false);
+                  onSelectItem?.(item.id);
+                }}
                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                   isActive
                     ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
@@ -84,7 +123,6 @@ export function Sidebar({
               {/* Tooltip positioned outside of the sidebar */}
               <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 text-xs font-semibold rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 whitespace-nowrap">
                 {item.label}
-                {/* Tooltip pointing arrow */}
                 <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-neutral-900 dark:border-r-neutral-100" />
               </div>
             </div>
@@ -92,36 +130,83 @@ export function Sidebar({
         })}
       </div>
 
-      {/* Bottom Navigation Items (INFO & LOGOUT) */}
-      <div className="py-3 w-18 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-col items-center gap-2 overflow-visible shrink-0">
-        {bottomItems.map((item) => {
-          const isLogout = item.id === "logout";
-          const isActive = activeItem === item.id;
-          return (
-            <div key={item.id} className="relative group flex justify-center">
-              <button
-                onClick={() => onSelectItem?.(item.id)}
-                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                  isLogout
-                    ? "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                    : isActive
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
-                    : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-100"
-                }`}
-              >
-                <span className="text-xs font-bold tracking-wider">
-                  {item.abbr}
+      {/* Bottom Navigation: Account & Logout */}
+      <div className="py-3 w-18 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-col items-center gap-2 overflow-visible shrink-0 relative">
+        {/* Account Button / Avatar */}
+        <div className="relative group flex justify-center">
+          <button
+            onClick={handleAccountClick}
+            aria-label={isUserLoggedIn ? `User ${user?.displayName || user?.email}` : "Sign in / Register"}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${
+              isUserLoggedIn
+                ? "border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-xs hover:border-emerald-600 active:scale-95"
+                : "border-dashed border-neutral-400 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+            }`}
+          >
+            {isUserLoggedIn ? (
+              user?.avatarUrl ? (
+                /* Avatar Image nếu có */
+                <img
+                  src={user.avatarUrl}
+                  alt={user.displayName || "Avatar"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                /* Chữ viết tắt của tên nếu chưa có avatar */
+                <span className="text-xs font-black tracking-wider">
+                  {userInitials}
                 </span>
-              </button>
+              )
+            ) : (
+              /* Icon Auth / Chưa đăng nhập (Hình người + ổ khóa nhỏ) */
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
+          </button>
 
-              {/* Tooltip outside */}
-              <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 text-xs font-semibold rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 whitespace-nowrap">
-                {item.label}
-                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-neutral-900 dark:border-r-neutral-100" />
-              </div>
+          {/* Tooltip hiển thị khi hover nếu menu popup chưa mở */}
+          {!showUserMenu && (
+            <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 text-xs font-semibold rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 whitespace-nowrap">
+              {isUserLoggedIn ? `${user?.displayName || user?.email} (Click for options)` : "Sign in / Register"}
+              <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-neutral-900 dark:border-r-neutral-100" />
             </div>
-          );
-        })}
+          )}
+
+          {/* User Popover Menu (Hiện ra khi đã đăng nhập và bấm vào icon) */}
+          {isUserLoggedIn && showUserMenu && (
+            <>
+              {/* Overlay vô hình để bấm ra ngoài là đóng menu */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowUserMenu(false)}
+              />
+
+              <div className="absolute left-[calc(100%+12px)] bottom-0 w-56 p-3 bg-white dark:bg-neutral-900 rounded-2xl border-2 border-neutral-900 dark:border-white shadow-2xl z-50 flex flex-col gap-2.5 animate-in fade-in slide-in-from-left-2 duration-150">
+                {/* Thông tin user vắn tắt */}
+                <div className="px-2 py-1 border-b border-neutral-200 dark:border-neutral-800 pb-2">
+                  <div className="text-xs font-extrabold text-neutral-900 dark:text-white truncate">
+                    {user?.displayName || "User"}
+                  </div>
+                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                    {user?.email}
+                  </div>
+                </div>
+
+                {/* Nút Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer group/btn"
+                >
+                  <span>Logout</span>
+                  <svg className="w-4 h-4 transition-transform group-hover/btn:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );

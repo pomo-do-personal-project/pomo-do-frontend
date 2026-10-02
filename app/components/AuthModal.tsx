@@ -1,32 +1,79 @@
 "use client";
 
 import React, { useState } from "react";
+import { useAuthStore } from "../stores/useAuthStore";
+import { ApiError } from "../lib/apiClient";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: "signup" | "signin";
+  onAuthSuccess?: (user: any) => void;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = "signup" }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialMode = "signup", onAuthSuccess }: AuthModalProps) {
   const [authMode, setAuthMode] = useState<"signup" | "signin">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Zustand auth actions & state
+  const { login, register, isLoading } = useAuthStore();
 
   // Sync mode whenever modal is opened
   React.useEffect(() => {
     if (isOpen) {
       setAuthMode(initialMode);
+      setErrorMsg(null);
+      setSuccessMsg(null);
     }
   }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate auth action
-    alert(`${authMode === "signup" ? "Đăng ký" : "Đăng nhập"} thành công với email: ${email}`);
-    onClose();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      if (authMode === "signup") {
+        await register({
+          email,
+          password,
+          displayName: displayName.trim() || email.split("@")[0],
+        });
+        setSuccessMsg("Đăng ký tài khoản thành công! Đang chuyển...");
+        const currentUser = useAuthStore.getState().user;
+        if (onAuthSuccess && currentUser) {
+          onAuthSuccess(currentUser);
+        }
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      } else {
+        await login({
+          email,
+          password,
+        });
+        setSuccessMsg("Đăng nhập thành công! Đang chuyển...");
+        const currentUser = useAuthStore.getState().user;
+        if (onAuthSuccess && currentUser) {
+          onAuthSuccess(currentUser);
+        }
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      }
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setErrorMsg(err.message + (err.errors?.length ? `: ${err.errors.join(", ")}` : ""));
+      } else {
+        setErrorMsg(err?.message || "Đã xảy ra lỗi không xác định");
+      }
+    }
   };
 
   return (
@@ -45,12 +92,39 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }: AuthModal
         </button>
 
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-black text-center text-neutral-900 dark:text-white uppercase tracking-wider mb-6">
+        <h2 className="text-2xl md:text-3xl font-black text-center text-neutral-900 dark:text-white uppercase tracking-wider mb-5">
           {authMode === "signup" ? "Sign Up" : "Sign In"}
         </h2>
 
+        {/* Error Alert */}
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold text-center animate-in fade-in">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="mb-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold text-center animate-in fade-in">
+            {successMsg}
+          </div>
+        )}
+
         {/* Main Auth Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {/* Display Name (Only in Sign Up) */}
+          {authMode === "signup" && (
+            <div className="flex flex-col">
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Display Name (vd: Minh Ngo)"
+                className="w-full px-4 py-3 bg-transparent border-2 border-neutral-800 dark:border-neutral-200 rounded-2xl text-sm font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
+              />
+            </div>
+          )}
+
           {/* Email input */}
           <div className="flex flex-col">
             <input
@@ -70,7 +144,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }: AuthModal
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder="Password (tối thiểu 6 ký tự)"
               className="w-full px-4 py-3 bg-transparent border-2 border-neutral-800 dark:border-neutral-200 rounded-2xl text-sm font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
             />
           </div>
@@ -78,9 +152,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup" }: AuthModal
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 mt-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white border-2 border-neutral-800 dark:border-neutral-200 rounded-2xl text-sm font-bold shadow-xs active:scale-[0.98] transition-all cursor-pointer"
+            disabled={isLoading}
+            className="w-full py-3 mt-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white border-2 border-neutral-800 dark:border-neutral-200 rounded-2xl text-sm font-bold shadow-xs active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {authMode === "signup" ? "Sign up" : "Sign in"}
+            {isLoading ? (
+              <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : null}
+            <span>{authMode === "signup" ? (isLoading ? "Signing up..." : "Sign up") : (isLoading ? "Signing in..." : "Sign in")}</span>
           </button>
 
           {/* Forgot Password link (Shown on Sign Up / Sign In) */}
