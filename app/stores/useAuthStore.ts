@@ -12,7 +12,8 @@ interface AuthState {
   // Actions
   login: (data: LoginRequest) => Promise<boolean>;
   register: (data: RegisterRequest) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshToken: (token?: string) => Promise<boolean>;
   clearError: () => void;
   setUser: (user: UserDto | null) => void;
 }
@@ -81,13 +82,33 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        authService.logout();
-        set({
-          user: null,
-          isAuthenticated: false,
-          error: null,
-        });
+      logout: async () => {
+        try {
+          await authService.logout();
+        } finally {
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          });
+        }
+      },
+
+      refreshToken: async (token?: string) => {
+        try {
+          const authData = await authService.refreshToken(token);
+          if (authData) {
+            if ("user" in authData && authData.user) {
+              set({ user: authData.user, isAuthenticated: true });
+            }
+            return true;
+          }
+          return false;
+        } catch {
+          // Token hết hạn hoặc không hợp lệ -> reset auth state
+          set({ user: null, isAuthenticated: false });
+          return false;
+        }
       },
     }),
     {

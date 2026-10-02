@@ -10,7 +10,7 @@ interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   activeItem?: string;
-  onSelectItem?: (id: string) => void;
+  onSelectItem?: (id: string) => void | Promise<void>;
 }
 
 interface NavItem {

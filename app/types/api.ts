@@ -37,7 +37,13 @@ export interface LoginRequest {
 }
 
 export interface RefreshTokenRequest {
+  refreshToken?: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
   refreshToken: string;
+  expiresInSeconds: number;
 }
 
 export interface TaskDto {

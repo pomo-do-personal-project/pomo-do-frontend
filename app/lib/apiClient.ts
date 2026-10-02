@@ -63,6 +63,43 @@ export async function apiClient<T>(
       errors: [res.statusText],
     }));
 
+    // Tự động làm mới token nếu gặp 401 và không phải đang gọi auth endpoints
+    if (res.status === 401 && !endpoint.includes("/api/auth/")) {
+      try {
+        const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+          method: "POST",
+          credentials: "include",
+          headers: defaultHeaders,
+          body: JSON.stringify({}),
+        });
+
+        if (refreshRes.ok) {
+          // Thử lại request ban đầu sau khi cookie token đã được làm mới
+          const retryRes = await fetch(url, {
+            credentials: "include",
+            ...restOptions,
+            headers: {
+              ...defaultHeaders,
+              ...headers,
+            },
+          });
+
+          const retryData: ApiResponse<T> = await retryRes.json().catch(() => ({
+            success: retryRes.ok,
+            data: null,
+            message: retryRes.statusText || "Lỗi giao tiếp máy chủ",
+            errors: [retryRes.statusText],
+          }));
+
+          if (retryRes.ok && retryData.success) {
+            return retryData;
+          }
+        }
+      } catch {
+        // Refresh thất bại, tiếp tục throw lỗi 401
+      }
+    }
+
     if (!res.ok || !data.success) {
       throw new ApiError(
         data.message || `Lỗi hệ thống (${res.status})`,

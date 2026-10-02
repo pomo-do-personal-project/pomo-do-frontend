@@ -55,15 +55,14 @@ export default function Home() {
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((prev) => !prev)}
         activeItem={activeView}
-        onSelectItem={(viewId) => {
+        onSelectItem={async (viewId) => {
           if (viewId === "info") {
             // Khi ấn Account Info: hiện modal đăng ký/đăng nhập
             setIsAuthModalOpen(true);
             return;
           }
           if (viewId === "logout") {
-            logout();
-            alert("Đã đăng xuất tài khoản thành công!");
+            await logout();
             return;
           }
           setActiveView(viewId);

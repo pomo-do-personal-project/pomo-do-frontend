@@ -27,14 +27,30 @@ export const authService = {
   },
 
   /**
-   * Đăng xuất & xóa phiên
+   * Đăng xuất & xóa phiên (hủy cookie và thu hồi token trên backend)
    */
   async logout() {
-    // Có thể gọi thêm endpoint /api/auth/logout nếu backend hỗ trợ để xóa HttpOnly cookie
     try {
-      await apiClient("/api/auth/logout", { method: "POST" }).catch(() => {});
+      await apiClient("/api/auth/logout", {
+        method: "POST",
+      }).catch(() => {});
     } catch {
       // Ignored
     }
+  },
+
+  /**
+   * Làm mới Access Token (Refresh token qua HttpOnly cookie hoặc body)
+   */
+  async refreshToken(refreshToken?: string) {
+    const res = await apiClient<AuthResponse | { accessToken: string; refreshToken: string }>(
+      "/api/auth/refresh-token",
+      {
+        method: "POST",
+        body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+      }
+    );
+
+    return res.data;
   },
 };
