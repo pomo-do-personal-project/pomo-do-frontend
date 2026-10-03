@@ -36,6 +36,15 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Filter tasks based on mode: Quick Add tasks vs Planned/Daily tasks
+  const quickAddTasks = React.useMemo(() => {
+    return tasks.filter((t) => t.isQuickAdd);
+  }, [tasks]);
+
+  const dailyTasks = React.useMemo(() => {
+    return tasks.filter((t) => !t.isQuickAdd);
+  }, [tasks]);
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim() || isSaving) return;
@@ -46,6 +55,7 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
         priority: Priority.ImportantNotUrgent,
         estimatedMinutes: 25,
         estimatedPomodoros: 1,
+        isQuickAdd: isQuickAddActive, // Đánh dấu true nếu thêm từ tab Quick Add
       });
       setNewTaskTitle("");
       setIsInputExpanded(false);
@@ -85,7 +95,7 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
           </button>
         </div>
 
-        {/* Stats Section: Today focus & Completed tasks */}
+        {/* Stats Section: Done focus & Done tasks */}
         <div className="grid grid-cols-2 gap-3 mb-8 shrink-0">
           <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center justify-center">
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
@@ -106,81 +116,84 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
           </div>
         </div>
 
-        {/* Daily Task Section with Dropdown Arrow */}
+        {/* Daily Task & Quick Add Mode Dropdown */}
         <div className="relative mb-4 shrink-0" ref={dropdownRef}>
           <div className="flex items-center justify-between">
             <button
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               className="flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white py-1 transition-colors cursor-pointer group"
             >
-              <span>{isQuickAddActive ? "Quick Add" : "Daily Task"}</span>
-              {!isQuickAddActive && (
-                <span className="text-xs text-neutral-400">({tasks.length})</span>
-              )}
+              <span>{isQuickAddActive ? "⚡ Quick Add (Ghi nhanh)" : "📋 Daily Task (Kế hoạch)"}</span>
+              <span className="text-xs text-neutral-400 font-mono">
+                ({isQuickAddActive ? quickAddTasks.length : dailyTasks.length})
+              </span>
               <span
                 className={`text-neutral-400 text-xs transition-transform duration-200 font-mono ${
                   isDropdownOpen ? "rotate-180" : ""
                 }`}
               >
-                v
+                ▼
               </span>
             </button>
           </div>
 
-          {/* Dropdown Menu when clicking dropdown button */}
+          {/* Dropdown Menu when clicking selector */}
           {isDropdownOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-44 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl z-20 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               <button
                 onClick={() => {
                   setIsQuickAddActive(false);
                   setIsDropdownOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-left transition-colors cursor-pointer ${
                   !isQuickAddActive
                     ? "bg-neutral-100 dark:bg-neutral-700 font-semibold text-neutral-900 dark:text-white"
                     : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
                 }`}
               >
-                <span>Daily Task List</span>
-                {!isQuickAddActive && <span className="text-[10px] text-emerald-500">✓</span>}
+                <span>📋 Daily Task List</span>
+                <span className="text-[11px] text-neutral-400 font-mono">({dailyTasks.length})</span>
+                {!isQuickAddActive && <span className="text-[10px] text-emerald-500 font-bold ml-1">✓</span>}
               </button>
               <button
                 onClick={() => {
                   setIsQuickAddActive(true);
                   setIsDropdownOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2 text-xs text-left transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-left transition-colors cursor-pointer ${
                   isQuickAddActive
                     ? "bg-neutral-100 dark:bg-neutral-700 font-semibold text-neutral-900 dark:text-white"
                     : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
                 }`}
               >
-                <span>Quick Add</span>
-                {isQuickAddActive && <span className="text-[10px] text-emerald-500">✓</span>}
+                <span>⚡ Quick Add (Parked)</span>
+                <span className="text-[11px] text-neutral-400 font-mono">({quickAddTasks.length})</span>
+                {isQuickAddActive && <span className="text-[10px] text-emerald-500 font-bold ml-1">✓</span>}
               </button>
             </div>
           )}
         </div>
 
-        {/* 1. Quick Add Mode: Only shows the big (+) button and form */}
+        {/* 1. Quick Add Mode: Hiển thị nút (+) nhập nhanh VÀ danh sách các Quick Add task đã lưu */}
         {isQuickAddActive ? (
           <div className="flex-1 flex flex-col gap-3">
             {!isInputExpanded ? (
               <button
                 onClick={() => setIsInputExpanded(true)}
-                className="w-full h-14 rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-500 dark:hover:border-neutral-400 bg-neutral-50/50 dark:bg-neutral-800/40 flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white text-2xl font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
+                className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700/80 hover:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300 text-sm font-semibold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
               >
-                +
+                <span className="text-base font-black">+</span>
+                <span>Ghi nhanh ý nghĩ phát sinh (Quick Add)</span>
               </button>
             ) : (
-              <form onSubmit={handleAddTask} className="flex flex-col gap-3 bg-neutral-50/50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-xs">
+              <form onSubmit={handleAddTask} className="flex flex-col gap-3 bg-amber-50/50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-300 dark:border-amber-700 shadow-xs">
                 <input
                   type="text"
                   autoFocus
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Nhập nội dung task mới..."
-                  className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-500 transition-colors"
+                  placeholder="Ghi nhanh suy nghĩ nảy ra (nhấn Enter)..."
+                  className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
                 />
                 <div className="flex justify-end gap-2 text-xs">
                   <button
@@ -196,31 +209,85 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="px-4 py-1.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium rounded-lg shadow-xs cursor-pointer disabled:opacity-50"
+                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg shadow-xs cursor-pointer disabled:opacity-50"
                   >
-                    {isSaving ? "Đang thêm..." : "Thêm"}
+                    {isSaving ? "Đang lưu..." : "Lưu nhanh"}
                   </button>
                 </div>
               </form>
             )}
 
-            <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-4">
-              Nhấn (+) để nhập nhanh công việc mới vào Backend
-            </p>
+            {/* Danh sách các task Quick Add đã lưu */}
+            <div className="flex flex-col gap-2.5 flex-1 mt-2">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                Các ý nghĩ đã ghi nhận ({quickAddTasks.length})
+              </div>
+
+              {quickAddTasks.length === 0 ? (
+                <div className="text-center py-8 text-xs text-neutral-400 dark:text-neutral-500 italic">
+                  Chưa có ghi chú nhanh nào. Khi đang tập trung, hãy ghi lại tại đây!
+                </div>
+              ) : (
+                quickAddTasks.map((task) => {
+                  const isCompleted = task.status === TaskStatus.Completed;
+
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={() => handleToggleTask(task.id)}
+                      className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-start gap-3 cursor-pointer select-none ${
+                        isCompleted
+                          ? "bg-neutral-50/50 dark:bg-neutral-900/40 border-neutral-200/50 dark:border-neutral-800 text-neutral-400"
+                          : "bg-white dark:bg-neutral-800/80 border-amber-200/70 dark:border-amber-800/50 text-neutral-800 dark:text-neutral-200 shadow-2xs hover:border-amber-400"
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center text-[10px] shrink-0 transition-colors ${
+                          isCompleted
+                            ? "bg-emerald-500 border-emerald-500 text-white"
+                            : "border-neutral-400 dark:border-neutral-600"
+                        }`}
+                      >
+                        {isCompleted && "✓"}
+                      </div>
+
+                      <div className="flex-1 flex flex-col gap-1 min-w-0">
+                        <span
+                          className={`text-sm leading-snug break-words ${
+                            isCompleted ? "line-through opacity-60" : "font-medium"
+                          }`}
+                        >
+                          {task.title}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">
+                            ⚡ Quick Add
+                          </span>
+                          <span className="text-[11px] text-neutral-400 font-mono">
+                            ⏱ {task.estimatedMinutes || 25}m
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         ) : (
-          /* 2. Daily Task Mode: Shows the task items list */
+          /* 2. Daily Task Mode: Hiển thị danh sách task kế hoạch thông thường */
           <div className="flex flex-col gap-2.5 flex-1">
-            {isLoading && tasks.length === 0 ? (
+            {isLoading && dailyTasks.length === 0 ? (
               <div className="text-center py-6 text-xs text-neutral-400">
                 Đang tải danh sách công việc...
               </div>
-            ) : tasks.length === 0 ? (
+            ) : dailyTasks.length === 0 ? (
               <div className="text-center py-6 text-xs text-neutral-400">
-                Chưa có công việc nào hôm nay.
+                Chưa có công việc kế hoạch nào hôm nay.
               </div>
             ) : (
-              tasks.map((task) => {
+              dailyTasks.map((task) => {
                 const isCompleted = task.status === TaskStatus.Completed;
 
                 return (

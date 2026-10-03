@@ -8,20 +8,25 @@ import { TaskPage } from "./components/TaskPage";
 import { MatrixPage } from "./components/MatrixPage";
 import { StatisticPage } from "./components/StatisticPage";
 import { AuthModal } from "./components/AuthModal";
+import { SettingsModal } from "./components/SettingsModal";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { useAuthStore } from "./stores/useAuthStore";
+import { useSettingsStore } from "./stores/useSettingsStore";
 
 export default function Home() {
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "task" | "matrix" | ...
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Zustand Auth Store
+  // Zustand Stores
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
   // Initialize theme
   React.useEffect(() => {
@@ -76,6 +81,9 @@ export default function Home() {
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isSidebarOpen ? "ml-16" : "ml-0"
           } ${isOverviewOpen && activeView === "dashboard" ? "mr-80 sm:mr-96" : "mr-0"}`}
       >
+        {/* Offline Network Warning Banner */}
+        <OfflineBanner />
+
         {/* Top Header Bar (Hẹp gọn gàng với h-14 thay vì h-18) */}
         <header className="w-full h-14 px-5 flex items-center justify-between border-b border-neutral-200/50 dark:border-neutral-800/50 shrink-0">
           {/* Left: The only trigger button when sidebar is closed (faint by default, bold on hover) */}
@@ -95,8 +103,17 @@ export default function Home() {
             )}
           </div>
 
-          {/* Right Action Icons: Theme Toggle, Speaker (Sound) & Three-dot (Overview Panel) */}
+          {/* Right Action Icons: Theme Toggle, Settings, Speaker (Sound) & Three-dot (Overview Panel) */}
           <div className="flex items-center gap-1.5">
+            {/* Settings Button */}
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              title="Cài đặt Pomodoro & Thời lượng"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            >
+              <span className="text-base select-none">⚙️</span>
+            </button>
+
             {/* Theme Toggle Button (Dark / Light) */}
             <button
               onClick={toggleTheme}
@@ -162,6 +179,12 @@ export default function Home() {
         isOpen={isAuthModalOpen}
         initialMode="signup"
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      {/* 5. Settings Modal: Cài đặt thời lượng Pomodoro / Nghỉ ngắn / Nghỉ dài */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </div>
   );

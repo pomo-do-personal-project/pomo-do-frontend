@@ -1,4 +1,5 @@
 import { ApiResponse } from "../types/api";
+import { useNetworkStore } from "../stores/useNetworkStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5267";
 
@@ -9,17 +10,28 @@ export interface RequestOptions extends RequestInit {
 export class ApiError extends Error {
   public statusCode: number;
   public errors: string[] | null;
+  public isNetworkError: boolean;
 
-  constructor(message: string, statusCode: number = 500, errors: string[] | null = null) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    errors: string[] | null = null,
+    isNetworkError: boolean = false
+  ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.errors = errors;
+    this.isNetworkError = isNetworkError;
   }
 }
 
 /**
  * Universal type-safe fetch client for Pomo-Do backend
+ * Features:
+ * - Cookie-based HttpOnly JWT auth
+ * - Automatic 401 refresh-token interceptor & retry
+ * - Global Offline & Network Error detection
  */
 export async function apiClient<T>(
   endpoint: string,
@@ -55,6 +67,9 @@ export async function apiClient<T>(
         ...headers,
       },
     });
+
+    // Kết nối thành công tới server -> cập nhật server online
+    useNetworkStore.getState().setServerOnline(true);
 
     const data: ApiResponse<T> = await res.json().catch(() => ({
       success: res.ok,
@@ -104,7 +119,8 @@ export async function apiClient<T>(
       throw new ApiError(
         data.message || `Lỗi hệ thống (${res.status})`,
         res.status,
-        data.errors
+        data.errors,
+        false
       );
     }
 
@@ -113,10 +129,15 @@ export async function apiClient<T>(
     if (error instanceof ApiError) {
       throw error;
     }
+
+    // Phát hiện lỗi không thể kết nối tới server (Failed to fetch / ERR_CONNECTION_REFUSED)
+    useNetworkStore.getState().setServerOnline(false);
+
     throw new ApiError(
-      error instanceof Error ? error.message : "Không thể kết nối đến máy chủ backend",
-      500,
-      [error instanceof Error ? error.message : "Network error"]
+      "Không thể kết nối đến máy chủ backend (Máy chủ đang tắt hoặc mất mạng)",
+      0,
+      ["Backend offline or Network unreachable"],
+      true
     );
   }
 }

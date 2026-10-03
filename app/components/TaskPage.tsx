@@ -11,6 +11,8 @@ export type MatrixQuadrant =
   | "urgent-not-important" // Q3: Cần gấp / Ủy quyền (Delegate)
   | "not-urgent-not-important"; // Q4: Loại bỏ / Thư giãn (Don't do)
 
+export type TaskCategory = "Today" | "Upcoming" | "QuickAdd" | "Calendar";
+
 export const PRIORITY_MAP: Record<MatrixQuadrant, Priority> = {
   "urgent-important": Priority.ImportantUrgent,
   "not-urgent-important": Priority.ImportantNotUrgent,
@@ -53,7 +55,7 @@ export function TaskPage() {
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const [currentCategory, setCurrentCategory] = useState<"Today" | "Upcoming" | "Calendar">("Today");
+  const [currentCategory, setCurrentCategory] = useState<TaskCategory>("Today");
   const [selectedTag, setSelectedTag] = useState<string>("All");
 
   const [isAddingTaskInput, setIsAddingTaskInput] = useState(false);
@@ -109,20 +111,34 @@ export function TaskPage() {
     return Array.from(tagSet);
   }, [tasks]);
 
+  // Counts for sidebar badges
+  const categoryCounts = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return {
+      Today: tasks.filter((t) => !t.isQuickAdd && (!t.dueDate || t.dueDate.startsWith(todayStr))).length,
+      Upcoming: tasks.filter((t) => !t.isQuickAdd && t.dueDate && !t.dueDate.startsWith(todayStr)).length,
+      QuickAdd: tasks.filter((t) => t.isQuickAdd).length,
+      Calendar: tasks.length,
+    };
+  }, [tasks]);
+
   // Filter tasks based on category & tag
   const filteredTasks = React.useMemo(() => {
     const todayStr = new Date().toISOString().split("T")[0];
 
     return tasks.filter((t) => {
       // Filter by Category
-      if (currentCategory === "Today") {
+      if (currentCategory === "QuickAdd") {
+        if (!t.isQuickAdd) return false;
+      } else if (currentCategory === "Today") {
+        if (t.isQuickAdd) return false;
         if (t.dueDate && !t.dueDate.startsWith(todayStr)) {
-          // If has due date and not today, exclude from Today view
-          // But if no dueDate or dueDate is today, include
+          return false;
         }
       } else if (currentCategory === "Upcoming") {
+        if (t.isQuickAdd) return false;
         if (!t.dueDate || t.dueDate.startsWith(todayStr)) {
-          // If no dueDate or today, not in upcoming
+          return false;
         }
       }
 
@@ -141,13 +157,16 @@ export function TaskPage() {
     e.preventDefault();
     if (!newTaskInput.trim() || isSaving) return;
 
+    const isQuick = currentCategory === "QuickAdd";
+
     try {
       const created = await createTask({
         title: newTaskInput.trim(),
         priority: Priority.ImportantUrgent,
         estimatedPomodoros: Math.ceil(30 / 25),
         estimatedMinutes: 30,
-        dueDate: new Date().toISOString(),
+        dueDate: isQuick ? null : new Date().toISOString(),
+        isQuickAdd: isQuick,
       });
       if (created) {
         setNewTaskInput("");
@@ -221,20 +240,47 @@ export function TaskPage() {
           Category
         </h3>
         <nav className="flex flex-col gap-1 mb-6">
-          {(["Today", "Upcoming", "Calendar"] as const).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCurrentCategory(cat)}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
-                currentCategory === cat
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs"
-                  : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white"
-              }`}
-            >
-              <span>{cat === "Today" ? "📅" : cat === "Upcoming" ? "⏩" : "🗓️"}</span>
-              <span>{cat}</span>
-            </button>
-          ))}
+          {(
+            [
+              { id: "Today", label: "Today", icon: "📅" },
+              { id: "Upcoming", label: "Upcoming", icon: "⏩" },
+              { id: "QuickAdd", label: "Quick Add", icon: "⚡" },
+              { id: "Calendar", label: "Calendar", icon: "🗓️" },
+            ] as const
+          ).map((item) => {
+            const count = categoryCounts[item.id];
+            const isActive = currentCategory === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setCurrentCategory(item.id)}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
+                  isActive
+                    ? item.id === "QuickAdd"
+                      ? "bg-amber-500 text-white shadow-xs font-semibold"
+                      : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs"
+                    : item.id === "QuickAdd"
+                    ? "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                    : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span>{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
+                </div>
+                <span
+                  className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
+                    isActive
+                      ? "bg-black/20 text-white"
+                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* Tags / Custom Lists Filter */}
@@ -277,9 +323,11 @@ export function TaskPage() {
       {/* 2. Middle Main Area: Task List for Selected Category */}
       <main className="flex-1 flex flex-col p-8 overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
-            {currentCategory}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+              {currentCategory === "QuickAdd" ? "⚡ Quick Add (Ý nghĩ phát sinh)" : currentCategory}
+            </h1>
+          </div>
           {isLoading && (
             <span className="text-xs text-neutral-400 animate-pulse font-mono">
               Đang đồng bộ...
@@ -288,11 +336,25 @@ export function TaskPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={clearError} className="font-bold underline cursor-pointer">
-              Đóng
-            </button>
+          <div className="mb-4 p-3.5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">⚠️</span>
+              <span>{error}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchTasks()}
+                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition-colors cursor-pointer text-[11px]"
+              >
+                Thử lại ↺
+              </button>
+              <button
+                onClick={clearError}
+                className="px-2 py-1 text-rose-600 hover:text-rose-900 dark:text-rose-400 dark:hover:text-rose-100 font-medium cursor-pointer text-[11px]"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         )}
 
@@ -301,21 +363,51 @@ export function TaskPage() {
           <button
             type="button"
             onClick={() => setIsAddingTaskInput(true)}
-            className="w-full mb-6 flex items-center gap-3 px-4 py-3 bg-neutral-100/50 hover:bg-neutral-100 dark:bg-neutral-900/50 dark:hover:bg-neutral-900 border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 rounded-2xl text-left cursor-pointer transition-all group shadow-2xs"
+            className={`w-full mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl text-left cursor-pointer transition-all group shadow-2xs border-2 border-dashed ${
+              currentCategory === "QuickAdd"
+                ? "bg-amber-50/40 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-700"
+                : "bg-neutral-100/50 hover:bg-neutral-100 dark:bg-neutral-900/50 dark:hover:bg-neutral-900 border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500"
+            }`}
           >
-            <span className="w-6 h-6 rounded-lg bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 flex items-center justify-center text-base font-bold shrink-0 group-hover:scale-105 transition-transform">
+            <span
+              className={`w-6 h-6 rounded-lg flex items-center justify-center text-base font-bold shrink-0 group-hover:scale-105 transition-transform ${
+                currentCategory === "QuickAdd"
+                  ? "bg-amber-500 text-white"
+                  : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+              }`}
+            >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
               </svg>
             </span>
-            <span className="text-sm sm:text-base font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors">
-              Add new task
+            <span
+              className={`text-sm sm:text-base font-medium transition-colors ${
+                currentCategory === "QuickAdd"
+                  ? "text-amber-800 dark:text-amber-300"
+                  : "text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200"
+              }`}
+            >
+              {currentCategory === "QuickAdd"
+                ? "Ghi nhanh ý nghĩ phát sinh (Quick Add)"
+                : "Add new task"}
             </span>
           </button>
         ) : (
           <form onSubmit={handleAddNewTask} className="mb-6">
-            <div className="flex items-center gap-3 px-4 py-3 bg-transparent border-2 border-neutral-900 dark:border-white rounded-2xl shadow-2xs transition-colors">
-              <span className="w-6 h-6 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shrink-0">
+            <div
+              className={`flex items-center gap-3 px-4 py-3 bg-transparent border-2 rounded-2xl shadow-2xs transition-colors ${
+                currentCategory === "QuickAdd"
+                  ? "border-amber-500"
+                  : "border-neutral-900 dark:border-white"
+              }`}
+            >
+              <span
+                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                  currentCategory === "QuickAdd"
+                    ? "bg-amber-500 text-white"
+                    : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                }`}
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                 </svg>
@@ -325,7 +417,11 @@ export function TaskPage() {
                 autoFocus
                 value={newTaskInput}
                 onChange={(e) => setNewTaskInput(e.target.value)}
-                placeholder="Nhập tên công việc mới rồi nhấn Enter..."
+                placeholder={
+                  currentCategory === "QuickAdd"
+                    ? "Nhập nhanh ý nghĩ nảy ra khi đang làm việc..."
+                    : "Nhập tên công việc mới rồi nhấn Enter..."
+                }
                 className="flex-1 bg-transparent text-sm sm:text-base text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none font-medium"
               />
               <button
@@ -348,6 +444,8 @@ export function TaskPage() {
             <div className="text-center py-12 text-sm text-neutral-400 dark:text-neutral-500">
               {isLoading
                 ? "Đang tải công việc..."
+                : currentCategory === "QuickAdd"
+                ? "Chưa có ý nghĩ nảy sinh nào được ghi nhận. Hãy bấm nút trên để thêm nhanh!"
                 : `Chưa có công việc nào trong mục ${currentCategory}. Hãy thêm task mới ở trên!`}
             </div>
           ) : (
@@ -390,6 +488,13 @@ export function TaskPage() {
                       >
                         {task.title}
                       </span>
+
+                      {/* QuickAdd Badge */}
+                      {task.isQuickAdd && (
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                          ⚡ Quick
+                        </span>
+                      )}
 
                       {/* Eisenhower Matrix Priority Indicator */}
                       <span
@@ -496,9 +601,16 @@ export function TaskPage() {
 
           {/* Detail Frame (Due Date, Estimation as Time) */}
           <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40 mb-6 flex flex-col gap-3.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              Chi tiết công việc
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                Chi tiết công việc
+              </span>
+              {selectedTask.isQuickAdd && (
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100/60 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
+                  ⚡ Nguồn: Quick Add
+                </span>
+              )}
+            </div>
 
             {/* Due Date */}
             <div className="flex items-center justify-between text-xs">
