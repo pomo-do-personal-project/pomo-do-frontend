@@ -1,27 +1,16 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Button } from "./ui/Button";
+import { useTaskStore } from "../stores/useTaskStore";
+import { TaskStatus, Priority } from "../types/api";
 
 interface OverviewPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface TaskItem {
-  id: string;
-  title: string;
-  pomoCurrent: number;
-  pomoTarget: number;
-  completed: boolean;
-}
-
 export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
-  const [tasks, setTasks] = useState<TaskItem[]>([
-    { id: "1", title: "Viết User Story cho Sprint tới", pomoCurrent: 1, pomoTarget: 3, completed: false },
-    { id: "2", title: "Review UI Design System primitives", pomoCurrent: 2, pomoTarget: 2, completed: true },
-    { id: "3", title: "Setup Pomodoro timer logic", pomoCurrent: 0, pomoTarget: 4, completed: false },
-  ]);
+  const { tasks, isLoading, isSaving, fetchTasks, createTask, toggleTaskStatus } = useTaskStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isQuickAddActive, setIsQuickAddActive] = useState(false);
@@ -29,6 +18,12 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchTasks();
+    }
+  }, [isOpen, fetchTasks]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -41,28 +36,34 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
+    if (!newTaskTitle.trim() || isSaving) return;
+
+    try {
+      await createTask({
         title: newTaskTitle.trim(),
-        pomoCurrent: 0,
-        pomoTarget: 3,
-        completed: false,
-      },
-    ]);
-    setNewTaskTitle("");
-    setIsInputExpanded(false);
+        priority: Priority.ImportantNotUrgent,
+        estimatedMinutes: 25,
+        estimatedPomodoros: 1,
+      });
+      setNewTaskTitle("");
+      setIsInputExpanded(false);
+    } catch {
+      // Handled in store
+    }
   };
 
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
+  const handleToggleTask = async (id: string) => {
+    await toggleTaskStatus(id);
   };
+
+  const completedCount = tasks.filter((t) => t.status === TaskStatus.Completed).length;
+  const totalMinutes = tasks.reduce(
+    (acc, t) => acc + (t.status === TaskStatus.Completed ? t.estimatedMinutes || 25 : 0),
+    0
+  );
+  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
   return (
     <aside
@@ -84,28 +85,28 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
           </button>
         </div>
 
-        {/* Stats Section: Today focus & Today pomos */}
+        {/* Stats Section: Today focus & Completed tasks */}
         <div className="grid grid-cols-2 gap-3 mb-8 shrink-0">
           <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center justify-center">
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-              Today focus
+              Done focus
             </span>
             <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-              2h
+              {totalHours}h
             </span>
           </div>
 
           <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/60 dark:border-neutral-700/60 flex flex-col items-center justify-center">
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-              Today pomos
+              Done tasks
             </span>
             <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-              5
+              {completedCount}/{tasks.length}
             </span>
           </div>
         </div>
 
-        {/* Daily Task Section with Dropdown Arrow (Daily Task v) */}
+        {/* Daily Task Section with Dropdown Arrow */}
         <div className="relative mb-4 shrink-0" ref={dropdownRef}>
           <div className="flex items-center justify-between">
             <button
@@ -161,7 +162,7 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
           )}
         </div>
 
-        {/* 1. Quick Add Mode: Only shows the big (+) button and form, hides the task list */}
+        {/* 1. Quick Add Mode: Only shows the big (+) button and form */}
         {isQuickAddActive ? (
           <div className="flex-1 flex flex-col gap-3">
             {!isInputExpanded ? (
@@ -194,59 +195,74 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium rounded-lg shadow-xs cursor-pointer"
+                    disabled={isSaving}
+                    className="px-4 py-1.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium rounded-lg shadow-xs cursor-pointer disabled:opacity-50"
                   >
-                    Thêm
+                    {isSaving ? "Đang thêm..." : "Thêm"}
                   </button>
                 </div>
               </form>
             )}
 
             <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 mt-4">
-              Nhấn (+) để nhập nhanh công việc mới
+              Nhấn (+) để nhập nhanh công việc mới vào Backend
             </p>
           </div>
         ) : (
           /* 2. Daily Task Mode: Shows the task items list */
           <div className="flex flex-col gap-2.5 flex-1">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                onClick={() => toggleTask(task.id)}
-                className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-start gap-3 cursor-pointer select-none ${
-                  task.completed
-                    ? "bg-neutral-50/50 dark:bg-neutral-900/40 border-neutral-200/50 dark:border-neutral-800 text-neutral-400"
-                    : "bg-white dark:bg-neutral-800/80 border-neutral-200/80 dark:border-neutral-700/80 text-neutral-800 dark:text-neutral-200 shadow-2xs hover:border-neutral-400"
-                }`}
-              >
-                {/* Custom Checkbox */}
-                <div
-                  className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center text-[10px] shrink-0 transition-colors ${
-                    task.completed
-                      ? "bg-emerald-500 border-emerald-500 text-white"
-                      : "border-neutral-400 dark:border-neutral-600"
-                  }`}
-                >
-                  {task.completed && "✓"}
-                </div>
+            {isLoading && tasks.length === 0 ? (
+              <div className="text-center py-6 text-xs text-neutral-400">
+                Đang tải danh sách công việc...
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-6 text-xs text-neutral-400">
+                Chưa có công việc nào hôm nay.
+              </div>
+            ) : (
+              tasks.map((task) => {
+                const isCompleted = task.status === TaskStatus.Completed;
 
-                {/* Task Content */}
-                <div className="flex-1 flex flex-col gap-1 min-w-0">
-                  <span
-                    className={`text-sm leading-snug break-words ${
-                      task.completed ? "line-through opacity-60" : "font-medium"
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => handleToggleTask(task.id)}
+                    className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-start gap-3 cursor-pointer select-none ${
+                      isCompleted
+                        ? "bg-neutral-50/50 dark:bg-neutral-900/40 border-neutral-200/50 dark:border-neutral-800 text-neutral-400"
+                        : "bg-white dark:bg-neutral-800/80 border-neutral-200/80 dark:border-neutral-700/80 text-neutral-800 dark:text-neutral-200 shadow-2xs hover:border-neutral-400"
                     }`}
                   >
-                    {task.title}
-                  </span>
+                    {/* Custom Checkbox */}
+                    <div
+                      className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center text-[10px] shrink-0 transition-colors ${
+                        isCompleted
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "border-neutral-400 dark:border-neutral-600"
+                      }`}
+                    >
+                      {isCompleted && "✓"}
+                    </div>
 
-                  {/* Tomato Progress indicator like wireframe: (1/3 🍅) */}
-                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1 font-mono">
-                    ⏱ ({task.pomoCurrent}/{task.pomoTarget} 🍅)
-                  </span>
-                </div>
-              </div>
-            ))}
+                    {/* Task Content */}
+                    <div className="flex-1 flex flex-col gap-1 min-w-0">
+                      <span
+                        className={`text-sm leading-snug break-words ${
+                          isCompleted ? "line-through opacity-60" : "font-medium"
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+
+                      {/* Tomato Progress indicator */}
+                      <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1 font-mono">
+                        ⏱ ({task.completedPomodoros || 0}/{task.estimatedPomodoros || 1} 🍅)
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
       </div>
