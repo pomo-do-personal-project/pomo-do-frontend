@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { Button } from "./ui/Button";
+import { Settings, X } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800 mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-sm shadow-xs">
-              ⚙️
+              <Settings size={18} strokeWidth={1.75} />
             </div>
             <div>
               <h2 className="text-base font-bold text-neutral-900 dark:text-white">
@@ -76,9 +77,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Đóng bảng cài đặt"
             className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           >
-            ✕
+            <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 

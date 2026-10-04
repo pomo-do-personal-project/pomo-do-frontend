@@ -3,6 +3,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { TaskStatus, Priority } from "../types/api";
+import {
+  X,
+  ChevronDown,
+  ClipboardList,
+  Zap,
+  Check,
+  Plus,
+  Clock,
+} from "lucide-react";
 
 interface OverviewPanelProps {
   isOpen: boolean;
@@ -89,9 +98,10 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
           </h2>
           <button
             onClick={onClose}
+            aria-label="Đóng Overview"
             className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           >
-            ✕
+            <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 
@@ -123,17 +133,29 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               className="flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white py-1 transition-colors cursor-pointer group"
             >
-              <span>{isQuickAddActive ? "⚡ Quick Add (Ghi nhanh)" : "📋 Daily Task (Kế hoạch)"}</span>
+              <span className="flex items-center gap-1.5">
+                {isQuickAddActive ? (
+                  <>
+                    <Zap size={15} strokeWidth={2} className="text-amber-500" />
+                    <span>Quick Add (Ghi nhanh)</span>
+                  </>
+                ) : (
+                  <>
+                    <ClipboardList size={15} strokeWidth={1.75} className="text-blue-500" />
+                    <span>Daily Task (Kế hoạch)</span>
+                  </>
+                )}
+              </span>
               <span className="text-xs text-neutral-400 font-mono">
                 ({isQuickAddActive ? quickAddTasks.length : dailyTasks.length})
               </span>
-              <span
-                className={`text-neutral-400 text-xs transition-transform duration-200 font-mono ${
+              <ChevronDown
+                size={14}
+                strokeWidth={2}
+                className={`text-neutral-400 transition-transform duration-200 ${
                   isDropdownOpen ? "rotate-180" : ""
                 }`}
-              >
-                ▼
-              </span>
+              />
             </button>
           </div>
 
@@ -151,9 +173,14 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                     : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
                 }`}
               >
-                <span>📋 Daily Task List</span>
-                <span className="text-[11px] text-neutral-400 font-mono">({dailyTasks.length})</span>
-                {!isQuickAddActive && <span className="text-[10px] text-emerald-500 font-bold ml-1">✓</span>}
+                <div className="flex items-center gap-2">
+                  <ClipboardList size={14} strokeWidth={1.75} className="text-blue-500" />
+                  <span>Daily Task List</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-neutral-400 font-mono">({dailyTasks.length})</span>
+                  {!isQuickAddActive && <Check size={12} strokeWidth={2.5} className="text-emerald-500" />}
+                </div>
               </button>
               <button
                 onClick={() => {
@@ -166,9 +193,14 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                     : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
                 }`}
               >
-                <span>⚡ Quick Add (Parked)</span>
-                <span className="text-[11px] text-neutral-400 font-mono">({quickAddTasks.length})</span>
-                {isQuickAddActive && <span className="text-[10px] text-emerald-500 font-bold ml-1">✓</span>}
+                <div className="flex items-center gap-2">
+                  <Zap size={14} strokeWidth={2} className="text-amber-500" />
+                  <span>Quick Add (Parked)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-neutral-400 font-mono">({quickAddTasks.length})</span>
+                  {isQuickAddActive && <Check size={12} strokeWidth={2.5} className="text-emerald-500" />}
+                </div>
               </button>
             </div>
           )}
@@ -182,7 +214,7 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                 onClick={() => setIsInputExpanded(true)}
                 className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700/80 hover:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300 text-sm font-semibold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
               >
-                <span className="text-base font-black">+</span>
+                <Plus size={16} strokeWidth={2.2} />
                 <span>Ghi nhanh ý nghĩ phát sinh (Quick Add)</span>
               </button>
             ) : (
@@ -242,13 +274,13 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                       }`}
                     >
                       <div
-                        className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center text-[10px] shrink-0 transition-colors ${
+                        className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
                           isCompleted
                             ? "bg-emerald-500 border-emerald-500 text-white"
                             : "border-neutral-400 dark:border-neutral-600"
                         }`}
                       >
-                        {isCompleted && "✓"}
+                        {isCompleted && <Check size={11} strokeWidth={2.5} />}
                       </div>
 
                       <div className="flex-1 flex flex-col gap-1 min-w-0">
@@ -261,11 +293,13 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                         </span>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">
-                            ⚡ Quick Add
+                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                            <Zap size={10} strokeWidth={2} />
+                            <span>Quick Add</span>
                           </span>
-                          <span className="text-[11px] text-neutral-400 font-mono">
-                            ⏱ {task.estimatedMinutes || 25}m
+                          <span className="text-[11px] text-neutral-400 font-mono flex items-center gap-0.5">
+                            <Clock size={10} strokeWidth={1.75} />
+                            <span>{task.estimatedMinutes || 25}m</span>
                           </span>
                         </div>
                       </div>
@@ -302,13 +336,13 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
                   >
                     {/* Custom Checkbox */}
                     <div
-                      className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center text-[10px] shrink-0 transition-colors ${
+                      className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
                         isCompleted
                           ? "bg-emerald-500 border-emerald-500 text-white"
                           : "border-neutral-400 dark:border-neutral-600"
                       }`}
                     >
-                      {isCompleted && "✓"}
+                      {isCompleted && <Check size={11} strokeWidth={2.5} />}
                     </div>
 
                     {/* Task Content */}

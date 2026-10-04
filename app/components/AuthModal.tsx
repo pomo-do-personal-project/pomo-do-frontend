@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { ApiError } from "../lib/apiClient";
+import { X } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -86,9 +87,10 @@ export function AuthModal({ isOpen, onClose, initialMode = "signup", onAuthSucce
         {/* Close Button Top Right */}
         <button
           onClick={onClose}
+          aria-label="Đóng cửa sổ"
           className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
         >
-          ✕
+          <X size={18} strokeWidth={1.75} />
         </button>
 
         {/* Title */}

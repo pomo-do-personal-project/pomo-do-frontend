@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { FocusSessionDto, FocusSessionMode } from "../types/api";
+import { Flame, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PALETTE = [
   "#3b82f6", // blue-500
@@ -268,17 +269,19 @@ export function StatisticPage() {
               </div>
 
               {/* Time Range Filter: < Today > */}
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              <div className="inline-flex items-center gap-1 px-2 py-1 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 <button
                   onClick={() =>
                     setTimeRange((prev) =>
                       prev === "Today" ? "Week" : prev === "Week" ? "Month" : "Today"
                     )
                   }
-                  className="hover:text-neutral-900 dark:hover:text-white cursor-pointer px-1 transition-colors"
+                  className="hover:text-neutral-900 dark:hover:text-white cursor-pointer px-1 transition-colors flex items-center gap-1.5"
                   title="Đổi khoảng thời gian thống kê"
                 >
-                  &lt; {timeRange} &gt;
+                  <ChevronLeft size={13} strokeWidth={2} />
+                  <span>{timeRange}</span>
+                  <ChevronRight size={13} strokeWidth={2} />
                 </button>
               </div>
             </div>
@@ -420,8 +423,9 @@ export function StatisticPage() {
             <span className="text-6xl md:text-7xl font-black text-neutral-900 dark:text-white tracking-tighter leading-none mb-2">
               {streaksCount}
             </span>
-            <span className="text-base font-semibold text-neutral-500 dark:text-neutral-400">
-              ngày liên tục 🔥
+            <span className="text-base font-semibold text-neutral-500 dark:text-neutral-400 flex items-center justify-center gap-1.5">
+              <span>ngày liên tục</span>
+              <Flame size={18} strokeWidth={2} className="text-amber-500 fill-amber-500/20" />
             </span>
             {summary?.longestStreak ? (
               <span className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-2 font-mono">

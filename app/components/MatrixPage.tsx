@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { Priority, TaskStatus } from "../types/api";
 import { MatrixQuadrant, PRIORITY_MAP, REVERSE_PRIORITY_MAP } from "./TaskPage";
+import { Plus, X, Check } from "lucide-react";
 
 const QUADRANTS: {
   id: MatrixQuadrant;
@@ -128,10 +129,11 @@ export function MatrixPage() {
                     setActiveInputQuadrant(isAdding ? null : quad.id);
                     setQuickInput("");
                   }}
-                  className="w-8 h-8 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 flex items-center justify-center text-sm font-bold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 flex items-center justify-center text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer"
                   title="Thêm task vào ô này"
+                  aria-label="Thêm task vào ô này"
                 >
-                  {isAdding ? "✕" : "+"}
+                  {isAdding ? <X size={15} strokeWidth={2} /> : <Plus size={15} strokeWidth={2.2} />}
                 </button>
               </div>
 
@@ -177,13 +179,13 @@ export function MatrixPage() {
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           <span
-                            className={`w-4 h-4 rounded-md border flex items-center justify-center text-[9px] shrink-0 ${
+                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                               isCompleted
                                 ? "bg-emerald-500 border-emerald-500 text-white"
                                 : "border-neutral-400 dark:border-neutral-600"
                             }`}
                           >
-                            {isCompleted && "✓"}
+                            {isCompleted && <Check size={11} strokeWidth={2.5} />}
                           </span>
                           <span
                             className={`text-xs sm:text-sm truncate ${
@@ -196,10 +198,11 @@ export function MatrixPage() {
 
                         <button
                           onClick={(e) => handleDeleteTask(t.id, e)}
-                          className="text-xs text-neutral-400 hover:text-rose-500 px-1 transition-colors cursor-pointer"
+                          className="text-neutral-400 hover:text-rose-500 p-1 transition-colors cursor-pointer"
                           title="Xóa task"
+                          aria-label="Xóa task"
                         >
-                          ✕
+                          <X size={13} strokeWidth={2} />
                         </button>
                       </div>
                     );

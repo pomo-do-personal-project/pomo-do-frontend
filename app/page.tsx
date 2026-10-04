@@ -12,6 +12,15 @@ import { SettingsModal } from "./components/SettingsModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { useAuthStore } from "./stores/useAuthStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
+import {
+  Settings,
+  Sun,
+  Moon,
+  Volume2,
+  VolumeX,
+  MoreHorizontal,
+  ChevronsRight,
+} from "lucide-react";
 
 export default function Home() {
   const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "task" | "matrix" | ...
@@ -91,12 +100,11 @@ export default function Home() {
             {!isSidebarOpen ? (
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                title="Expand Sidebar"
-                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 transition-all duration-200 cursor-pointer group"
+                title="Mở rộng Sidebar"
+                aria-label="Mở rộng thanh điều hướng"
+                className="p-2 rounded-xl text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 cursor-pointer group"
               >
-                <span className="font-mono text-sm tracking-tighter opacity-50 group-hover:opacity-100 group-hover:font-extrabold transition-all select-none">
-                  &gt;&gt;
-                </span>
+                <ChevronsRight size={18} strokeWidth={1.75} className="opacity-70 group-hover:opacity-100 transition-opacity" />
               </button>
             ) : (
               <div className="w-6" />
@@ -109,45 +117,52 @@ export default function Home() {
             <button
               onClick={() => setIsSettingsModalOpen(true)}
               title="Cài đặt Pomodoro & Thời lượng"
+              aria-label="Cài đặt thời lượng Pomodoro"
               className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             >
-              <span className="text-base select-none">⚙️</span>
+              <Settings size={18} strokeWidth={1.75} />
             </button>
 
             {/* Theme Toggle Button (Dark / Light) */}
             <button
               onClick={toggleTheme}
-              title={isDarkMode ? "Switch to Light mode" : "Switch to Dark mode"}
+              title={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
+              aria-label={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             >
-              <span className="text-sm select-none">
-                {isDarkMode ? "☀️" : "🌙"}
-              </span>
+              {isDarkMode ? (
+                <Sun size={18} strokeWidth={1.75} />
+              ) : (
+                <Moon size={18} strokeWidth={1.75} />
+              )}
             </button>
 
             {/* Speaker Button */}
             <button
               onClick={() => setIsSoundMuted((prev) => !prev)}
-              title={isSoundMuted ? "Unmute sound" : "Mute sound"}
+              title={isSoundMuted ? "Bật âm thanh chuông báo" : "Tắt âm thanh chuông báo"}
+              aria-label={isSoundMuted ? "Bật âm thanh" : "Tắt âm thanh"}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             >
-              <span className="text-sm select-none">
-                {isSoundMuted ? "🔇" : "🔊"}
-              </span>
+              {isSoundMuted ? (
+                <VolumeX size={18} strokeWidth={1.75} />
+              ) : (
+                <Volume2 size={18} strokeWidth={1.75} />
+              )}
             </button>
 
             {/* Three-dot Button to toggle Overview panel (Chỉ hiển thị hoặc áp dụng cho Dashboard) */}
             <button
               onClick={() => setIsOverviewOpen((prev) => !prev)}
-              title={isOverviewOpen ? "Close Overview" : "Open Overview"}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${isOverviewOpen && activeView === "dashboard"
+              title={isOverviewOpen ? "Đóng bảng Overview" : "Mở bảng Overview"}
+              aria-label={isOverviewOpen ? "Đóng Overview" : "Mở Overview"}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                isOverviewOpen && activeView === "dashboard"
                   ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white"
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                }`}
+              }`}
             >
-              <span className="font-mono font-bold text-base tracking-widest select-none">
-                ....
-              </span>
+              <MoreHorizontal size={18} strokeWidth={1.75} />
             </button>
           </div>
         </header>

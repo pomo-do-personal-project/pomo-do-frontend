@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/Button";
 import { StopwatchDial } from "./StopwatchDial";
+import { Play, Pause, RotateCcw, Check, ChevronDown } from "lucide-react";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -242,7 +243,7 @@ export function TimerCenter() {
             <span className="font-bold text-neutral-900 dark:text-white tracking-wider">
               {focusMode}
             </span>
-            <span className="text-neutral-400 dark:text-neutral-500 text-xs">▼</span>
+            <ChevronDown size={14} strokeWidth={2} className={`text-neutral-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
           {/* Dropdown Options */}
@@ -323,9 +324,10 @@ export function TimerCenter() {
           size="icon"
           onClick={handleReset}
           title="Reset Timer / Hủy phiên"
-          className="w-12 h-12 rounded-2xl hover:rotate-[-45deg] transition-transform"
+          aria-label="Đặt lại bộ đếm hoặc hủy phiên"
+          className="w-12 h-12 rounded-2xl hover:rotate-[-45deg] transition-transform text-neutral-600 dark:text-neutral-300"
         >
-          <span className="text-xl">↺</span>
+          <RotateCcw size={20} strokeWidth={1.75} />
         </Button>
 
         {/* Main Play / Pause Button */}
@@ -333,14 +335,15 @@ export function TimerCenter() {
           variant="primary"
           size="lg"
           onClick={handleTogglePlay}
-          className={`w-20 h-14 rounded-2xl shadow-md flex items-center justify-center text-xl ${
+          aria-label={isRunning ? "Tạm dừng" : "Bắt đầu"}
+          className={`w-20 h-14 rounded-2xl shadow-md flex items-center justify-center ${
             isOvertime ? "bg-rose-600 hover:bg-rose-700 text-white" : ""
           }`}
         >
           {isRunning ? (
-            <span className="tracking-widest font-mono text-base">❚❚</span>
+            <Pause size={22} strokeWidth={2} />
           ) : (
-            <span className="translate-x-0.5 text-2xl">▶</span>
+            <Play size={22} strokeWidth={2} className="translate-x-0.5 fill-current" />
           )}
         </Button>
 
@@ -351,13 +354,14 @@ export function TimerCenter() {
             size="icon"
             onClick={handleManualComplete}
             title={isOvertime ? "Dừng & Lưu thời gian Overtime vào Backend" : "Hoàn thành & Lưu phiên vào Backend"}
+            aria-label="Hoàn thành và lưu phiên làm việc"
             className={`w-12 h-12 rounded-2xl transition-all ${
               isOvertime
                 ? "bg-rose-500 hover:bg-rose-600 text-white border-rose-500 shadow-md scale-105 animate-bounce"
                 : "bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-500/30"
             }`}
           >
-            <span className="text-lg font-bold">✓</span>
+            <Check size={22} strokeWidth={2.2} />
           </Button>
         )}
       </div>

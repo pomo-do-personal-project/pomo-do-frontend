@@ -4,6 +4,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { Priority, TaskStatus, TaskDto } from "../types/api";
+import {
+  CalendarDays,
+  FastForward,
+  Zap,
+  Calendar,
+  AlertTriangle,
+  RotateCcw,
+  Plus,
+  Check,
+  Clock,
+  ChevronRight,
+  Flag,
+  ChevronDown,
+  X,
+} from "lucide-react";
 
 export type MatrixQuadrant =
   | "urgent-important" // Q1: Làm ngay (Do first)
@@ -242,14 +257,15 @@ export function TaskPage() {
         <nav className="flex flex-col gap-1 mb-6">
           {(
             [
-              { id: "Today", label: "Today", icon: "📅" },
-              { id: "Upcoming", label: "Upcoming", icon: "⏩" },
-              { id: "QuickAdd", label: "Quick Add", icon: "⚡" },
-              { id: "Calendar", label: "Calendar", icon: "🗓️" },
+              { id: "Today", label: "Today", icon: CalendarDays },
+              { id: "Upcoming", label: "Upcoming", icon: FastForward },
+              { id: "QuickAdd", label: "Quick Add", icon: Zap },
+              { id: "Calendar", label: "Calendar", icon: Calendar },
             ] as const
           ).map((item) => {
             const count = categoryCounts[item.id];
             const isActive = currentCategory === item.id;
+            const IconComponent = item.icon;
 
             return (
               <button
@@ -266,7 +282,7 @@ export function TaskPage() {
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span>{item.icon}</span>
+                  <IconComponent size={16} strokeWidth={1.75} className="shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </div>
                 <span
@@ -338,15 +354,16 @@ export function TaskPage() {
         {error && (
           <div className="mb-4 p-3.5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
-              <span className="text-base">⚠️</span>
+              <AlertTriangle size={18} strokeWidth={1.75} className="text-rose-600 dark:text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => fetchTasks()}
-                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition-colors cursor-pointer text-[11px]"
+                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition-colors cursor-pointer text-[11px] flex items-center gap-1"
               >
-                Thử lại ↺
+                <span>Thử lại</span>
+                <RotateCcw size={12} strokeWidth={2} />
               </button>
               <button
                 onClick={clearError}
@@ -376,9 +393,7 @@ export function TaskPage() {
                   : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus size={16} strokeWidth={2.2} />
             </span>
             <span
               className={`text-sm sm:text-base font-medium transition-colors ${
@@ -408,9 +423,7 @@ export function TaskPage() {
                     : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus size={16} strokeWidth={2.2} />
               </span>
               <input
                 type="text"
@@ -469,13 +482,13 @@ export function TaskPage() {
                       type="button"
                       onClick={(e) => handleToggleTask(task.id, e)}
                       aria-label={`Đánh dấu hoàn thành ${task.title}`}
-                      className={`w-5 h-5 rounded-lg border flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer ${
+                      className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
                         isCompleted
                           ? "bg-emerald-500 border-emerald-500 text-white"
                           : "border-neutral-400 dark:border-neutral-600 hover:border-neutral-600"
                       }`}
                     >
-                      {isCompleted && "✓"}
+                      {isCompleted && <Check size={13} strokeWidth={2.5} />}
                     </button>
 
                     <div className="flex items-center gap-2 truncate">
@@ -491,8 +504,9 @@ export function TaskPage() {
 
                       {/* QuickAdd Badge */}
                       {task.isQuickAdd && (
-                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
-                          ⚡ Quick
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Zap size={10} strokeWidth={2} />
+                          <span>Quick</span>
                         </span>
                       )}
 
@@ -505,8 +519,9 @@ export function TaskPage() {
                       </span>
 
                       {/* Estimated time tag */}
-                      <span className="text-[11px] font-mono text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md">
-                        ⏱ {task.estimatedMinutes || 25}m
+                      <span className="text-[11px] font-mono text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <Clock size={11} strokeWidth={1.75} />
+                        <span>{task.estimatedMinutes || 25}m</span>
                       </span>
 
                       {/* Subtasks summary */}
@@ -519,8 +534,8 @@ export function TaskPage() {
                   </div>
 
                   {/* Arrow indicator pointing to detail panel */}
-                  <span className="text-neutral-400 dark:text-neutral-500 font-mono text-base px-2">
-                    &gt;
+                  <span className="text-neutral-400 dark:text-neutral-500 px-2 flex items-center">
+                    <ChevronRight size={16} strokeWidth={1.75} />
                   </span>
                 </div>
               );
@@ -548,12 +563,11 @@ export function TaskPage() {
                 <button
                   onClick={() => setIsMatrixMenuOpen((prev) => !prev)}
                   title="Chọn dạng Ma trận Eisenhower (Matrix Quadrant)"
-                  className="p-1.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1 cursor-pointer"
+                  aria-label="Chọn Ma trận Eisenhower"
+                  className="p-1.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span className={`text-lg ${getMatrixBadgeColor(editPriority)}`}>
-                    ⚑
-                  </span>
-                  <span className="text-[10px] text-neutral-400">▼</span>
+                  <Flag size={18} strokeWidth={2} className={getMatrixBadgeColor(editPriority)} />
+                  <ChevronDown size={14} strokeWidth={2} className="text-neutral-400" />
                 </button>
 
                 {/* Matrix Quadrant Selection Dropdown */}
@@ -584,7 +598,7 @@ export function TaskPage() {
                               {opt.label}
                             </span>
                             {isSelected && (
-                              <span className="text-emerald-500 font-bold">✓</span>
+                              <Check size={14} strokeWidth={2.5} className="text-emerald-500" />
                             )}
                           </div>
                           <span className="text-[10px] text-neutral-400 dark:text-neutral-400">
@@ -659,9 +673,7 @@ export function TaskPage() {
                 className="w-full flex items-center gap-2 px-3 py-2 bg-neutral-100/50 hover:bg-neutral-100 dark:bg-neutral-800/40 dark:hover:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 rounded-xl text-left cursor-pointer transition-all group mb-2"
               >
                 <span className="w-5 h-5 rounded-md bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus size={13} strokeWidth={2.2} />
                 </span>
                 <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors">
                   Thêm subtask
@@ -671,9 +683,7 @@ export function TaskPage() {
               <form onSubmit={handleAddSubtask} className="flex items-center gap-2 mb-2">
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-transparent border border-neutral-900 dark:border-white rounded-xl">
                   <span className="text-neutral-500">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Plus size={13} strokeWidth={2.2} />
                   </span>
                   <input
                     type="text"
@@ -713,13 +723,13 @@ export function TaskPage() {
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span
-                      className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[8px] border shrink-0 ${
+                      className={`w-3.5 h-3.5 rounded flex items-center justify-center border shrink-0 ${
                         sub.isCompleted
                           ? "bg-emerald-500 border-emerald-500 text-white"
                           : "border-neutral-400"
                       }`}
                     >
-                      {sub.isCompleted && "✓"}
+                      {sub.isCompleted && <Check size={10} strokeWidth={2.5} />}
                     </span>
                     <span
                       className={`truncate ${
@@ -737,8 +747,9 @@ export function TaskPage() {
                     }}
                     className="text-neutral-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
                     title="Xóa subtask"
+                    aria-label="Xóa subtask"
                   >
-                    ✕
+                    <X size={13} strokeWidth={2} />
                   </button>
                 </div>
               ))}
