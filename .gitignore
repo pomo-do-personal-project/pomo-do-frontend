@@ -49,3 +49,5 @@ skills-lock.json
 # Markdown files (ignore all .md files EXCEPT README.md)
 *.md
 !README.md
+
+certificates

@@ -86,11 +86,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authService.logout();
         } finally {
-          set({
-            user: null,
-            isAuthenticated: false,
-            error: null,
-          });
+          const { clearAllUserData } = await import("../lib/sessionManager");
+          clearAllUserData();
         }
       },
 
@@ -103,10 +100,13 @@ export const useAuthStore = create<AuthState>()(
             }
             return true;
           }
+          const { clearAllUserData } = await import("../lib/sessionManager");
+          clearAllUserData();
           return false;
         } catch {
-          // Token hết hạn hoặc không hợp lệ -> reset auth state
-          set({ user: null, isAuthenticated: false });
+          // Token hết hạn hoặc không hợp lệ -> reset toàn bộ dữ liệu người dùng
+          const { clearAllUserData } = await import("../lib/sessionManager");
+          clearAllUserData();
           return false;
         }
       },

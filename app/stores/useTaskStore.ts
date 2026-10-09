@@ -25,6 +25,7 @@ interface TaskState {
   selectTask: (task: TaskDto | null) => void;
   createTask: (data: CreateTaskRequest) => Promise<TaskDto | null>;
   updateTask: (id: string, data: UpdateTaskRequest) => Promise<TaskDto | null>;
+  moveTaskPriority: (id: string, newPriority: Priority) => Promise<boolean>;
   toggleTaskStatus: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<boolean>;
 
@@ -39,6 +40,7 @@ interface TaskState {
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<boolean>;
 
   clearError: () => void;
+  resetTaskStore: () => void;
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -51,6 +53,16 @@ export const useTaskStore = create<TaskState>()(
       error: null,
 
       clearError: () => set({ error: null }),
+
+      resetTaskStore: () => {
+        set({
+          tasks: [],
+          selectedTask: null,
+          isLoading: false,
+          isSaving: false,
+          error: null,
+        });
+      },
 
       selectTask: (task) => set({ selectedTask: task }),
 
@@ -67,11 +79,25 @@ export const useTaskStore = create<TaskState>()(
               : null,
           });
         } catch (err: any) {
-          // Khi backend offline: GIỮ NGUYÊN danh sách tasks đã cache từ localStorage
-          set({
-            isLoading: false,
-            error: err?.message || "Không thể kết nối đến máy chủ backend",
-          });
+          const is401 = err?.statusCode === 401 || err?.message?.toLowerCase().includes("unauthorized");
+          if (is401) {
+            // Khi chưa đăng nhập hoặc hết hạn phiên: dọn dẹp sạch danh sách, không báo lỗi phiền hà cho người dùng
+            set({
+              tasks: [],
+              selectedTask: null,
+              isLoading: false,
+              error: null,
+            });
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("pomo-tasks-cache");
+            }
+          } else {
+            // Khi backend offline thực sự: GIỮ NGUYÊN danh sách tasks đã cache từ localStorage
+            set({
+              isLoading: false,
+              error: err?.message || "Không thể kết nối đến máy chủ backend",
+            });
+          }
         }
       },
 
@@ -118,6 +144,50 @@ export const useTaskStore = create<TaskState>()(
             error: err?.message || "Không thể cập nhật công việc",
           });
           throw err;
+        }
+      },
+
+      moveTaskPriority: async (id: string, newPriority: Priority) => {
+        const target = get().tasks.find((t) => t.id === id);
+        if (!target || target.priority === newPriority) return true;
+
+        const prevPriority = target.priority;
+
+        // Optimistic UI update: cập nhật state ngay lập tức giúp kéo thả siêu nhạy
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, priority: newPriority } : t)),
+          selectedTask: state.selectedTask?.id === id ? { ...state.selectedTask, priority: newPriority } : state.selectedTask,
+        }));
+
+        try {
+          const updated = await taskService.updateTask(id, {
+            title: target.title,
+            priority: newPriority,
+            status: target.status,
+            estimatedMinutes: target.estimatedMinutes,
+            estimatedPomodoros: target.estimatedPomodoros,
+            dueDate: target.dueDate,
+            tags: target.tags,
+            category: target.category,
+            isQuickAdd: target.isQuickAdd,
+          });
+
+          if (updated) {
+            set((state) => ({
+              tasks: state.tasks.map((t) => (t.id === id ? updated : t)),
+              selectedTask: state.selectedTask?.id === id ? updated : state.selectedTask,
+            }));
+            return true;
+          }
+          return false;
+        } catch (err: any) {
+          // Rollback nếu API backend gặp lỗi
+          set((state) => ({
+            tasks: state.tasks.map((t) => (t.id === id ? { ...t, priority: prevPriority } : t)),
+            selectedTask: state.selectedTask?.id === id ? { ...state.selectedTask, priority: prevPriority } : state.selectedTask,
+            error: err?.message || "Không thể chuyển đổi góc ma trận",
+          }));
+          return false;
         }
       },
 

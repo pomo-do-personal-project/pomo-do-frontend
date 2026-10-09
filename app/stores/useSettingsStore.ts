@@ -14,6 +14,7 @@ interface SettingsState {
   updateSettings: (data: Partial<UpdateUserSettingsRequest>) => Promise<boolean>;
   setLocalSettings: (partial: Partial<UserSettingsDto>) => void;
   clearError: () => void;
+  resetSettingsStore: () => void;
 }
 
 const DEFAULT_SETTINGS: UserSettingsDto = {
@@ -35,6 +36,15 @@ export const useSettingsStore = create<SettingsState>()(
       error: null,
 
       clearError: () => set({ error: null }),
+
+      resetSettingsStore: () => {
+        set({
+          settings: DEFAULT_SETTINGS,
+          isLoading: false,
+          isSaving: false,
+          error: null,
+        });
+      },
 
       setLocalSettings: (partial) => {
         set((state) => ({

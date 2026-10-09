@@ -5,20 +5,25 @@ import React, { useMemo } from "react";
 interface StopwatchDialProps {
   seconds: number;
   label?: string;
-  totalCycleSeconds?: number; // 60s per full rotation
+  totalCycleSeconds?: number;
+  isOvertime?: boolean;
+  overtimeSeconds?: number;
 }
 
 export function StopwatchDial({
   seconds,
   label = "SEC. ELAPSED",
   totalCycleSeconds = 60,
+  isOvertime = false,
+  overtimeSeconds = 0,
 }: StopwatchDialProps) {
-  const currentSecInCycle = seconds % totalCycleSeconds;
+  const currentSecInCycle = (isOvertime ? overtimeSeconds : seconds) % totalCycleSeconds;
   const progressRatio = currentSecInCycle / totalCycleSeconds; // 0 to 1
 
   // Format MM:SS
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const displaySeconds = isOvertime ? overtimeSeconds : seconds;
+  const mins = Math.floor(displaySeconds / 60);
+  const secs = displaySeconds % 60;
   const formattedTime = `${mins.toString().padStart(2, "0")}:${secs
     .toString()
     .padStart(2, "0")}`;
@@ -30,12 +35,13 @@ export function StopwatchDial({
   const totalTicks = 60; // 60 ticks around the circle
 
   // Generate tick markers: Ticks are oriented RADIALLY (pointing from center outward like a clock)
+  // Quét ngược chiều kim đồng hồ (từ trên đỉnh sang trái: counter-clockwise)
   const ticks = useMemo(() => {
     return Array.from({ length: totalTicks }, (_, i) => {
-      // Angle: 0 at top (-90deg), clockwise
-      const angle = (i * 360) / totalTicks - 90;
+      // Angle: 0 at top (-90deg), counter-clockwise (- i * 360 / totalTicks)
+      const angle = -90 - (i * 360) / totalTicks;
       const rad = (angle * Math.PI) / 180;
-      const isPassed = i / totalTicks <= progressRatio && seconds > 0;
+      const isPassed = i / totalTicks <= progressRatio && (seconds > 0 || overtimeSeconds > 0);
 
       // Radial ticks: lines perpendicular to the circle (xuyên tâm)
       const tickLength = i % 5 === 0 ? 12 : 8; // Major ticks longer
@@ -57,10 +63,10 @@ export function StopwatchDial({
         isMajor: i % 5 === 0,
       };
     });
-  }, [totalTicks, progressRatio, radius, center, seconds]);
+  }, [totalTicks, progressRatio, radius, center, seconds, overtimeSeconds]);
 
-  // Current hand angle in degrees (0 at top, clockwise)
-  const handAngle = progressRatio * 360;
+  // Current hand angle in degrees: ngược chiều kim đồng hồ (counter-clockwise)
+  const handAngle = -progressRatio * 360;
 
   return (
     <div className="relative flex flex-col items-center justify-center select-none">
@@ -79,7 +85,11 @@ export function StopwatchDial({
             x2={tick.x2}
             y2={tick.y2}
             stroke={
-              tick.isPassed
+              isOvertime
+                ? tick.isPassed
+                  ? "#f43f5e" // Rose-500
+                  : "currentColor"
+                : tick.isPassed
                 ? "#84cc16" // Lime-500 neon
                 : "currentColor"
             }
@@ -94,7 +104,7 @@ export function StopwatchDial({
         ))}
 
         {/* 2. Rotating Clock Hand (Kim đồng hồ xoay tròn quét qua các vạch) */}
-        {seconds > 0 && (
+        {(seconds > 0 || overtimeSeconds > 0) && (
           <g
             transform={`rotate(${handAngle} ${center} ${center})`}
             className="transition-transform duration-300 ease-out"
@@ -105,10 +115,14 @@ export function StopwatchDial({
               y1={center - radius - 10}
               x2={center}
               y2={center - radius + 10}
-              stroke="#65a30d"
+              stroke={isOvertime ? "#e11d48" : "#65a30d"}
               strokeWidth="4"
               strokeLinecap="round"
-              className="drop-shadow-[0_0_8px_rgba(132,204,22,0.8)]"
+              className={
+                isOvertime
+                  ? "drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]"
+                  : "drop-shadow-[0_0_8px_rgba(132,204,22,0.8)]"
+              }
             />
           </g>
         )}
@@ -116,10 +130,20 @@ export function StopwatchDial({
 
       {/* Center Digital Clock & Subtitle: Auto adaptive to light/dark mode */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="font-mono text-5xl sm:text-6xl font-light tracking-tight text-neutral-900 dark:text-white drop-shadow-sm transition-colors duration-200">
-          {formattedTime}
+        <span
+          className={`font-mono text-5xl sm:text-6xl tracking-tight drop-shadow-sm transition-colors duration-200 ${
+            isOvertime
+              ? "text-rose-600 dark:text-rose-400 font-normal"
+              : "text-neutral-900 dark:text-white font-light"
+          }`}
+        >
+          {isOvertime ? `+${formattedTime}` : formattedTime}
         </span>
-        <span className="mt-1 text-[11px] font-semibold tracking-widest text-neutral-500 dark:text-neutral-400 uppercase font-mono transition-colors duration-200">
+        <span
+          className={`mt-1 text-[11px] font-semibold tracking-widest uppercase font-mono transition-colors duration-200 ${
+            isOvertime ? "text-rose-500 dark:text-rose-400" : "text-neutral-500 dark:text-neutral-400"
+          }`}
+        >
           {label}
         </span>
       </div>

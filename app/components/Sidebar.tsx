@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
-import logoImg from "../logo.png";
 
 import { useAuthStore } from "../stores/useAuthStore";
 import {
@@ -83,9 +81,8 @@ export function Sidebar({
 
   return (
     <aside
-      className={`fixed top-0 left-0 bottom-0 z-30 flex flex-col bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-neutral-800/80 select-none shadow-sm transition-[width] duration-300 ease-in-out ${
-        isOpen ? "w-18 visible" : "w-0 overflow-hidden invisible border-none"
-      }`}
+      className={`fixed top-0 left-0 bottom-0 z-30 flex flex-col bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-neutral-800/80 select-none shadow-sm transition-[width] duration-300 ease-in-out ${isOpen ? "w-18 visible" : "w-0 overflow-hidden invisible border-none"
+        }`}
     >
       {/* Top Header: Logo Image + Collapse Toggle on hover (h-14 match Top Header) */}
       <div className="h-14 w-18 flex items-center justify-center border-b border-neutral-200/60 dark:border-neutral-800/60 shrink-0 relative">
@@ -95,12 +92,46 @@ export function Sidebar({
           aria-label="Thu gọn Sidebar"
           className="w-10 h-10 relative flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all group"
         >
-          <Image
-            src={logoImg}
-            alt="Pomo-do Logo"
-            className="w-full h-full object-contain p-0.5 group-hover:opacity-10 transition-opacity duration-200"
-            priority
-          />
+          <div className="w-full h-full p-0.5 group-hover:opacity-10 transition-opacity duration-200 flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+              className="w-full h-full"
+            >
+              <defs>
+                <path
+                  id="sidebar-leaf-shape"
+                  d="M 157.1 117.4 C 180.6 105.7 207.9 109.9 230.2 122.0 C 238.1 104.0 243.2 84.2 259.1 82.1 C 270.5 79.6 281.0 88.9 275.9 101.5 L 266.7 124.6 C 289.8 107.8 327.6 102.7 354.9 118.3 C 349.4 140.9 323.0 158.2 294.0 167.0 C 247.4 180.0 191.9 161.9 167.6 140.5 C 161.3 134.6 157.9 125.8 157.1 117.4 Z"
+                />
+                <circle id="sidebar-check-bg" cx="370" cy="390" r="65" />
+              </defs>
+
+              {/* Thân cà chua */}
+              <circle cx="256" cy="295" r="155" fill="#EF3E36" />
+
+              {/* Mặt đồng hồ */}
+              <circle cx="256" cy="295" r="95" fill="#FFFFFF" />
+
+              {/* Vạch giờ */}
+              <rect x="251" y="215" width="10" height="20" rx="5" fill="#EF3E36" />
+              <rect x="315" y="290" width="20" height="10" rx="5" fill="#EF3E36" />
+              <rect x="251" y="355" width="10" height="20" rx="5" fill="#EF3E36" />
+              <rect x="176" y="290" width="20" height="10" rx="5" fill="#EF3E36" />
+
+              {/* Chốt & Kim đồng hồ */}
+              <circle cx="256" cy="295" r="9" fill="#EF3E36" />
+              <line x1="256" y1="295" x2="295" y2="256" stroke="#EF3E36" strokeWidth="18" strokeLinecap="round" />
+
+              {/* Cuống lá */}
+              <use href="#sidebar-leaf-shape" fill="#0b706b" stroke="#0b706b" strokeWidth="4" strokeLinejoin="round" />
+
+              {/* Dấu tích hoàn thành */}
+              <g>
+                <use href="#sidebar-check-bg" fill="#0b706b" />
+                <path d="M 340 395 L 360 415 L 400 365" fill="none" stroke="#FFFFFF" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+            </svg>
+          </div>
           {/* Collapse indicator with Lucide minimal stroke that reveals on hover */}
           <span className="hidden group-hover:flex absolute inset-0 items-center justify-center text-neutral-800 dark:text-neutral-100">
             <ChevronsLeft size={20} strokeWidth={2} />
@@ -122,11 +153,10 @@ export function Sidebar({
                   onSelectItem?.(item.id);
                 }}
                 aria-label={item.label}
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
-                    : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-100"
-                }`}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${isActive
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
+                  : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  }`}
               >
                 <IconComponent size={22} strokeWidth={isActive ? 2 : 1.75} />
               </button>
@@ -148,11 +178,10 @@ export function Sidebar({
           <button
             onClick={handleAccountClick}
             aria-label={isUserLoggedIn ? `User ${user?.displayName || user?.email}` : "Sign in / Register"}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${
-              isUserLoggedIn
-                ? "border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-xs hover:border-emerald-600 active:scale-95"
-                : "border-dashed border-neutral-400 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
-            }`}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${isUserLoggedIn
+              ? "border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-xs hover:border-emerald-600 active:scale-95"
+              : "border-dashed border-neutral-400 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+              }`}
           >
             {isUserLoggedIn ? (
               user?.avatarUrl ? (

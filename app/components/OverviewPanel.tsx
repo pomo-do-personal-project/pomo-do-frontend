@@ -28,8 +28,12 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const isAuthenticated = useTaskStore((s) => s.tasks.length > 0) || false;
+
   useEffect(() => {
-    if (isOpen) {
+    // Chỉ gọi fetchTasks nếu user đang có phiên đăng nhập (tránh lỗi 401 khi ở chế độ guest)
+    const authed = (typeof window !== "undefined" && localStorage.getItem("pomo-auth-storage")) ? true : false;
+    if (isOpen && authed) {
       fetchTasks();
     }
   }, [isOpen, fetchTasks]);

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
+import { useAuthStore } from "../stores/useAuthStore";
 import { FocusSessionDto, FocusSessionMode } from "../types/api";
 import { Flame, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -33,8 +34,16 @@ export function StatisticPage() {
   const tasks = useTaskStore((s) => s.tasks);
   const fetchTasks = useTaskStore((s) => s.fetchTasks);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   // Fetch summary and history on mount or range change
   useEffect(() => {
+    if (!isAuthenticated) {
+      usePomodoroStore.getState().resetPomodoroStore();
+      useTaskStore.getState().resetTaskStore();
+      return;
+    }
+
     fetchSummary();
     fetchTasks();
 
@@ -53,7 +62,7 @@ export function StatisticPage() {
     }
 
     fetchHistory(fromUtc);
-  }, [fetchSummary, fetchHistory, fetchTasks, timeRange]);
+  }, [fetchSummary, fetchHistory, fetchTasks, timeRange, isAuthenticated]);
 
   // Aggregate sessions by Task or Free Pomo
   const processedItems = React.useMemo(() => {
@@ -75,7 +84,7 @@ export function StatisticPage() {
     history.forEach((session, index) => {
       const isTask = !!session.taskId;
       const key = isTask ? `task-${session.taskId}` : `session-${session.id}`;
-      const name = session.taskTitle || session.note || (session.mode === FocusSessionMode.Pomo ? "Phiên Pomodoro tự do" : "Phiên Stopwatch tự do");
+      const name = session.taskTitle || session.note || (session.mode === FocusSessionMode.Pomo ? "Tự do" : "Stopwatch");
       const color = PALETTE[index % PALETTE.length];
 
       if (!map.has(key)) {
@@ -343,8 +352,8 @@ export function StatisticPage() {
                 </div>
               </div>
 
-              {/* Right Task Progress Bars */}
-              <div className="sm:col-span-7 flex flex-col gap-4 w-full">
+              {/* Right Task Progress Bars: Giới hạn tối đa hiển thị 3 dòng, các dòng tiếp theo cuộn (scroll) */}
+              <div className="sm:col-span-7 flex flex-col gap-4 w-full max-h-[175px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-700">
                 {filteredData.map((item) => {
                   const isOvertime = item.actualMinutes > item.plannedMinutes;
                   const overtimeMinutes = item.overtimeMinutes || Math.max(0, item.actualMinutes - item.plannedMinutes);

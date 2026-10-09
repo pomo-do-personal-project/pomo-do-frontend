@@ -10,8 +10,10 @@ import { StatisticPage } from "./components/StatisticPage";
 import { AuthModal } from "./components/AuthModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { WelcomeSplash } from "./components/WelcomeSplash";
 import { useAuthStore } from "./stores/useAuthStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
+import { usePomodoroStore } from "./stores/usePomodoroStore";
 import {
   Settings,
   Sun,
@@ -20,6 +22,9 @@ import {
   VolumeX,
   MoreHorizontal,
   ChevronsRight,
+  Play,
+  Pause,
+  Timer,
 } from "lucide-react";
 
 export default function Home() {
@@ -30,24 +35,30 @@ export default function Home() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   // Zustand Stores
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
+  // Global Pomodoro Timer State để hiển thị Mini Timer trên Header khi sang trang khác
+  const isTimerRunning = usePomodoroStore((s) => s.isRunning);
+  const timerSeconds = usePomodoroStore((s) => s.seconds);
+  const isOvertime = usePomodoroStore((s) => s.isOvertime);
+  const overtimeSeconds = usePomodoroStore((s) => s.overtimeSeconds);
+  const timerFocusMode = usePomodoroStore((s) => s.focusMode);
+  const timerType = usePomodoroStore((s) => s.timerType);
+  const setIsRunning = usePomodoroStore((s) => s.setIsRunning);
 
-  // Initialize theme
+  const formatMiniTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
   React.useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
-    }
+    const isDark = document.documentElement.classList.contains("dark");
+    setIsDarkMode(isDark);
   }, []);
 
   const toggleTheme = () => {
@@ -111,6 +122,54 @@ export default function Home() {
             )}
           </div>
 
+          {/* Center: Mini Timer Widget (Hiển thị nổi bật khi người dùng đang ở tab Task, Matrix hoặc Statistic) */}
+          {activeView !== "dashboard" && (
+            <div
+              onClick={() => setActiveView("dashboard")}
+              title="Nhấn để quay về màn hình Đồng hồ"
+              className={`flex items-center gap-2 px-3 py-1 rounded-xl border transition-all duration-200 cursor-pointer shadow-2xs group ${
+                isOvertime
+                  ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse"
+                  : isTimerRunning
+                  ? "bg-neutral-100 dark:bg-neutral-800/80 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
+                  : "bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              }`}
+            >
+              <span className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                <Timer size={14} strokeWidth={2} className={isTimerRunning ? "text-emerald-500 animate-spin-slow" : "text-neutral-400"} />
+                <span>{timerType === "pomo" ? `Pomo (${timerFocusMode})` : "Stopwatch"}:</span>
+              </span>
+              <span className="font-mono text-xs font-semibold">
+                {isOvertime ? `+${formatMiniTime(overtimeSeconds)} OT` : formatMiniTime(timerSeconds)}
+              </span>
+              {isTimerRunning ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRunning(false);
+                  }}
+                  title="Tạm dừng"
+                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
+                >
+                  <Pause size={12} strokeWidth={2.5} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRunning(true);
+                  }}
+                  title="Tiếp tục"
+                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
+                >
+                  <Play size={12} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Right Action Icons: Theme Toggle, Settings, Speaker (Sound) & Three-dot (Overview Panel) */}
           <div className="flex items-center gap-1.5">
             {/* Settings Button */}
@@ -123,18 +182,15 @@ export default function Home() {
               <Settings size={18} strokeWidth={1.75} />
             </button>
 
-            {/* Theme Toggle Button (Dark / Light) */}
+            {/* Theme Toggle Button (Dark / Light) with pure CSS classes to prevent icon flickers */}
             <button
               onClick={toggleTheme}
               title={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
               aria-label={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             >
-              {isDarkMode ? (
-                <Sun size={18} strokeWidth={1.75} />
-              ) : (
-                <Moon size={18} strokeWidth={1.75} />
-              )}
+              <Sun size={18} strokeWidth={1.75} className="hidden dark:block text-amber-400" />
+              <Moon size={18} strokeWidth={1.75} className="block dark:hidden text-neutral-600" />
             </button>
 
             {/* Speaker Button */}
@@ -168,17 +224,14 @@ export default function Home() {
         </header>
 
         {/* 2. Main Content View: Dashboard (Timer), TaskPage, MatrixPage OR StatisticPage */}
-        {activeView === "task" ? (
-          <TaskPage />
-        ) : activeView === "matrix" ? (
-          <MatrixPage />
-        ) : activeView === "statistic" ? (
-          <StatisticPage />
-        ) : (
-          <main className="flex-1 flex items-center justify-center p-4">
-            <TimerCenter />
-          </main>
-        )}
+        {/* Giữ TimerCenter luôn mounted trong DOM (ẩn hiện bằng CSS) để bộ đếm tiếp tục chạy ngầm khi người dùng sang tab khác */}
+        <main className={`flex-1 flex items-center justify-center p-4 ${activeView === "dashboard" ? "" : "hidden"}`}>
+          <TimerCenter />
+        </main>
+
+        {activeView === "task" && <TaskPage />}
+        {activeView === "matrix" && <MatrixPage />}
+        {activeView === "statistic" && <StatisticPage />}
       </div>
 
       {/* 3. Overview Panel (Right Slide-out): Chỉ kích hoạt ở trang Dashboard */}
@@ -201,6 +254,14 @@ export default function Home() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
       />
+
+      {/* 6. Welcome Splash Loading Screen (Hiển thị đầu tiên khi vào web, video đặt dưới đáy màn hình) */}
+      {showWelcome && (
+        <WelcomeSplash
+          minDurationMs={2600}
+          onFinish={() => setShowWelcome(false)}
+        />
+      )}
     </div>
   );
 }

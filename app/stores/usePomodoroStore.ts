@@ -16,6 +16,24 @@ interface PomodoroState {
   isLoading: boolean;
   error: string | null;
 
+  // Global Timer Runtime State (duy trì liên tục khi chuyển tab/trang)
+  timerType: "pomo" | "stopwatch";
+  focusMode: "W" | "SB" | "LB";
+  isRunning: boolean;
+  seconds: number;
+  isOvertime: boolean;
+  overtimeSeconds: number;
+  elapsedSeconds: number;
+  taskName: string;
+
+  // Timer Actions
+  setTimerType: (type: "pomo" | "stopwatch") => void;
+  setFocusMode: (mode: "W" | "SB" | "LB") => void;
+  setTaskName: (name: string) => void;
+  setIsRunning: (running: boolean) => void;
+  tickTimer: (focusDurationMinutes: number) => void;
+  resetTimer: (defaultSeconds: number) => void;
+
   // Actions
   fetchSummary: () => Promise<void>;
   fetchHistory: (fromUtc?: string, toUtc?: string) => Promise<void>;
@@ -31,6 +49,7 @@ interface PomodoroState {
   }) => Promise<FocusSessionDto | null>;
   clearCurrentSession: () => void;
   clearError: () => void;
+  resetPomodoroStore: () => void;
 }
 
 export const usePomodoroStore = create<PomodoroState>()(
@@ -42,8 +61,72 @@ export const usePomodoroStore = create<PomodoroState>()(
       isLoading: false,
       error: null,
 
+      // Global Timer Runtime State Defaults
+      timerType: "pomo",
+      focusMode: "W",
+      isRunning: false,
+      seconds: 25 * 60,
+      isOvertime: false,
+      overtimeSeconds: 0,
+      elapsedSeconds: 0,
+      taskName: "",
+
+      setTimerType: (timerType) => set({ timerType }),
+      setFocusMode: (focusMode) => set({ focusMode }),
+      setTaskName: (taskName) => set({ taskName }),
+      setIsRunning: (isRunning) => set({ isRunning }),
+
+      tickTimer: () => {
+        const { isRunning, isOvertime, seconds, overtimeSeconds, elapsedSeconds } = get();
+        if (!isRunning) return;
+
+        const nextElapsed = elapsedSeconds + 1;
+
+        if (!isOvertime) {
+          if (seconds <= 1) {
+            set({
+              seconds: 0,
+              isOvertime: true,
+              overtimeSeconds: 1,
+              elapsedSeconds: nextElapsed,
+            });
+          } else {
+            set({
+              seconds: seconds - 1,
+              elapsedSeconds: nextElapsed,
+            });
+          }
+        } else {
+          set({
+            overtimeSeconds: overtimeSeconds + 1,
+            elapsedSeconds: nextElapsed,
+          });
+        }
+      },
+
+      resetTimer: (defaultSeconds: number) => {
+        set({
+          isRunning: false,
+          isOvertime: false,
+          seconds: defaultSeconds,
+          overtimeSeconds: 0,
+          elapsedSeconds: 0,
+        });
+      },
+
       clearError: () => set({ error: null }),
       clearCurrentSession: () => set({ currentSession: null }),
+
+      resetPomodoroStore: () => {
+        set({
+          currentSession: null,
+          summary: null,
+          history: [],
+          isLoading: false,
+          error: null,
+          taskName: "",
+        });
+      },
 
       fetchSummary: async () => {
         try {
@@ -52,8 +135,15 @@ export const usePomodoroStore = create<PomodoroState>()(
             set({ summary });
           }
         } catch (err: any) {
-          // Lỗi mạng được apiClient xử lý chuyển sang offline mode
-          console.warn("Fetch summary error:", err?.message);
+          const is401 = err?.statusCode === 401 || err?.message?.toLowerCase().includes("unauthorized");
+          if (is401) {
+            set({ summary: null, history: [] });
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("pomo-pomodoro-cache");
+            }
+          } else {
+            console.warn("Fetch summary error:", err?.message);
+          }
         }
       },
 

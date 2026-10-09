@@ -18,6 +18,7 @@ import {
   Flag,
   ChevronDown,
   X,
+  Trash2,
 } from "lucide-react";
 
 export type MatrixQuadrant =
@@ -85,11 +86,82 @@ export function TaskPage() {
   const [editEstimatedMinutes, setEditEstimatedMinutes] = useState<number>(30);
   const [editDueDate, setEditDueDate] = useState<string>("");
 
+  // Kích thước panel chi tiết và trạng thái kéo giãn (Resize)
+  const [detailWidth, setDetailWidth] = useState<number>(384); // 384px = w-96 mặc định
+  const [isResizing, setIsResizing] = useState(false);
+  const detailWidthRef = useRef<number>(384);
+
   const matrixDropdownRef = useRef<HTMLDivElement>(null);
+  const detailPanelRef = useRef<HTMLElement>(null);
+
+  // Khôi phục chiều rộng panel đã lưu trong localStorage nếu có
+  useEffect(() => {
+    const savedWidth = localStorage.getItem("pomo-task-detail-width");
+    if (savedWidth) {
+      const parsed = parseInt(savedWidth, 10);
+      if (!isNaN(parsed) && parsed >= 280 && parsed <= 750) {
+        setDetailWidth(parsed);
+        detailWidthRef.current = parsed;
+      }
+    }
+  }, []);
+
+  // Xử lý kéo thả chuột để co giãn chiều rộng panel mượt mà (dùng requestAnimationFrame)
+  useEffect(() => {
+    let animationFrameId: number | null = null;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
+      animationFrameId = requestAnimationFrame(() => {
+        // Tính chiều rộng từ cạnh phải màn hình
+        const newWidth = window.innerWidth - e.clientX;
+        const clampedWidth = Math.max(300, Math.min(newWidth, Math.min(750, window.innerWidth - 350)));
+        detailWidthRef.current = clampedWidth;
+        setDetailWidth(clampedWidth);
+      });
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        localStorage.setItem("pomo-task-detail-width", detailWidthRef.current.toString());
+      }
+    };
+
+    if (isResizing) {
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+      window.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing]);
 
   // Fetch tasks on initial mount or when auth status changes
   useEffect(() => {
-    fetchTasks();
+    if (isAuthenticated) {
+      fetchTasks();
+    } else {
+      // Khi chưa đăng nhập: đảm bảo reset sạch danh sách task khỏi màn hình
+      useTaskStore.getState().resetTaskStore();
+    }
   }, [fetchTasks, isAuthenticated]);
 
   // Synchronize edit fields when selectedTask changes
@@ -116,6 +188,31 @@ export function TaskPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close task detail panel on click outside (ấn ra ngoài màn hình là đóng)
+  useEffect(() => {
+    function handleOutsideDetailClick(event: MouseEvent) {
+      if (isResizing || !selectedTask) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      // Không đóng nếu click bên trong detail panel
+      if (detailPanelRef.current && detailPanelRef.current.contains(target)) {
+        return;
+      }
+
+      // Không đóng nếu click vào một task item trong danh sách (để tránh xung đột với việc chọn task khác)
+      if (target.closest("[data-task-item]")) {
+        return;
+      }
+
+      selectTask(null);
+    }
+
+    document.addEventListener("mousedown", handleOutsideDetailClick);
+    return () => document.removeEventListener("mousedown", handleOutsideDetailClick);
+  }, [isResizing, selectedTask, selectTask]);
 
   // Filter tags list based on tasks
   const allTags = React.useMemo(() => {
@@ -200,7 +297,7 @@ export function TaskPage() {
   const handleSaveDetail = async () => {
     if (!selectedTask || isSaving) return;
     try {
-      await updateTask(selectedTask.id, {
+      const updated = await updateTask(selectedTask.id, {
         title: editTitle.trim() || selectedTask.title,
         priority: editPriority,
         status: selectedTask.status,
@@ -208,9 +305,17 @@ export function TaskPage() {
         estimatedPomodoros: Math.max(1, Math.round(editEstimatedMinutes / 25)),
         dueDate: editDueDate ? new Date(editDueDate).toISOString() : null,
       });
+      // Đóng panel chi tiết sau khi lưu thành công
+      if (updated) {
+        selectTask(null);
+      }
     } catch {
       // Handled in store
     }
+  };
+
+  const handleCloseDetail = () => {
+    selectTask(null);
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -351,7 +456,7 @@ export function TaskPage() {
           )}
         </div>
 
-        {error && (
+        {error && isAuthenticated && !error.toLowerCase().includes("unauthorized") && (
           <div className="mb-4 p-3.5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
               <AlertTriangle size={18} strokeWidth={1.75} className="text-rose-600 dark:text-rose-400 shrink-0" />
@@ -469,6 +574,7 @@ export function TaskPage() {
               return (
                 <div
                   key={task.id}
+                  data-task-item="true"
                   onClick={() => selectTask(task)}
                   className={`px-4 py-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer select-none ${
                     isSelected
@@ -544,72 +650,88 @@ export function TaskPage() {
         </div>
       </main>
 
-      {/* 3. Right Task Detail Panel */}
+      {/* 3. Right Task Detail Panel (Resizable & Closable) */}
       {selectedTask && (
-        <aside className="w-96 border-l border-neutral-200/80 dark:border-neutral-800/80 bg-transparent flex flex-col p-6 overflow-y-auto shrink-0 transition-all">
-          {/* Header: Name task & Matrix Selector Button (Flag) */}
-          <div className="relative pb-3 border-b-2 border-neutral-300 dark:border-neutral-700 mb-6">
-            <div className="flex items-center justify-between">
+        <aside
+          ref={detailPanelRef}
+          style={{ width: `${detailWidth}px` }}
+          className={`relative border-l border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-md flex flex-col p-6 overflow-y-auto shrink-0 select-none ${
+            isResizing ? "transition-none pointer-events-none" : "transition-[width] duration-150 ease-out"
+          }`}
+        >
+          {/* Resize Handle Bar (kéo mép trái để co dãn kích thước panel) */}
+          <div
+            onMouseDown={() => setIsResizing(true)}
+            title="Kéo sang trái/phải để co giãn khung chi tiết"
+            className="absolute top-0 left-0 bottom-0 w-3 cursor-col-resize hover:bg-neutral-400/30 dark:hover:bg-neutral-500/30 transition-colors z-20 group flex items-center justify-center -ml-1.5 pointer-events-auto"
+          >
+            <div className="w-1 h-10 bg-neutral-300 dark:bg-neutral-600 rounded-full group-hover:bg-neutral-500 dark:group-hover:bg-neutral-400 transition-colors" />
+          </div>
+
+          {/* Header: Name task & Fix cứng Matrix Selector Button (Flag) */}
+          <div className="relative pb-3 border-b-2 border-neutral-300 dark:border-neutral-700 mb-6 pointer-events-auto">
+            <div className="flex items-center justify-between gap-3">
               <input
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="text-lg font-bold text-neutral-900 dark:text-white bg-transparent focus:outline-none flex-1 truncate mr-2"
+                className="text-lg font-bold text-neutral-900 dark:text-white bg-transparent focus:outline-none flex-1 min-w-0 truncate"
                 placeholder="Tên công việc"
               />
 
-              {/* Matrix Flag Dropdown Trigger */}
-              <div className="relative" ref={matrixDropdownRef}>
+              {/* Matrix Flag Dropdown Trigger - Cố định vị trí cứng cáp */}
+              <div className="relative shrink-0 flex items-center" ref={matrixDropdownRef}>
                 <button
+                  type="button"
                   onClick={() => setIsMatrixMenuOpen((prev) => !prev)}
                   title="Chọn dạng Ma trận Eisenhower (Matrix Quadrant)"
                   aria-label="Chọn Ma trận Eisenhower"
-                  className="p-1.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="p-1.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
                 >
-                  <Flag size={18} strokeWidth={2} className={getMatrixBadgeColor(editPriority)} />
-                  <ChevronDown size={14} strokeWidth={2} className="text-neutral-400" />
+                  <Flag size={18} strokeWidth={2} className={`${getMatrixBadgeColor(editPriority)} shrink-0`} />
+                  <ChevronDown size={14} strokeWidth={2} className="text-neutral-400 shrink-0" />
                 </button>
 
-                {/* Matrix Quadrant Selection Dropdown */}
-                {isMatrixMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl z-30 p-2 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="text-[11px] font-bold text-neutral-400 dark:text-neutral-500 uppercase px-2 py-1 mb-1">
-                      Phân loại Ma trận Eisenhower
-                    </div>
-                    {MATRIX_OPTIONS.map((opt) => {
-                      const optPriority = PRIORITY_MAP[opt.id];
-                      const isSelected = editPriority === optPriority;
+                  {/* Matrix Quadrant Selection Dropdown */}
+                  {isMatrixMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl z-30 p-2 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="text-[11px] font-bold text-neutral-400 dark:text-neutral-500 uppercase px-2 py-1 mb-1">
+                        Phân loại Ma trận Eisenhower
+                      </div>
+                      {MATRIX_OPTIONS.map((opt) => {
+                        const optPriority = PRIORITY_MAP[opt.id];
+                        const isSelected = editPriority === optPriority;
 
-                      return (
-                        <button
-                          key={opt.id}
-                          onClick={() => {
-                            setEditPriority(optPriority);
-                            setIsMatrixMenuOpen(false);
-                          }}
-                          className={`w-full text-left p-2.5 rounded-xl text-xs flex flex-col gap-0.5 transition-colors cursor-pointer ${
-                            isSelected
-                              ? "bg-neutral-100 dark:bg-neutral-700 font-semibold"
-                              : "hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-neutral-900 dark:text-white font-medium">
-                              {opt.label}
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              setEditPriority(optPriority);
+                              setIsMatrixMenuOpen(false);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-xl text-xs flex flex-col gap-0.5 transition-colors cursor-pointer ${
+                              isSelected
+                                ? "bg-neutral-100 dark:bg-neutral-700 font-semibold"
+                                : "hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-neutral-900 dark:text-white font-medium">
+                                {opt.label}
+                              </span>
+                              {isSelected && (
+                                <Check size={14} strokeWidth={2.5} className="text-emerald-500" />
+                              )}
+                            </div>
+                            <span className="text-[10px] text-neutral-400 dark:text-neutral-400">
+                              {opt.desc}
                             </span>
-                            {isSelected && (
-                              <Check size={14} strokeWidth={2.5} className="text-emerald-500" />
-                            )}
-                          </div>
-                          <span className="text-[10px] text-neutral-400 dark:text-neutral-400">
-                            {opt.desc}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
             </div>
           </div>
 
@@ -756,20 +878,30 @@ export function TaskPage() {
             </div>
           </div>
 
-          {/* Bottom Action Buttons: SAVE & DELETE */}
-          <div className="flex items-center gap-3 pt-4 border-t border-neutral-200/80 dark:border-neutral-800/80 mt-auto">
+          {/* Bottom Action Buttons: SAVE, CLOSE & DELETE */}
+          <div className="flex items-center gap-2.5 pt-4 border-t border-neutral-200/80 dark:border-neutral-800/80 mt-auto pointer-events-auto">
             <button
               onClick={handleSaveDetail}
               disabled={isSaving}
-              className="flex-1 py-2.5 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {isSaving ? "Đang lưu..." : "Save"}
+              <Check size={14} strokeWidth={2.5} />
+              <span>{isSaving ? "Đang lưu..." : "Save"}</span>
+            </button>
+            <button
+              onClick={handleCloseDetail}
+              className="py-2.5 px-3 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold uppercase tracking-wider active:scale-98 transition-all cursor-pointer"
+              title="Đóng panel chi tiết"
+            >
+              Đóng
             </button>
             <button
               onClick={() => handleDeleteTask(selectedTask.id)}
-              className="flex-1 py-2.5 rounded-xl border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold uppercase tracking-wider active:scale-98 transition-all cursor-pointer"
+              className="py-2.5 px-3 rounded-xl border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold uppercase tracking-wider active:scale-98 transition-all cursor-pointer flex items-center justify-center"
+              title="Xóa công việc này"
+              aria-label="Xóa công việc"
             >
-              Delete
+              <Trash2 size={15} strokeWidth={1.75} />
             </button>
           </div>
         </aside>

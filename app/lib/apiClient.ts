@@ -1,7 +1,7 @@
 import { ApiResponse } from "../types/api";
 import { useNetworkStore } from "../stores/useNetworkStore";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5267";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7123";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -109,9 +109,15 @@ export async function apiClient<T>(
           if (retryRes.ok && retryData.success) {
             return retryData;
           }
+        } else {
+          // Refresh thất bại (token hết hạn hẳn) -> tự động dọn dẹp cache
+          const { clearAllUserData } = await import("./sessionManager");
+          clearAllUserData();
         }
       } catch {
-        // Refresh thất bại, tiếp tục throw lỗi 401
+        // Refresh gặp lỗi mạng/ngoại lệ -> dọn dẹp cache phiên cũ
+        const { clearAllUserData } = await import("./sessionManager");
+        clearAllUserData();
       }
     }
 
