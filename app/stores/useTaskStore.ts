@@ -167,9 +167,7 @@ export const useTaskStore = create<TaskState>()(
             estimatedMinutes: target.estimatedMinutes,
             estimatedPomodoros: target.estimatedPomodoros,
             dueDate: target.dueDate,
-            tags: target.tags,
-            category: target.category,
-            isQuickAdd: target.isQuickAdd,
+            tagIds: target.tags?.map((t) => t.id) ?? [],
           });
 
           if (updated) {
