@@ -8,7 +8,7 @@ interface NetworkState {
   checkHealth: () => Promise<boolean>;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7123";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
 
 export const useNetworkStore = create<NetworkState>((set) => ({
   isServerOnline: true, // Mặc định online

@@ -25,10 +25,30 @@ export interface AuthResponse {
   expiresInSeconds: number;
 }
 
+export enum OtpPurpose {
+  Register = 1,
+}
+
+export interface SendOtpRequest {
+  email: string;
+  purpose?: OtpPurpose;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;
   displayName: string;
+  otpCode: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
 }
 
 export interface LoginRequest {

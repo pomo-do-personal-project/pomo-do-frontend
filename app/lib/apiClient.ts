@@ -1,7 +1,7 @@
 import { ApiResponse } from "../types/api";
 import { useNetworkStore } from "../stores/useNetworkStore";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7123";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;

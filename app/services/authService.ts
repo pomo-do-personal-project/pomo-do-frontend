@@ -1,17 +1,57 @@
 import { apiClient } from "../lib/apiClient";
-import { AuthResponse, LoginRequest, RegisterRequest } from "../types/api";
+import {
+  AuthResponse,
+  UserDto,
+  LoginRequest,
+  RegisterRequest,
+  SendOtpRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+} from "../types/api";
 
 export const authService = {
   /**
-   * Đăng ký tài khoản mới qua backend API (Cookies HttpOnly được browser tự động lưu)
+   * Gửi mã OTP xác thực 6 số qua email để đăng ký tài khoản
    */
-  async register(data: RegisterRequest) {
-    const res = await apiClient<AuthResponse>("/api/auth/register", {
+  async sendOtp(data: SendOtpRequest): Promise<string> {
+    const res = await apiClient<string>("/api/auth/otp/send", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return res.message;
+  },
 
+  /**
+   * Đăng ký tài khoản mới kèm mã xác thực OTP
+   */
+  async register(data: RegisterRequest): Promise<UserDto | null> {
+    const res = await apiClient<UserDto>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
     return res.data;
+  },
+
+  /**
+   * Gửi email kèm liên kết đặt lại mật khẩu
+   */
+  async forgotPassword(data: ForgotPasswordRequest): Promise<string> {
+    const res = await apiClient<string>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return res.message;
+  },
+
+  /**
+   * Đặt lại mật khẩu mới bằng token từ email
+   */
+  async resetPassword(data: ResetPasswordRequest): Promise<string> {
+    const res = await apiClient<string>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return res.message;
   },
 
   /**

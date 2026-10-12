@@ -1,7 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { authService } from "../services/authService";
-import { UserDto, LoginRequest, RegisterRequest } from "../types/api";
+import {
+  UserDto,
+  LoginRequest,
+  RegisterRequest,
+  OtpPurpose,
+  ResetPasswordRequest,
+} from "../types/api";
 
 interface AuthState {
   user: UserDto | null;
@@ -12,6 +18,9 @@ interface AuthState {
   // Actions
   login: (data: LoginRequest) => Promise<boolean>;
   register: (data: RegisterRequest) => Promise<boolean>;
+  sendOtp: (email: string, purpose?: OtpPurpose) => Promise<string>;
+  forgotPassword: (email: string) => Promise<string>;
+  resetPassword: (data: ResetPasswordRequest) => Promise<string>;
   logout: () => Promise<void>;
   refreshToken: (token?: string) => Promise<boolean>;
   clearError: () => void;
@@ -56,28 +65,57 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      sendOtp: async (email: string, purpose: OtpPurpose = OtpPurpose.Register) => {
+        set({ isLoading: true, error: null });
+        try {
+          const message = await authService.sendOtp({ email, purpose });
+          set({ isLoading: false });
+          return message;
+        } catch (err: any) {
+          const msg = err?.message || "Không thể gửi mã OTP";
+          set({ isLoading: false, error: msg });
+          throw err;
+        }
+      },
+
       register: async (data: RegisterRequest) => {
         set({ isLoading: true, error: null });
         try {
-          const authData = await authService.register(data);
-          if (authData) {
-            set({
-              user: authData.user,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-            });
-            return true;
-          }
-          set({ isLoading: false, error: "Đăng ký thất bại" });
-          return false;
+          const user = await authService.register(data);
+          set({ isLoading: false });
+          return !!user;
         } catch (err: any) {
           const msg = err?.message || "Đăng ký thất bại";
           set({
             isLoading: false,
             error: msg,
-            isAuthenticated: false,
           });
+          throw err;
+        }
+      },
+
+      forgotPassword: async (email: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const message = await authService.forgotPassword({ email });
+          set({ isLoading: false });
+          return message;
+        } catch (err: any) {
+          const msg = err?.message || "Không thể gửi yêu cầu đặt lại mật khẩu";
+          set({ isLoading: false, error: msg });
+          throw err;
+        }
+      },
+
+      resetPassword: async (data: ResetPasswordRequest) => {
+        set({ isLoading: true, error: null });
+        try {
+          const message = await authService.resetPassword(data);
+          set({ isLoading: false });
+          return message;
+        } catch (err: any) {
+          const msg = err?.message || "Không thể đặt lại mật khẩu";
+          set({ isLoading: false, error: msg });
           throw err;
         }
       },

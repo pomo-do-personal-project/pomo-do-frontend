@@ -32,6 +32,9 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<
+    "signup" | "otp-verify" | "signin" | "forgot" | "reset"
+  >("signup");
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -245,7 +248,7 @@ export default function Home() {
       {/* 4. Auth Modal: Đăng ký / Đăng nhập (Mặc định hiển thị Đăng ký trước) */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        initialMode="signup"
+        initialMode={authInitialMode}
         onClose={() => setIsAuthModalOpen(false)}
       />
 
