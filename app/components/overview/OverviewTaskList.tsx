@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { TaskDto, TaskStatus } from "../../types/api";
-import { Plus, Check, Zap, Clock } from "lucide-react";
+import { Plus, Check, Zap, Clock, Timer } from "lucide-react";
 
 interface OverviewTaskListProps {
   isQuickAddActive: boolean;
@@ -186,8 +186,13 @@ export function OverviewTaskList({
                   {task.title}
                 </span>
 
-                <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1 font-mono">
-                  ⏱ ({task.completedPomodoros || 0}/{task.estimatedPomodoros || 1} 🍅)
+                <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5 font-mono">
+                  <Clock size={11} strokeWidth={1.75} className="shrink-0" />
+                  <span>
+                    ({task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}
+                  </span>
+                  <Timer size={11} strokeWidth={1.75} className="text-rose-500 shrink-0 inline -ml-0.5" />
+                  <span>)</span>
                 </span>
               </div>
             </div>

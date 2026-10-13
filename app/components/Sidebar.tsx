@@ -220,7 +220,7 @@ export function Sidebar({
                   }}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
-                  <Sparkles size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400" />
+                  <Sparkles size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />
                   <span>Premiums</span>
                 </button>
 
@@ -233,7 +233,7 @@ export function Sidebar({
                   }}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
-                  <Settings size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400" />
+                  <Settings size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />
                   <span>Settings</span>
                 </button>
 
@@ -246,7 +246,7 @@ export function Sidebar({
                   onClick={handleLogout}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-rose-500/10 text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer text-left group"
                 >
-                  <LogOut size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
+                  <LogOut size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors shrink-0" />
                   <span>Log out</span>
                 </button>
               </div>

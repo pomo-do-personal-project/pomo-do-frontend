@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { Button } from "../../ui/Button";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Coffee, Palmtree, Timer } from "lucide-react";
 
 interface DateTimeTabProps {
   showNotice: (message: string, icon?: React.ReactNode) => void;
@@ -171,23 +171,26 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
           <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-mono select-none">
             {Array.from({ length: longBreakInterval }).map((_, idx) => (
               <React.Fragment key={idx}>
-                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold shadow-2xs">
-                  🍅 {focusDuration}m
+                <span className="px-2 py-0.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold shadow-2xs flex items-center gap-1">
+                  <Timer size={11} className="text-rose-500 shrink-0" />
+                  <span>{focusDuration}m</span>
                 </span>
                 {idx < longBreakInterval - 1 && (
                   <>
-                    <ArrowRight size={10} className="text-neutral-400" />
-                    <span className="px-1.5 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-medium">
-                      ☕ {shortBreakDuration}m
+                    <ArrowRight size={10} className="text-neutral-400 shrink-0" />
+                    <span className="px-1.5 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-medium flex items-center gap-1">
+                      <Coffee size={11} className="text-teal-600 dark:text-teal-400 shrink-0" />
+                      <span>{shortBreakDuration}m</span>
                     </span>
-                    <ArrowRight size={10} className="text-neutral-400" />
+                    <ArrowRight size={10} className="text-neutral-400 shrink-0" />
                   </>
                 )}
               </React.Fragment>
             ))}
-            <ArrowRight size={10} className="text-neutral-400" />
-            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-2xs">
-              🌴 Nghỉ dài {longBreakDuration}m
+            <ArrowRight size={10} className="text-neutral-400 shrink-0" />
+            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-2xs flex items-center gap-1">
+              <Palmtree size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Nghỉ dài {longBreakDuration}m</span>
             </span>
           </div>
         </div>

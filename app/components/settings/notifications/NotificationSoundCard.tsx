@@ -2,7 +2,7 @@
 
 import React from "react";
 import { RingtoneType } from "../hooks/useSettingsAudio";
-import { Volume2, VolumeX, Play, Briefcase, Coffee } from "lucide-react";
+import { Volume2, VolumeX, Play, Briefcase, Coffee, Bell, Sparkles, Zap, Music, LucideIcon } from "lucide-react";
 
 interface NotificationSoundCardProps {
   soundEnabled: boolean;
@@ -100,12 +100,13 @@ export function NotificationSoundCard({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: "bell", label: "Classic Bell", icon: "🔔" },
-                { id: "zen", label: "Zen Bowl", icon: "🧘" },
-                { id: "digital", label: "Digital Beep", icon: "⚡" },
-                { id: "marimba", label: "Soft Marimba", icon: "🎶" },
+                { id: "bell", label: "Classic Bell", icon: Bell },
+                { id: "zen", label: "Zen Bowl", icon: Sparkles },
+                { id: "digital", label: "Digital Beep", icon: Zap },
+                { id: "marimba", label: "Soft Marimba", icon: Music },
               ].map((r) => {
                 const isSelected = focusRingtone === r.id;
+                const RingtoneIcon = r.icon;
                 return (
                   <button
                     key={`focus-${r.id}`}
@@ -114,13 +115,17 @@ export function NotificationSoundCard({
                       onSelectFocusRingtone(r.id as RingtoneType);
                       onPlayRingtone(r.id as RingtoneType, soundVolume);
                     }}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                       isSelected
                         ? "bg-amber-500/10 border-amber-500 text-neutral-900 dark:text-white dark:bg-neutral-800 dark:border-amber-500/60 shadow-xs"
                         : "bg-white dark:bg-neutral-900/60 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800/40"
                     }`}
                   >
-                    <span className="text-base">{r.icon}</span>
+                    <RingtoneIcon
+                      size={18}
+                      strokeWidth={1.75}
+                      className={`shrink-0 ${isSelected ? "text-amber-600 dark:text-amber-400" : "text-neutral-500 dark:text-neutral-400"}`}
+                    />
                     <span className="text-xs font-semibold truncate">{r.label}</span>
                   </button>
                 );
@@ -147,12 +152,13 @@ export function NotificationSoundCard({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: "bell", label: "Classic Bell", icon: "🔔" },
-                { id: "zen", label: "Zen Bowl", icon: "🧘" },
-                { id: "digital", label: "Digital Beep", icon: "⚡" },
-                { id: "marimba", label: "Soft Marimba", icon: "🎶" },
+                { id: "bell", label: "Classic Bell", icon: Bell },
+                { id: "zen", label: "Zen Bowl", icon: Sparkles },
+                { id: "digital", label: "Digital Beep", icon: Zap },
+                { id: "marimba", label: "Soft Marimba", icon: Music },
               ].map((r) => {
                 const isSelected = breakRingtone === r.id;
+                const RingtoneIcon = r.icon;
                 return (
                   <button
                     key={`break-${r.id}`}
@@ -161,13 +167,17 @@ export function NotificationSoundCard({
                       onSelectBreakRingtone(r.id as RingtoneType);
                       onPlayRingtone(r.id as RingtoneType, soundVolume);
                     }}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                       isSelected
                         ? "bg-teal-500/10 border-teal-500 text-neutral-900 dark:text-white dark:bg-neutral-800 dark:border-teal-500/60 shadow-xs"
                         : "bg-white dark:bg-neutral-900/60 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800/40"
                     }`}
                   >
-                    <span className="text-base">{r.icon}</span>
+                    <RingtoneIcon
+                      size={18}
+                      strokeWidth={1.75}
+                      className={`shrink-0 ${isSelected ? "text-teal-600 dark:text-teal-400" : "text-neutral-500 dark:text-neutral-400"}`}
+                    />
                     <span className="text-xs font-semibold truncate">{r.label}</span>
                   </button>
                 );

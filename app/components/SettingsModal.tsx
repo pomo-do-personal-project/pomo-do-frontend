@@ -80,7 +80,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
         {/* ======================================================== */}
         {/* CỘT TRÁI: SIDEBAR CÁC DANH MỤC CÀI ĐẶT                   */}
         {/* ======================================================== */}
-        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800/80 p-4 sm:p-5 flex flex-col bg-neutral-50/90 dark:bg-[#191919] shrink-0">
+        <aside className="w-full md:w-68 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800/80 p-3.5 sm:p-4 flex flex-col bg-neutral-50/90 dark:bg-[#191919] shrink-0">
           <div className="flex items-center gap-2.5 px-3 py-2 mb-3">
             <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">Cài đặt</span>
           </div>
@@ -100,8 +100,12 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
                       : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/50"
                   }`}
                 >
-                  <IconComp size={17} className={isActive ? "text-neutral-900 dark:text-white" : "text-neutral-400"} />
-                  <span>{tab.label}</span>
+                  <IconComp
+                    size={18}
+                    strokeWidth={1.75}
+                    className={`shrink-0 ${isActive ? "text-neutral-900 dark:text-white" : "text-neutral-400"}`}
+                  />
+                  <span className="truncate">{tab.label}</span>
                 </button>
               );
             })}

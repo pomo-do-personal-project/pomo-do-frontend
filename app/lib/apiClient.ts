@@ -27,10 +27,41 @@ export class ApiError extends Error {
 }
 
 /**
+ * Single-flight mutex: Đảm bảo chỉ 1 request gọi refresh-token tại một thời điểm.
+ * Các request 401 đồng thời sẽ chia sẻ chung kết quả của Promise này.
+ */
+let refreshPromise: Promise<boolean> | null = null;
+
+async function executeRefreshToken(): Promise<boolean> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      return refreshRes.ok;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
  * Universal type-safe fetch client for Pomo-Do backend
  * Features:
  * - Cookie-based HttpOnly JWT auth
- * - Automatic 401 refresh-token interceptor & retry
+ * - Automatic 401 refresh-token interceptor & retry (Single-Flight Mutex)
  * - Global Offline & Network Error detection
  */
 export async function apiClient<T>(
@@ -80,42 +111,31 @@ export async function apiClient<T>(
 
     // Tự động làm mới token nếu gặp 401 và không phải đang gọi auth endpoints
     if (res.status === 401 && !endpoint.includes("/api/auth/")) {
-      try {
-        const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
-          method: "POST",
+      const refreshSuccess = await executeRefreshToken();
+
+      if (refreshSuccess) {
+        // Thử lại request ban đầu sau khi cookie token đã được làm mới
+        const retryRes = await fetch(url, {
           credentials: "include",
-          headers: defaultHeaders,
-          body: JSON.stringify({}),
+          ...restOptions,
+          headers: {
+            ...defaultHeaders,
+            ...headers,
+          },
         });
 
-        if (refreshRes.ok) {
-          // Thử lại request ban đầu sau khi cookie token đã được làm mới
-          const retryRes = await fetch(url, {
-            credentials: "include",
-            ...restOptions,
-            headers: {
-              ...defaultHeaders,
-              ...headers,
-            },
-          });
+        const retryData: ApiResponse<T> = await retryRes.json().catch(() => ({
+          success: retryRes.ok,
+          data: null,
+          message: retryRes.statusText || "Lỗi giao tiếp máy chủ",
+          errors: [retryRes.statusText],
+        }));
 
-          const retryData: ApiResponse<T> = await retryRes.json().catch(() => ({
-            success: retryRes.ok,
-            data: null,
-            message: retryRes.statusText || "Lỗi giao tiếp máy chủ",
-            errors: [retryRes.statusText],
-          }));
-
-          if (retryRes.ok && retryData.success) {
-            return retryData;
-          }
-        } else {
-          // Refresh thất bại (token hết hạn hẳn) -> tự động dọn dẹp cache
-          const { clearAllUserData } = await import("./sessionManager");
-          clearAllUserData();
+        if (retryRes.ok && retryData.success) {
+          return retryData;
         }
-      } catch {
-        // Refresh gặp lỗi mạng/ngoại lệ -> dọn dẹp cache phiên cũ
+      } else {
+        // Refresh thất bại (token hết hạn hẳn) -> tự động dọn dẹp cache
         const { clearAllUserData } = await import("./sessionManager");
         clearAllUserData();
       }

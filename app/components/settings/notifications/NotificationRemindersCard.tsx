@@ -127,7 +127,7 @@ export function NotificationRemindersCard({
             onClick={() =>
               showNotice(
                 "Tính năng nhắc nhở Streak theo khung giờ sẽ khả dụng trong bản cập nhật tới.",
-                <Bell size={18} className="text-amber-400" />
+                <Bell size={18} className="text-amber-400 shrink-0" />
               )
             }
             className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 border border-neutral-300 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-white dark:border-neutral-700/60 rounded-xl transition-colors cursor-pointer"

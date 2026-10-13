@@ -9,12 +9,16 @@ import { TaskSidebar } from "./tasks/TaskSidebar";
 import { TaskQuickAdd } from "./tasks/TaskQuickAdd";
 import { TaskList } from "./tasks/TaskList";
 import { TaskDetailDrawer } from "./tasks/TaskDetailDrawer";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, Zap } from "lucide-react";
 
 // Re-export types for backward compatibility with MatrixPage and other consumers
 export * from "./tasks/types";
 
-export function TaskPage() {
+interface TaskPageProps {
+  onNavigateToTimer?: () => void;
+}
+
+export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
   const {
     tasks,
     selectedTask,
@@ -214,8 +218,15 @@ export function TaskPage() {
       {/* 2. Middle Main Area: Task List */}
       <main className="flex-1 flex flex-col p-8 overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
-            {currentCategory === "QuickAdd" ? "⚡ Quick Add (Ý nghĩ phát sinh)" : currentCategory}
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2.5">
+            {currentCategory === "QuickAdd" ? (
+              <>
+                <Zap size={26} strokeWidth={2} className="text-amber-500 shrink-0" />
+                <span>Quick Add (Ý nghĩ phát sinh)</span>
+              </>
+            ) : (
+              currentCategory
+            )}
           </h1>
           {isLoading && (
             <span className="text-xs text-neutral-400 animate-pulse font-mono">
@@ -271,6 +282,7 @@ export function TaskPage() {
           onStartResize={() => setIsResizing(true)}
           onClose={() => selectTask(null)}
           onDelete={handleDeleteTask}
+          onNavigateToTimer={onNavigateToTimer}
           detailPanelRef={detailPanelRef}
         />
       )}

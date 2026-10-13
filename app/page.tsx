@@ -15,16 +15,12 @@ import { useAuthStore } from "./stores/useAuthStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import { usePomodoroStore } from "./stores/usePomodoroStore";
 import {
-  Settings,
-  Sun,
-  Moon,
-  Volume2,
-  VolumeX,
-  MoreHorizontal,
   ChevronsRight,
   Play,
   Pause,
   Timer,
+  PanelRightOpen,
+  PanelRightClose,
 } from "lucide-react";
 
 export default function Home() {
@@ -36,8 +32,6 @@ export default function Home() {
     "signup" | "otp-verify" | "signin" | "forgot" | "reset"
   >("signup");
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isSoundMuted, setIsSoundMuted] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
 
   // Zustand Stores
@@ -57,23 +51,6 @@ export default function Home() {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  React.useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
-  }, []);
-
-  const toggleTheme = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setIsDarkMode(false);
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setIsDarkMode(true);
-    }
   };
 
   return (
@@ -182,56 +159,29 @@ export default function Home() {
             </div>
           )}
 
-          {/* Right Action Icons: Theme Toggle, Settings, Speaker (Sound) & Three-dot (Overview Panel) */}
-          <div className="flex items-center gap-1.5">
-            {/* Settings Button */}
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              title="Cài đặt Pomodoro & Thời lượng"
-              aria-label="Cài đặt thời lượng Pomodoro"
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            >
-              <Settings size={18} strokeWidth={1.75} />
-            </button>
-
-            {/* Theme Toggle Button (Dark / Light) with pure CSS classes to prevent icon flickers */}
-            <button
-              onClick={toggleTheme}
-              title={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
-              aria-label={isDarkMode ? "Chuyển sang giao diện Sáng" : "Chuyển sang giao diện Tối"}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            >
-              <Sun size={18} strokeWidth={1.75} className="hidden dark:block text-amber-400" />
-              <Moon size={18} strokeWidth={1.75} className="block dark:hidden text-neutral-600" />
-            </button>
-
-            {/* Speaker Button */}
-            <button
-              onClick={() => setIsSoundMuted((prev) => !prev)}
-              title={isSoundMuted ? "Bật âm thanh chuông báo" : "Tắt âm thanh chuông báo"}
-              aria-label={isSoundMuted ? "Bật âm thanh" : "Tắt âm thanh"}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            >
-              {isSoundMuted ? (
-                <VolumeX size={18} strokeWidth={1.75} />
-              ) : (
-                <Volume2 size={18} strokeWidth={1.75} />
-              )}
-            </button>
-
-            {/* Three-dot Button to toggle Overview panel (Chỉ hiển thị hoặc áp dụng cho Dashboard) */}
-            <button
-              onClick={() => setIsOverviewOpen((prev) => !prev)}
-              title={isOverviewOpen ? "Đóng bảng Overview" : "Mở bảng Overview"}
-              aria-label={isOverviewOpen ? "Đóng Overview" : "Mở Overview"}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
-                isOverviewOpen && activeView === "dashboard"
-                  ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white"
-                  : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              }`}
-            >
-              <MoreHorizontal size={18} strokeWidth={1.75} />
-            </button>
+          {/* Right Action: Panel Toggle (Phong cách Linear/Notion - Chỉ hiện ở Dashboard) */}
+          <div className="flex items-center">
+            {activeView === "dashboard" ? (
+              <button
+                type="button"
+                onClick={() => setIsOverviewOpen((prev) => !prev)}
+                title={isOverviewOpen ? "Đóng bảng tổng quan (Overview)" : "Mở bảng tổng quan (Overview)"}
+                aria-label={isOverviewOpen ? "Đóng bảng tổng quan" : "Mở bảng tổng quan"}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                  isOverviewOpen
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                }`}
+              >
+                {isOverviewOpen ? (
+                  <PanelRightClose size={18} strokeWidth={1.75} className="shrink-0" />
+                ) : (
+                  <PanelRightOpen size={18} strokeWidth={1.75} className="shrink-0" />
+                )}
+              </button>
+            ) : (
+              <div className="w-9 h-9" />
+            )}
           </div>
         </header>
 
@@ -242,7 +192,9 @@ export default function Home() {
             <TimerCenter />
           </div>
 
-          {activeView === "task" && <TaskPage />}
+          {activeView === "task" && (
+            <TaskPage onNavigateToTimer={() => setActiveView("dashboard")} />
+          )}
           {activeView === "matrix" && <MatrixPage />}
           {activeView === "statistic" && <StatisticPage />}
         </main>

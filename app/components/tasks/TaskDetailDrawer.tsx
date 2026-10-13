@@ -4,16 +4,19 @@ import React, { useState, useEffect, useRef } from "react";
 import { TaskDto, Priority } from "../../types/api";
 import { PRIORITY_MAP, MATRIX_OPTIONS } from "./types";
 import { useTaskStore } from "../../stores/useTaskStore";
-import { Flag, ChevronDown, Check, Trash2 } from "lucide-react";
+import { usePomodoroStore } from "../../stores/usePomodoroStore";
+import { Flag, ChevronDown, Check, Zap } from "lucide-react";
 import { TaskSubtasksSection } from "./TaskSubtasksSection";
+import { TaskDetailBottomBar } from "./TaskDetailBottomBar";
 
 interface TaskDetailDrawerProps {
   task: TaskDto;
   detailWidth: number;
   isResizing: boolean;
   onStartResize: () => void;
-  onClose: () => void;
+  onClose?: () => void;
   onDelete: (id: string) => Promise<void>;
+  onNavigateToTimer?: () => void;
   detailPanelRef: React.RefObject<HTMLElement | null>;
 }
 
@@ -22,11 +25,11 @@ export function TaskDetailDrawer({
   detailWidth,
   isResizing,
   onStartResize,
-  onClose,
   onDelete,
+  onNavigateToTimer,
   detailPanelRef,
 }: TaskDetailDrawerProps) {
-  const { updateTask, isSaving } = useTaskStore();
+  const { updateTask, isSaving, createTask } = useTaskStore();
 
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPriority, setEditPriority] = useState<Priority>(task.priority);
@@ -63,36 +66,63 @@ export function TaskDetailDrawer({
   }, []);
 
   const getMatrixBadgeColor = (p: Priority) => {
-    switch (p) {
-      case Priority.ImportantUrgent:
-        return "text-rose-500";
-      case Priority.ImportantNotUrgent:
-        return "text-blue-500";
-      case Priority.NotImportantUrgent:
-        return "text-amber-500";
-      case Priority.NotImportantNotUrgent:
-        return "text-neutral-400";
-      default:
-        return "text-neutral-400";
+    if (p === Priority.ImportantUrgent) return "text-rose-500";
+    if (p === Priority.ImportantNotUrgent) return "text-blue-500";
+    if (p === Priority.NotImportantUrgent) return "text-amber-500";
+    return "text-neutral-400";
+  };
+
+  const handleAutoSave = async (updates?: {
+    title?: string;
+    priority?: Priority;
+    estimatedMinutes?: number;
+    dueDate?: string | null;
+  }) => {
+    const newTitle = (updates?.title ?? editTitle).trim();
+    if (!newTitle) return;
+
+    const newPriority = updates?.priority ?? editPriority;
+    const newEstMin = updates?.estimatedMinutes ?? editEstimatedMinutes;
+    const newDueDate = updates?.dueDate !== undefined ? updates.dueDate : editDueDate;
+
+    try {
+      await updateTask(task.id, {
+        title: newTitle,
+        priority: newPriority,
+        status: task.status,
+        estimatedPomodoros: Math.ceil(newEstMin / 25),
+        estimatedMinutes: newEstMin,
+        dueDate: newDueDate ? new Date(newDueDate).toISOString() : null,
+      });
+    } catch {
+      // Error handled in store
     }
   };
 
-  const handleSaveDetail = async () => {
-    if (!editTitle.trim()) return;
-    try {
-      await updateTask(task.id, {
-        title: editTitle.trim(),
-        priority: editPriority,
-        status: task.status,
-        estimatedPomodoros:
-          task.estimatedPomodoros || Math.ceil(editEstimatedMinutes / 25),
-        estimatedMinutes: editEstimatedMinutes,
-        dueDate: editDueDate ? new Date(editDueDate).toISOString() : null,
-      });
-      onClose();
-    } catch {
-      // Handled in store
-    }
+  const handleStartPomodoro = () => {
+    const { setTaskName, setIsRunning, setTimerType, setFocusMode } = usePomodoroStore.getState();
+    setTaskName(task.title);
+    setTimerType("pomo");
+    setFocusMode("W");
+    setIsRunning(true);
+    onNavigateToTimer?.();
+  };
+
+  const handleDuplicateTask = async () => {
+    await createTask({
+      title: `${task.title} (Bản sao)`,
+      priority: task.priority,
+      estimatedPomodoros: task.estimatedPomodoros,
+      estimatedMinutes: task.estimatedMinutes,
+      dueDate: task.dueDate || undefined,
+      isQuickAdd: task.isQuickAdd,
+      tagIds: task.tags?.map((t) => t.id),
+      initialSubtasks: task.subtasks?.map((st) => st.title),
+    });
+  };
+
+  const handleDelete = async () => {
+    await onDelete(task.id);
   };
 
   return (
@@ -121,6 +151,16 @@ export function TaskDetailDrawer({
             type="text"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
+            onBlur={() => {
+              if (editTitle.trim() && editTitle !== task.title) {
+                handleAutoSave({ title: editTitle });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              }
+            }}
             className="text-lg font-bold text-neutral-900 dark:text-white bg-transparent focus:outline-none flex-1 min-w-0 truncate"
             placeholder="Tên công việc"
           />
@@ -156,6 +196,9 @@ export function TaskDetailDrawer({
                       onClick={() => {
                         setEditPriority(optPriority);
                         setIsMatrixMenuOpen(false);
+                        if (optPriority !== editPriority) {
+                          handleAutoSave({ priority: optPriority });
+                        }
                       }}
                       className={`w-full text-left p-2.5 rounded-xl text-xs flex flex-col gap-0.5 transition-colors cursor-pointer ${
                         isSelected
@@ -188,8 +231,9 @@ export function TaskDetailDrawer({
             Chi tiết công việc
           </span>
           {task.isQuickAdd && (
-            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100/60 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
-              ⚡ Nguồn: Quick Add
+            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-100/60 dark:bg-amber-950/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <Zap size={12} strokeWidth={2} className="shrink-0" />
+              <span>Nguồn: Quick Add</span>
             </span>
           )}
         </div>
@@ -201,7 +245,11 @@ export function TaskDetailDrawer({
           <input
             type="date"
             value={editDueDate}
-            onChange={(e) => setEditDueDate(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setEditDueDate(val);
+              handleAutoSave({ dueDate: val });
+            }}
             className="px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer"
           />
         </div>
@@ -212,7 +260,11 @@ export function TaskDetailDrawer({
           </span>
           <select
             value={editEstimatedMinutes}
-            onChange={(e) => setEditEstimatedMinutes(parseInt(e.target.value) || 30)}
+            onChange={(e) => {
+              const val = parseInt(e.target.value) || 30;
+              setEditEstimatedMinutes(val);
+              handleAutoSave({ estimatedMinutes: val });
+            }}
             className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer font-medium"
           >
             <option value={15}>15 phút</option>
@@ -231,31 +283,13 @@ export function TaskDetailDrawer({
       {/* Subtasks Section */}
       <TaskSubtasksSection task={task} />
 
-      {/* Bottom Action Buttons */}
-      <div className="flex items-center gap-2.5 pt-4 border-t border-neutral-200/80 dark:border-neutral-800/80 mt-auto pointer-events-auto">
-        <button
-          onClick={handleSaveDetail}
-          disabled={isSaving}
-          className="flex-1 py-2.5 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
-        >
-          <Check size={14} strokeWidth={2.5} />
-          <span>{isSaving ? "Đang lưu..." : "Save"}</span>
-        </button>
-        <button
-          onClick={onClose}
-          className="py-2.5 px-3 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold uppercase tracking-wider active:scale-98 transition-all cursor-pointer"
-        >
-          Đóng
-        </button>
-        <button
-          onClick={() => onDelete(task.id)}
-          className="py-2.5 px-3 rounded-xl border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold uppercase tracking-wider active:scale-98 transition-all cursor-pointer flex items-center justify-center"
-          title="Xóa công việc này"
-          aria-label="Xóa công việc"
-        >
-          <Trash2 size={15} strokeWidth={1.75} />
-        </button>
-      </div>
+      {/* Sleek Bottom Action Toolbar with Auto-save and 3-dots Menu */}
+      <TaskDetailBottomBar
+        isSaving={isSaving}
+        onStartPomodoro={handleStartPomodoro}
+        onDuplicateTask={handleDuplicateTask}
+        onDelete={handleDelete}
+      />
     </aside>
   );
 }
