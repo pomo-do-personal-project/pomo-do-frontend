@@ -1,0 +1,154 @@
+"use client";
+
+import React, { useState } from "react";
+import { useAuthStore } from "../../../stores/useAuthStore";
+import { Camera, Pencil, Check, X, KeyRound, ShieldAlert } from "lucide-react";
+
+interface AccountTabProps {
+  showNotice: (message: string, icon?: React.ReactNode) => void;
+}
+
+export function AccountTab({ showNotice }: AccountTabProps) {
+  const user = useAuthStore((s) => s.user);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(user?.displayName || "minh ngô");
+
+  const handleSaveName = () => {
+    if (!editName.trim()) return;
+    useAuthStore.setState((s) => ({
+      user: s.user ? { ...s.user, displayName: editName.trim() } : null,
+    }));
+    setIsEditingName(false);
+    showNotice("Đã cập nhật tên hiển thị thành công.");
+  };
+
+  return (
+    <div className="max-w-md mx-auto flex flex-col gap-4 py-2 animate-in fade-in duration-150">
+      {/* Khối Avatar tròn lớn + Hover camera overlay */}
+      <div className="flex flex-col items-center justify-center pt-2 pb-1">
+        <div className="relative group cursor-pointer">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-neutral-950 font-bold text-3xl flex items-center justify-center shadow-md select-none">
+            {user?.displayName ? user.displayName.charAt(0).toUpperCase() : "M"}
+          </div>
+          <div
+            onClick={() =>
+              showNotice(
+                "Tính năng tải lên ảnh đại diện tùy chỉnh sẽ sớm ra mắt trong bản cập nhật tới."
+              )
+            }
+            title="Đổi ảnh đại diện"
+            className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+          >
+            <Camera size={22} strokeWidth={2} />
+          </div>
+        </div>
+
+        {/* Tên hiển thị + Nút sửa tên ✏️ */}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          {isEditingName ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="px-2.5 py-1 text-sm bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSaveName}
+                className="p-1 text-emerald-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+                title="Lưu tên"
+              >
+                <Check size={16} strokeWidth={2.5} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditingName(false)}
+                className="p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+                title="Hủy"
+              >
+                <X size={16} strokeWidth={2} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                {user?.displayName || "minh ngô"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditName(user?.displayName || "minh ngô");
+                  setIsEditingName(true);
+                }}
+                title="Sửa tên hiển thị"
+                className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+              >
+                <Pencil size={14} strokeWidth={2} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Subtitle vàng cam */}
+        <span className="text-xs font-semibold text-amber-500 mt-1 tracking-wide">
+          Premium Features
+        </span>
+      </div>
+
+      {/* CARD 1: Email & Password */}
+      <div className="bg-neutral-50/80 dark:bg-[#262626] rounded-2xl p-4 flex flex-col gap-3.5 border border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-neutral-500 dark:text-neutral-400 font-medium">Email</span>
+          <span className="text-neutral-800 dark:text-neutral-200 font-medium select-all">
+            {user?.email || "ngoquangminhtpm@gmail.com"}
+          </span>
+        </div>
+
+        <div className="border-t border-neutral-200 dark:border-neutral-800/80" />
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-neutral-500 dark:text-neutral-400 font-medium">Password</span>
+          <button
+            type="button"
+            onClick={() =>
+              showNotice(
+                "Tính năng đổi mật khẩu trong Cài đặt đang được hoàn thiện. Tạm thời bạn có thể dùng 'Quên mật khẩu' tại màn hình Đăng nhập.",
+                <KeyRound size={18} className="text-blue-500 dark:text-blue-400" />
+              )
+            }
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 hover:underline cursor-pointer font-medium"
+          >
+            Change Password
+          </button>
+        </div>
+      </div>
+
+      {/* CARD 2: Google */}
+      <div className="bg-neutral-50/80 dark:bg-[#262626] rounded-2xl p-4 flex items-center justify-between border border-neutral-200 dark:border-neutral-800 text-sm">
+        <span className="text-neutral-500 dark:text-neutral-400 font-medium">Google</span>
+        <span className="text-neutral-800 dark:text-neutral-200 font-medium">
+          {user?.displayName || "minh ngô"}
+        </span>
+      </div>
+
+      {/* CARD 3: Manage Account (Delete Account) */}
+      <div className="bg-neutral-50/80 dark:bg-[#262626] rounded-2xl p-4 flex items-center justify-between border border-neutral-200 dark:border-neutral-800 text-sm">
+        <span className="text-neutral-500 dark:text-neutral-400 font-medium">Manage Account</span>
+        <button
+          type="button"
+          onClick={() =>
+            showNotice(
+              "Tài khoản của bạn được bảo vệ an toàn. Để xóa tài khoản vĩnh viễn, vui lòng liên hệ admin hỗ trợ.",
+              <ShieldAlert size={18} className="text-rose-400" />
+            )
+          }
+          className="text-rose-500 hover:text-rose-400 hover:underline cursor-pointer font-medium"
+        >
+          Delete Account
+        </button>
+      </div>
+    </div>
+  );
+}

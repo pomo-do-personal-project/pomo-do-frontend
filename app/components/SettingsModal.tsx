@@ -1,196 +1,144 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSettingsStore } from "../stores/useSettingsStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { Button } from "./ui/Button";
-import { Settings, X } from "lucide-react";
+import { User, Crown, Bell, Clock, Palette, X, Sparkles, LucideIcon } from "lucide-react";
+import { AccountTab } from "./settings/tabs/AccountTab";
+import { PremiumTab } from "./settings/tabs/PremiumTab";
+import { NotificationsTab } from "./settings/tabs/NotificationsTab";
+import { DateTimeTab } from "./settings/tabs/DateTimeTab";
+import { AppearanceTab } from "./settings/tabs/AppearanceTab";
+
+export type SettingsTab = "account" | "premium" | "notifications" | "date-time" | "appearance";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: SettingsTab;
 }
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { settings, updateSettings, isSaving, isLoading } = useSettingsStore();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+export function SettingsModal({ isOpen, onClose, initialTab = "account" }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const user = useAuthStore((s) => s.user);
 
-  const [focusDuration, setFocusDuration] = useState(settings.focusDuration || 25);
-  const [shortBreakDuration, setShortBreakDuration] = useState(settings.shortBreakDuration || 5);
-  const [longBreakDuration, setLongBreakDuration] = useState(settings.longBreakDuration || 15);
-  const [autoStartBreaks, setAutoStartBreaks] = useState(settings.autoStartBreaks || false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  // In-Modal Toast State
+  const [toast, setToast] = useState<{ message: string; icon?: React.ReactNode } | null>(null);
+
+  const showNotice = (message: string, icon?: React.ReactNode) => {
+    setToast({ message, icon });
+  };
+
+  // Tự động tắt Toast sau 3.5 giây
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     if (isOpen) {
-      setFocusDuration(settings.focusDuration || 25);
-      setShortBreakDuration(settings.shortBreakDuration || 5);
-      setLongBreakDuration(settings.longBreakDuration || 15);
-      setAutoStartBreaks(settings.autoStartBreaks || false);
-      setSavedSuccess(false);
+      setActiveTab(initialTab);
     }
-  }, [isOpen, settings]);
+  }, [isOpen, initialTab]);
 
   if (!isOpen) return null;
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = await updateSettings({
-      focusDuration: Number(focusDuration),
-      shortBreakDuration: Number(shortBreakDuration),
-      longBreakDuration: Number(longBreakDuration),
-      autoStartBreaks,
-    });
-
-    if (success) {
-      setSavedSuccess(true);
-      setTimeout(() => {
-        setSavedSuccess(false);
-        onClose();
-      }, 700);
-    }
-  };
+  const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
+    { id: "account", label: "Tài khoản (Account)", icon: User },
+    { id: "premium", label: "Gói Premium", icon: Crown },
+    { id: "notifications", label: "Thông báo (Notifications)", icon: Bell },
+    { id: "date-time", label: "Thời gian (Date & Time)", icon: Clock },
+    { id: "appearance", label: "Giao diện (Appearance)", icon: Palette },
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      {/* Backdrop */}
-      <div className="fixed inset-0" onClick={onClose} />
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
+    >
+      <div
+        className="relative w-full max-w-4xl h-[88vh] max-h-[700px] bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="settings-dialog-title" className="sr-only">Cài đặt ứng dụng</h2>
 
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl p-6 z-10 animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800 mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-sm shadow-xs">
-              <Settings size={18} strokeWidth={1.75} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-neutral-900 dark:text-white">
-                Timer Settings
-              </h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {isAuthenticated
-                  ? "Đồng bộ trực tiếp với tài khoản backend"
-                  : "Lưu tạm trên trình duyệt (Đăng nhập để đồng bộ)"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Đóng bảng cài đặt"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-          >
-            <X size={18} strokeWidth={1.75} />
-          </button>
-        </div>
+        {/* Nút đóng modal góc trên bên phải */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Đóng cài đặt"
+          className="absolute top-4 right-4 z-20 p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+          title="Đóng cài đặt"
+        >
+          <X size={20} />
+        </button>
 
-        {/* Form Body */}
-        <form onSubmit={handleSave} className="space-y-5">
-          {/* Durations Grid */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-              Thời lượng chu kỳ (Phút)
-            </h3>
-
-            <div className="grid grid-cols-3 gap-3">
-              {/* Focus duration */}
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/70 dark:border-neutral-700/60 flex flex-col items-center">
-                <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Focus (W)
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  max="180"
-                  value={focusDuration}
-                  onChange={(e) => setFocusDuration(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full text-center font-mono font-bold text-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl py-1 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
-                />
-                <span className="text-[10px] text-neutral-400 mt-1">phút</span>
-              </div>
-
-              {/* Short break duration */}
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/70 dark:border-neutral-700/60 flex flex-col items-center">
-                <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Short Break
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={shortBreakDuration}
-                  onChange={(e) => setShortBreakDuration(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full text-center font-mono font-bold text-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl py-1 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
-                />
-                <span className="text-[10px] text-neutral-400 mt-1">phút</span>
-              </div>
-
-              {/* Long break duration */}
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/70 dark:border-neutral-700/60 flex flex-col items-center">
-                <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Long Break
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={longBreakDuration}
-                  onChange={(e) => setLongBreakDuration(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full text-center font-mono font-bold text-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl py-1 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
-                />
-                <span className="text-[10px] text-neutral-400 mt-1">phút</span>
-              </div>
-            </div>
+        {/* ======================================================== */}
+        {/* CỘT TRÁI: SIDEBAR CÁC DANH MỤC CÀI ĐẶT                   */}
+        {/* ======================================================== */}
+        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800/80 p-4 sm:p-5 flex flex-col bg-neutral-50/90 dark:bg-[#191919] shrink-0">
+          <div className="flex items-center gap-2.5 px-3 py-2 mb-3">
+            <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">Cài đặt</span>
           </div>
 
-          {/* Toggle Switches */}
-          <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
-            <label className="flex items-center justify-between cursor-pointer py-2 group">
-              <div>
-                <div className="text-xs font-semibold text-neutral-900 dark:text-white">
-                  Tự động chuyển phiên nghỉ
-                </div>
-                <div className="text-[11px] text-neutral-400">
-                  Tự động kích hoạt đếm giờ nghỉ sau khi kết thúc Pomodoro
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={autoStartBreaks}
-                onChange={(e) => setAutoStartBreaks(e.target.checked)}
-                className="w-4 h-4 rounded text-neutral-900 focus:ring-neutral-900 cursor-pointer accent-neutral-900 dark:accent-white"
-              />
-            </label>
-          </div>
+          <nav className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
+            {tabs.map((tab) => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap text-left ${
+                    isActive
+                      ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs border border-neutral-200/80 dark:border-transparent font-semibold"
+                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/50"
+                  }`}
+                >
+                  <IconComp size={17} className={isActive ? "text-neutral-900 dark:text-white" : "text-neutral-400"} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-          {/* Action buttons */}
-          <div className="pt-3 flex items-center justify-end gap-2.5">
-            <Button
+        {/* ======================================================== */}
+        {/* CỘT PHẢI: NỘI DUNG TỪNG TAB                               */}
+        {/* ======================================================== */}
+        <main className="flex-1 p-5 sm:p-8 pr-3 sm:pr-5 overflow-y-auto bg-white dark:bg-[#1e1e1e]">
+          {activeTab === "account" && <AccountTab showNotice={showNotice} />}
+          {activeTab === "premium" && <PremiumTab showNotice={showNotice} />}
+          {activeTab === "notifications" && (
+            <NotificationsTab userEmail={user?.email} showNotice={showNotice} />
+          )}
+          {activeTab === "date-time" && <DateTimeTab showNotice={showNotice} />}
+          {activeTab === "appearance" && <AppearanceTab />}
+        </main>
+
+        {/* In-Modal Toast Notification Cao Cấp */}
+        {toast && (
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-sm sm:max-w-md w-[92%] px-4 py-3 bg-[#2a2a2a] text-white border border-neutral-700 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <div className="shrink-0 text-amber-400">
+              {toast.icon || <Sparkles size={18} />}
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-200 leading-snug flex-1">
+              {toast.message}
+            </p>
+            <button
               type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onClose}
-              disabled={isSaving}
+              onClick={() => setToast(null)}
+              className="text-neutral-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer shrink-0"
             >
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              disabled={isSaving}
-              className="min-w-[90px]"
-            >
-              {isSaving ? (
-                "Đang lưu..."
-              ) : savedSuccess ? (
-                "✓ Đã lưu"
-              ) : (
-                "Lưu cài đặt"
-              )}
-            </Button>
+              <X size={15} />
+            </button>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

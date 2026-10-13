@@ -8,9 +8,52 @@ const interSans = Inter({
   display: "swap",
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Pomo-Do | Pomodoro & Task Management System",
-  description: "Tối ưu hóa năng suất với đồng hồ Pomodoro, quản lý công việc và ma trận Eisenhower.",
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: "Pomo-Do | Pomodoro & Task Management System",
+    template: "%s | Pomo-Do",
+  },
+  description:
+    "Tối ưu hóa năng suất cá nhân với đồng hồ Pomodoro thông minh, quản lý công việc toàn diện và Ma trận Eisenhower 4 góc.",
+  keywords: [
+    "Pomodoro",
+    "Pomo-Do",
+    "Quản lý thời gian",
+    "Ma trận Eisenhower",
+    "Năng suất làm việc",
+    "Focus timer",
+    "Task management",
+  ],
+  authors: [{ name: "Pomo-Do Team" }],
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    url: baseUrl,
+    siteName: "Pomo-Do",
+    title: "Pomo-Do | Pomodoro & Task Management System",
+    description:
+      "Tối ưu hóa năng suất cá nhân với đồng hồ Pomodoro thông minh, quản lý công việc toàn diện và Ma trận Eisenhower 4 góc.",
+    images: [
+      {
+        url: "/favicon.ico",
+        width: 64,
+        height: 64,
+        alt: "Pomo-Do Tomato Icon",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "Pomo-Do | Pomodoro & Task Management System",
+    description:
+      "Tối ưu hóa năng suất với đồng hồ Pomodoro, quản lý công việc và ma trận Eisenhower.",
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

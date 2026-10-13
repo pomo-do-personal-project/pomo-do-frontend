@@ -11,6 +11,9 @@ import {
   User as UserIcon,
   LogOut,
   ChevronsLeft,
+  ChevronRight,
+  Sparkles,
+  Settings,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -142,7 +145,7 @@ export function Sidebar({
             onClick={handleAccountClick}
             aria-label={isUserLoggedIn ? `User ${user?.displayName || user?.email}` : "Sign in / Register"}
             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${isUserLoggedIn
-              ? "border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-xs hover:border-emerald-600 active:scale-95"
+              ? "border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 shadow-xs hover:border-neutral-400 dark:hover:border-neutral-600 active:scale-95"
               : "border-dashed border-neutral-400 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
               }`}
           >
@@ -155,10 +158,10 @@ export function Sidebar({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                /* Chữ viết tắt của tên nếu chưa có avatar */
-                <span className="text-xs font-black tracking-wider">
+                /* Chữ viết tắt với nền tím tròn chuẩn theo ảnh mẫu */
+                <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold select-none shadow-xs">
                   {userInitials}
-                </span>
+                </div>
               )
             ) : (
               /* Icon Auth / Chưa đăng nhập (Minimal stroke User Icon) */
@@ -174,33 +177,77 @@ export function Sidebar({
             </div>
           )}
 
-          {/* User Popover Menu (Hiện ra khi đã đăng nhập và bấm vào icon) */}
+          {/* User Popover Menu 4 mục (Chuẩn phong cách dark card cao cấp) */}
           {isUserLoggedIn && showUserMenu && (
             <>
-              {/* Overlay vô hình để bấm ra ngoài là đóng menu */}
+              {/* Overlay vô hình bắt sự kiện click ra ngoài để đóng menu */}
               <div
                 className="fixed inset-0 z-40"
                 onClick={() => setShowUserMenu(false)}
               />
 
-              <div className="absolute left-[calc(100%+12px)] bottom-0 w-56 p-3 bg-white dark:bg-neutral-900 rounded-2xl border-2 border-neutral-900 dark:border-white shadow-2xl z-50 flex flex-col gap-2.5 animate-in fade-in slide-in-from-left-2 duration-150">
-                {/* Thông tin user vắn tắt */}
-                <div className="px-2 py-1 border-b border-neutral-200 dark:border-neutral-800 pb-2">
-                  <div className="text-xs font-extrabold text-neutral-900 dark:text-white truncate">
-                    {user?.displayName || "User"}
+              <div className="absolute left-[calc(100%+12px)] bottom-0 w-64 p-1.5 bg-white dark:bg-[#202123] text-neutral-900 dark:text-neutral-100 rounded-2xl border border-neutral-200 dark:border-neutral-700/60 shadow-2xl z-50 flex flex-col gap-0.5 animate-in fade-in slide-in-from-left-2 duration-150 select-none">
+                {/* 1. Header: Avatar tím + Tên + Free + Chevron */}
+                <div
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center justify-between transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+                      {userInitials}
+                    </div>
+                    <div className="flex flex-col min-w-0 text-left">
+                      <span className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                        {user?.displayName || "User"}
+                      </span>
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
+                        Free
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
-                    {user?.email}
-                  </div>
+                  <ChevronRight size={16} strokeWidth={2} className="text-neutral-400 dark:text-neutral-500 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </div>
 
-                {/* Nút Logout */}
+                {/* Đường kẻ phân cách */}
+                <div className="my-1 border-t border-neutral-200/80 dark:border-neutral-700/60" />
+
+                {/* 2. Mục Premiums */}
                 <button
-                  onClick={handleLogout}
-                  className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer group/btn"
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onSelectItem?.("premiums");
+                  }}
+                  className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
-                  <span>Logout</span>
-                  <LogOut size={16} strokeWidth={1.75} className="transition-transform group-hover/btn:translate-x-0.5" />
+                  <Sparkles size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400" />
+                  <span>Premiums</span>
+                </button>
+
+                {/* 3. Mục Settings */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onSelectItem?.("settings");
+                  }}
+                  className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
+                >
+                  <Settings size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400" />
+                  <span>Settings</span>
+                </button>
+
+                {/* Đường kẻ phân cách */}
+                <div className="my-1 border-t border-neutral-200/80 dark:border-neutral-700/60" />
+
+                {/* 4. Mục Log out */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full px-2.5 py-2 rounded-xl hover:bg-rose-500/10 text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer text-left group"
+                >
+                  <LogOut size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" />
+                  <span>Log out</span>
                 </button>
               </div>
             </>

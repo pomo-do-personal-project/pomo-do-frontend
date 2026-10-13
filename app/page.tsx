@@ -93,6 +93,13 @@ export default function Home() {
             await logout();
             return;
           }
+          if (viewId === "settings") {
+            setIsSettingsModalOpen(true);
+            return;
+          }
+          if (viewId === "premiums") {
+            return;
+          }
           setActiveView(viewId);
           // Tự động đóng overview panel khi chuyển view để màn hình thoáng đãng
           setIsOverviewOpen(false);
@@ -153,7 +160,8 @@ export default function Home() {
                     setIsRunning(false);
                   }}
                   title="Tạm dừng"
-                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
+                  aria-label="Tạm dừng"
+                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 cursor-pointer"
                 >
                   <Pause size={12} strokeWidth={2.5} />
                 </button>
@@ -165,7 +173,8 @@ export default function Home() {
                     setIsRunning(true);
                   }}
                   title="Tiếp tục"
-                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
+                  aria-label="Tiếp tục"
+                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 cursor-pointer"
                 >
                   <Play size={12} strokeWidth={2.5} />
                 </button>
@@ -226,15 +235,17 @@ export default function Home() {
           </div>
         </header>
 
-        {/* 2. Main Content View: Dashboard (Timer), TaskPage, MatrixPage OR StatisticPage */}
-        {/* Giữ TimerCenter luôn mounted trong DOM (ẩn hiện bằng CSS) để bộ đếm tiếp tục chạy ngầm khi người dùng sang tab khác */}
-        <main className={`flex-1 flex items-center justify-center p-4 ${activeView === "dashboard" ? "" : "hidden"}`}>
-          <TimerCenter />
-        </main>
+        {/* 2. Main Content Landmark: Dashboard (Timer), TaskPage, MatrixPage OR StatisticPage */}
+        <main className="flex-1 flex flex-col min-h-0">
+          {/* Giữ TimerCenter luôn mounted trong DOM (ẩn hiện bằng CSS) để bộ đếm tiếp tục chạy ngầm khi người dùng sang tab khác */}
+          <div className={`flex-1 flex items-center justify-center p-4 ${activeView === "dashboard" ? "" : "hidden"}`}>
+            <TimerCenter />
+          </div>
 
-        {activeView === "task" && <TaskPage />}
-        {activeView === "matrix" && <MatrixPage />}
-        {activeView === "statistic" && <StatisticPage />}
+          {activeView === "task" && <TaskPage />}
+          {activeView === "matrix" && <MatrixPage />}
+          {activeView === "statistic" && <StatisticPage />}
+        </main>
       </div>
 
       {/* 3. Overview Panel (Right Slide-out): Chỉ kích hoạt ở trang Dashboard */}
