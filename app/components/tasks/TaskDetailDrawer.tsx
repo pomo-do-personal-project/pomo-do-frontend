@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { TaskDto, Priority } from "../../types/api";
+import { TaskDto, Priority, FocusSessionMode } from "../../types/api";
 import { PRIORITY_MAP, MATRIX_OPTIONS } from "./types";
 import { useTaskStore } from "../../stores/useTaskStore";
 import { usePomodoroStore } from "../../stores/usePomodoroStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import { Flag, ChevronDown, Check, Zap } from "lucide-react";
 import { TaskSubtasksSection } from "./TaskSubtasksSection";
 import { TaskDetailBottomBar } from "./TaskDetailBottomBar";
+import { TaskTagsSection } from "./TaskTagsSection";
+import { DigitalTimePicker } from "./DigitalTimePicker";
 
 interface TaskDetailDrawerProps {
   task: TaskDto;
@@ -77,6 +80,7 @@ export function TaskDetailDrawer({
     priority?: Priority;
     estimatedMinutes?: number;
     dueDate?: string | null;
+    tagIds?: string[];
   }) => {
     const newTitle = (updates?.title ?? editTitle).trim();
     if (!newTitle) return;
@@ -84,6 +88,7 @@ export function TaskDetailDrawer({
     const newPriority = updates?.priority ?? editPriority;
     const newEstMin = updates?.estimatedMinutes ?? editEstimatedMinutes;
     const newDueDate = updates?.dueDate !== undefined ? updates.dueDate : editDueDate;
+    const newTagIds = updates?.tagIds !== undefined ? updates.tagIds : task.tags?.map((t) => t.id);
 
     try {
       await updateTask(task.id, {
@@ -93,17 +98,51 @@ export function TaskDetailDrawer({
         estimatedPomodoros: Math.ceil(newEstMin / 25),
         estimatedMinutes: newEstMin,
         dueDate: newDueDate ? new Date(newDueDate).toISOString() : null,
+        tagIds: newTagIds,
       });
     } catch {
       // Error handled in store
     }
   };
 
-  const handleStartPomodoro = () => {
-    const { setTaskName, setIsRunning, setTimerType, setFocusMode } = usePomodoroStore.getState();
+  const handleUpdateTags = async (tagIds: string[]) => {
+    await handleAutoSave({ tagIds });
+  };
+
+  const handleStartPomodoro = async () => {
+    const {
+      setTaskName,
+      setIsRunning,
+      setTimerType,
+      setFocusMode,
+      resetTimer,
+      clearCurrentSession,
+      startSession,
+    } = usePomodoroStore.getState();
+
+    const { settings } = useSettingsStore.getState();
+    const durationMinutes = settings.focusDuration || 25;
+    const durationSeconds = durationMinutes * 60;
+
+    // 1. Dọn dẹp session cũ & reset đồng hồ về thời lượng chuẩn
+    clearCurrentSession();
+    resetTimer(durationSeconds);
     setTaskName(task.title);
     setTimerType("pomo");
     setFocusMode("W");
+
+    // 2. Bắt đầu session mới liên kết với Task này
+    try {
+      await startSession({
+        taskId: task.id,
+        mode: FocusSessionMode.Pomo,
+        durationMinutes,
+      });
+    } catch {
+      // Bỏ qua lỗi nếu offline
+    }
+
+    // 3. Khởi chạy đồng hồ và chuyển hướng sang Dashboard
     setIsRunning(true);
     onNavigateToTimer?.();
   };
@@ -258,26 +297,19 @@ export function TaskDetailDrawer({
           <span className="text-neutral-600 dark:text-neutral-400 font-medium">
             Estimation
           </span>
-          <select
-            value={editEstimatedMinutes}
-            onChange={(e) => {
-              const val = parseInt(e.target.value) || 30;
+          <DigitalTimePicker
+            valueMinutes={editEstimatedMinutes}
+            onChange={(val) => {
               setEditEstimatedMinutes(val);
               handleAutoSave({ estimatedMinutes: val });
             }}
-            className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer font-medium"
-          >
-            <option value={15}>15 phút</option>
-            <option value={25}>25 phút (1 Pomo)</option>
-            <option value={30}>30 phút</option>
-            <option value={45}>45 phút</option>
-            <option value={50}>50 phút (2 Pomo)</option>
-            <option value={60}>1 giờ</option>
-            <option value={90}>1 giờ 30 phút</option>
-            <option value={120}>2 giờ</option>
-            <option value={180}>3 giờ</option>
-          </select>
+          />
         </div>
+      </div>
+
+      {/* Tags Section */}
+      <div className="mb-6">
+        <TaskTagsSection task={task} onUpdateTags={handleUpdateTags} />
       </div>
 
       {/* Subtasks Section */}

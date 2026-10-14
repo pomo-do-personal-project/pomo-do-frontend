@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -11,19 +11,25 @@ import { TimerModeSelector } from "./timer/TimerModeSelector";
 import { TimerDisplay } from "./timer/TimerDisplay";
 import { TimerTaskInput } from "./timer/TimerTaskInput";
 import { TimerControls } from "./timer/TimerControls";
+interface TimerCenterProps {
+  onOpenAiSettings?: () => void;
+}
 
-export function TimerCenter() {
+export function TimerCenter({}: TimerCenterProps = {}) {
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
   // Zustand Settings Store
   const settings = useSettingsStore((s) => s.settings);
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
-  const modeDurations: Record<FocusMode, ModeDurationInfo> = {
-    W: { label: "W", fullName: "Work / Focus", minutes: settings.focusDuration || 25 },
-    SB: { label: "SB", fullName: "Short Break", minutes: settings.shortBreakDuration || 5 },
-    LB: { label: "LB", fullName: "Long Break", minutes: settings.longBreakDuration || 15 },
-  };
+  const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(
+    () => ({
+      W: { label: "W", fullName: "Work / Focus", minutes: settings.focusDuration || 25 },
+      SB: { label: "SB", fullName: "Short Break", minutes: settings.shortBreakDuration || 5 },
+      LB: { label: "LB", fullName: "Long Break", minutes: settings.longBreakDuration || 15 },
+    }),
+    [settings.focusDuration, settings.shortBreakDuration, settings.longBreakDuration]
+  );
 
   // Zustand Pomodoro Global Store
   const timerType = usePomodoroStore((s) => s.timerType);
@@ -48,6 +54,14 @@ export function TimerCenter() {
 
   const tasks = useTaskStore((s) => s.tasks);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // Khớp task hiện tại nếu có
+  const matchedTask = useMemo(() => {
+    if (!taskName.trim()) return null;
+    return tasks.find(
+      (t) => t.title.toLowerCase() === taskName.trim().toLowerCase()
+    );
+  }, [tasks, taskName]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -88,10 +102,6 @@ export function TimerCenter() {
     if (!isRunning) {
       if (!currentSession && elapsedSeconds === 0) {
         const plannedMinutes = modeDurations[focusMode].minutes;
-        const matchedTask = tasks.find(
-          (t) => t.title.toLowerCase() === taskName.trim().toLowerCase()
-        );
-
         await startSession({
           taskId: matchedTask?.id || null,
           mode: timerType === "pomo" ? FocusSessionMode.Pomo : FocusSessionMode.Stopwatch,
@@ -114,7 +124,7 @@ export function TimerCenter() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, focusMode, tickTimer, modeDurations]);
+  }, [isRunning, tickTimer, focusMode, modeDurations]);
 
   const handleReset = async () => {
     setIsRunning(false);
@@ -197,3 +207,4 @@ export function TimerCenter() {
     </div>
   );
 }
+

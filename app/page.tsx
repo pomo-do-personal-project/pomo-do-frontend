@@ -8,7 +8,7 @@ import { TaskPage } from "./components/TaskPage";
 import { MatrixPage } from "./components/MatrixPage";
 import { StatisticPage } from "./components/StatisticPage";
 import { AuthModal } from "./components/AuthModal";
-import { SettingsModal } from "./components/SettingsModal";
+import { SettingsModal, SettingsTab } from "./components/SettingsModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { WelcomeSplash } from "./components/WelcomeSplash";
 import { useAuthStore } from "./stores/useAuthStore";
@@ -32,6 +32,7 @@ export default function Home() {
     "signup" | "otp-verify" | "signin" | "forgot" | "reset"
   >("signup");
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>("account");
   const [showWelcome, setShowWelcome] = useState(true);
 
   // Zustand Stores
@@ -71,6 +72,7 @@ export default function Home() {
             return;
           }
           if (viewId === "settings") {
+            setSettingsInitialTab("account");
             setIsSettingsModalOpen(true);
             return;
           }
@@ -215,9 +217,10 @@ export default function Home() {
         onClose={() => setIsAuthModalOpen(false)}
       />
 
-      {/* 5. Settings Modal: Cài đặt thời lượng Pomodoro / Nghỉ ngắn / Nghỉ dài */}
+      {/* 5. Settings Modal: Cài đặt thời lượng Pomodoro / Nghỉ ngắn / Nghỉ dài / AI Focus */}
       <SettingsModal
         isOpen={isSettingsModalOpen}
+        initialTab={settingsInitialTab}
         onClose={() => setIsSettingsModalOpen(false)}
       />
 

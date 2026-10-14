@@ -90,6 +90,16 @@ export interface TagDto {
   colorHex: string;
 }
 
+export interface CreateTagRequest {
+  name: string;
+  colorHex?: string;
+}
+
+export interface UpdateTagRequest {
+  name: string;
+  colorHex?: string;
+}
+
 export interface SubtaskDto {
   id: string;
   taskId: string;

@@ -78,6 +78,30 @@ export function TaskItem({
             </span>
           )}
 
+          {/* Tags list */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1 shrink-0">
+              {task.tags.slice(0, 2).map((t) => (
+                <span
+                  key={t.id}
+                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-neutral-200/80 dark:border-neutral-700/80 bg-neutral-100/60 dark:bg-neutral-800/60 text-neutral-600 dark:text-neutral-300 truncate max-w-[90px]"
+                  title={t.name}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: t.colorHex || "#6366f1" }}
+                  />
+                  <span className="truncate">{t.name}</span>
+                </span>
+              ))}
+              {task.tags.length > 2 && (
+                <span className="text-[10px] text-neutral-400 font-mono">
+                  +{task.tags.length - 2}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Eisenhower Matrix Priority Indicator */}
           <span
             className={`text-xs ${getMatrixBadgeColor(task.priority)}`}
