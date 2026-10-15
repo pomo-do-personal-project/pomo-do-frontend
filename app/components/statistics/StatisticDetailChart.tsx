@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useTranslation } from "../../stores/useLanguageStore";
+import { AiFocusSessionDetailModal } from "./AiFocusSessionDetailModal";
 
 export interface StatisticItem {
   id: string;
@@ -13,6 +14,8 @@ export interface StatisticItem {
   pomos: number;
   color: string;
   sourceType: "task" | "list";
+  aiData?: any;
+  sessionId?: string;
 }
 
 interface StatisticDetailChartProps {
@@ -31,6 +34,7 @@ export function StatisticDetailChart({
   onSetTimeRange,
 }: StatisticDetailChartProps) {
   const { t } = useTranslation();
+  const [selectedItem, setSelectedItem] = useState<StatisticItem | null>(null);
 
   const filteredData = React.useMemo(() => {
     if (sourceFilter === "all") return items;
@@ -169,8 +173,15 @@ export function StatisticDetailChart({
                 ? Math.min(40, Math.round((overtimeMinutes / item.plannedMinutes) * 100))
                 : 0;
 
+              const hasAiScore = item.aiData?.score !== undefined;
+
               return (
-                <div key={item.id} className="flex flex-col gap-1.5 w-full">
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className="flex flex-col gap-1.5 w-full p-2 -mx-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-all cursor-pointer group"
+                  title="Nhấn để xem phân tích sự tập trung của AI"
+                >
                   <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                     <div className="flex items-center gap-2 truncate max-w-[200px]">
                       <span
@@ -178,7 +189,14 @@ export function StatisticDetailChart({
                           item.sourceType === "task" ? "bg-blue-500" : "bg-amber-500"
                         }`}
                       />
-                      <span className="truncate">{item.name}</span>
+                      <span className="truncate group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                        {item.name}
+                      </span>
+                      {hasAiScore && (
+                        <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20 shrink-0">
+                          🎯 {item.aiData.score}%
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5 font-mono text-xs shrink-0">
@@ -210,6 +228,13 @@ export function StatisticDetailChart({
           </div>
         </div>
       )}
+
+      {/* Modal xem chi tiết sự tập trung của AI */}
+      <AiFocusSessionDetailModal
+        isOpen={selectedItem !== null}
+        onClose={() => setSelectedItem(null)}
+        item={selectedItem}
+      />
     </section>
   );
 }

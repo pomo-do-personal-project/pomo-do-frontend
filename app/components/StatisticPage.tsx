@@ -69,7 +69,29 @@ export function StatisticPage() {
     history.forEach((session, index) => {
       const isTask = !!session.taskId;
       const key = isTask ? `task-${session.taskId}` : `session-${session.id}`;
-      const name = session.taskTitle || session.note || (session.mode === FocusSessionMode.Pomo ? "Tự do" : "Stopwatch");
+      let title = session.taskTitle;
+      let aiData: any = null;
+
+      if (session.note) {
+        try {
+          const parsed = JSON.parse(session.note);
+          if (parsed && typeof parsed === "object") {
+            if (parsed.ai) aiData = parsed.ai;
+            if (parsed.title) title = title || parsed.title;
+          }
+        } catch {
+          title = title || session.note;
+        }
+      }
+
+      if (!aiData && typeof window !== "undefined") {
+        try {
+          const cached = localStorage.getItem(`pomo_ai_session_${session.id}`);
+          if (cached) aiData = JSON.parse(cached);
+        } catch {}
+      }
+
+      const name = title || (session.mode === FocusSessionMode.Pomo ? "Tự do" : "Stopwatch");
       const color = PALETTE[index % PALETTE.length];
 
       if (!map.has(key)) {
@@ -82,12 +104,15 @@ export function StatisticPage() {
           pomos: session.isCompleted ? 1 : 0,
           color,
           sourceType: isTask ? "task" : "list",
+          aiData,
+          sessionId: session.id,
         });
       } else {
         const existing = map.get(key)!;
         existing.plannedMinutes += session.durationMinutes || 25;
         existing.actualMinutes += session.actualMinutes;
         existing.overtimeMinutes += session.overtimeMinutes;
+        if (!existing.aiData && aiData) existing.aiData = aiData;
         if (session.isCompleted) existing.pomos += 1;
       }
     });

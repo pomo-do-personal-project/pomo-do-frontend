@@ -1,26 +1,28 @@
 import { create } from "zustand";
 
 export type AiFocusStatus = "FOCUSED" | "DISTRACTED" | "AFK" | "DISCONNECTED";
+export type AiSensitivity = "standard" | "relaxed" | "strict";
 
-interface AiFocusData {
-  status: AiFocusStatus;
-  detail: string;
-  is_focused: boolean;
-  active_screen: number | null;
-  total_screens: number;
-  look_x?: number | null;
-  look_y?: number | null;
-  has_face?: boolean;
+export interface AiSessionAnalysis {
+  score: number;
+  grade: "S" | "A" | "B" | "C" | "D";
+  conclusion: string;
+  advice: string;
+  phoneCount: number;
+  phoneSeconds: number;
+  sleepCount: number;
+  lookAwayCount: number;
+  focusedSeconds: number;
+  distractedSeconds: number;
+  totalSeconds: number;
 }
 
 interface AiFocusState {
-  // Trạng thái kết nối & phần cứng
   isConnected: boolean;
   isAiEnabled: boolean;
   isConnecting: boolean;
   error: string | null;
 
-  // Dữ liệu thời gian thực từ AI
   status: AiFocusStatus;
   detail: string;
   isFocused: boolean;
@@ -29,13 +31,17 @@ interface AiFocusState {
   image: string | null;
   showCameraPreview: boolean;
 
-  // Thống kê phiên Pomodoro
   distractionCount: number;
+  phoneCount: number;
+  phoneSeconds: number;
+  sleepCount: number;
+  lookAwayCount: number;
   focusedSeconds: number;
+  distractedSeconds: number;
   totalSessionSeconds: number;
   previousStatus: AiFocusStatus;
+  previousDetail: string;
 
-  // Actions
   toggleAiEnabled: () => void;
   toggleCameraPreview: () => void;
   connect: () => void;
@@ -45,10 +51,11 @@ interface AiFocusState {
   onTimerTick: (isWorkTimerRunning: boolean) => void;
   resetSessionStats: () => void;
   getFocusScore: () => number;
-  generateSessionSummary: () => string;
+  analyzeAndFinalizeSession: (taskName?: string) => Promise<AiSessionAnalysis>;
 }
 
 const WS_URL = process.env.NEXT_PUBLIC_AI_WS_URL || "ws://localhost:8001/ws";
+const HTTP_URL = WS_URL.replace("ws://", "http://").replace("/ws", "");
 
 let socket: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
@@ -68,218 +75,218 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
   showCameraPreview: true,
 
   distractionCount: 0,
+  phoneCount: 0,
+  phoneSeconds: 0,
+  sleepCount: 0,
+  lookAwayCount: 0,
   focusedSeconds: 0,
+  distractedSeconds: 0,
   totalSessionSeconds: 0,
   previousStatus: "DISCONNECTED",
+  previousDetail: "",
 
-  toggleCameraPreview: () => {
-    set((state) => ({ showCameraPreview: !state.showCameraPreview }));
-  },
+  toggleCameraPreview: () => set((s) => ({ showCameraPreview: !s.showCameraPreview })),
 
   toggleAiEnabled: () => {
-    const { isAiEnabled, connect, disconnect } = get();
-    const nextState = !isAiEnabled;
+    const nextState = !get().isAiEnabled;
     set({ isAiEnabled: nextState });
-
-    if (nextState) {
-      connect();
-    } else {
-      disconnect();
-    }
+    if (nextState) get().connect();
+    else get().disconnect();
   },
 
   connect: () => {
-    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
-
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
 
     set({ isConnecting: true, error: null });
-
     try {
       socket = new WebSocket(WS_URL);
-
       socket.onopen = () => {
-        set({
-          isConnected: true,
-          isConnecting: false,
-          error: null,
-          status: "AFK",
-          detail: "Đã kết nối AI camera"
-        });
-        console.log("[useAiFocusStore] Đã kết nối WebSocket pomo-ai thành công!");
+        set({ isConnected: true, isConnecting: false, error: null, status: "AFK", detail: "Đã kết nối AI" });
       };
-
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-
           if (data.event === "focus_update") {
-            const rawStatus = (data.status as AiFocusStatus) || "AFK";
-            const detail = data.detail || "";
-            const isFocused = Boolean(data.is_focused);
-            const activeScreen = data.active_screen ?? null;
-            const totalScreens = Number(data.total_screens || 0);
-            const image = data.image || null;
-
             set({
-              status: rawStatus,
-              detail: detail,
-              isFocused: isFocused,
-              activeScreen: activeScreen,
-              totalScreens: totalScreens,
-              image: image || get().image
+              status: (data.status as AiFocusStatus) || "AFK",
+              detail: data.detail || "",
+              isFocused: Boolean(data.is_focused),
+              activeScreen: data.active_screen ?? null,
+              totalScreens: Number(data.total_screens || 0),
+              image: data.image || get().image,
             });
           } else if (data.event === "screen_added") {
             set({ totalScreens: Number(data.total_screens || 0) });
           } else if (data.event === "screens_reset") {
             set({ totalScreens: 0, activeScreen: null });
           }
-        } catch (err) {
-          console.warn("[useAiFocusStore] Lỗi đọc gói tin WebSocket:", err);
-        }
+        } catch {}
       };
-
-      socket.onerror = (err) => {
-        console.warn("[useAiFocusStore] Lỗi kết nối WebSocket:", err);
-        set({ isConnected: false, isConnecting: false, error: "Không thể kết nối đến máy chủ AI (Port 8001)" });
-      };
-
+      socket.onerror = () => set({ isConnected: false, isConnecting: false, error: "Lỗi kết nối AI" });
       socket.onclose = () => {
-        set({
-          isConnected: false,
-          isConnecting: false,
-          status: "DISCONNECTED",
-          detail: "Chưa kết nối AI"
-        });
+        set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt" });
         socket = null;
-
-        // Tự động kết nối lại sau 3 giây nếu người dùng vẫn bật AI
-        if (get().isAiEnabled) {
-          reconnectTimer = setTimeout(() => {
-            get().connect();
-          }, 3000);
-        }
+        if (get().isAiEnabled) reconnectTimer = setTimeout(() => get().connect(), 3000);
       };
     } catch (err: any) {
-      set({
-        isConnected: false,
-        isConnecting: false,
-        status: "DISCONNECTED",
-        error: err?.message || "Lỗi khởi tạo WebSocket"
-      });
+      set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", error: err?.message || "Lỗi" });
     }
   },
 
   disconnect: () => {
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-
-    if (socket) {
-      try {
-        socket.close();
-      } catch (e) {
-        // ignore
-      }
-      socket = null;
-    }
-
-    set({
-      isConnected: false,
-      isConnecting: false,
-      status: "DISCONNECTED",
-      detail: "AI đang tắt",
-      isFocused: false,
-      activeScreen: null
-    });
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (socket) { try { socket.close(); } catch {} socket = null; }
+    set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt" });
   },
 
   addScreen: async () => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-
-    try {
-      socket.send(JSON.stringify({ action: "add_screen" }));
-      return true;
-    } catch (err) {
-      console.error("[useAiFocusStore] Lỗi khi gửi lệnh add_screen:", err);
-      return false;
-    }
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    try { socket.send(JSON.stringify({ action: "add_screen" })); return true; } catch { return false; }
   },
 
   resetScreens: async () => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return false;
-    }
-
-    try {
-      socket.send(JSON.stringify({ action: "reset" }));
-      return true;
-    } catch (err) {
-      console.error("[useAiFocusStore] Lỗi khi gửi lệnh reset:", err);
-      return false;
-    }
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    try { socket.send(JSON.stringify({ action: "reset" })); return true; } catch { return false; }
   },
 
-  // Gọi mỗi giây khi đồng hồ đếm giờ Pomodoro hoạt động
   onTimerTick: (isWorkTimerRunning: boolean) => {
-    const { isConnected, isAiEnabled, status, previousStatus, distractionCount, focusedSeconds, totalSessionSeconds } = get();
+    const s = get();
+    if (!isWorkTimerRunning || !s.isAiEnabled || !s.isConnected) return;
 
-    // Chỉ thống kê khi đang trong phiên làm việc Pomodoro và AI đang bật
-    if (!isWorkTimerRunning || !isAiEnabled || !isConnected) {
-      return;
-    }
+    const nextTotal = s.totalSessionSeconds + 1;
+    let nextFocused = s.focusedSeconds;
+    let nextDistracted = s.distractedSeconds;
+    let nextDistractions = s.distractionCount;
+    let nextPhoneCount = s.phoneCount;
+    let nextPhoneSeconds = s.phoneSeconds;
+    let nextSleepCount = s.sleepCount;
+    let nextLookAwayCount = s.lookAwayCount;
 
-    const nextTotal = totalSessionSeconds + 1;
-    let nextFocused = focusedSeconds;
-    let nextDistractions = distractionCount;
-
-    if (status === "FOCUSED") {
+    if (s.status === "FOCUSED") {
       nextFocused += 1;
-    }
+    } else {
+      nextDistracted += 1;
+      const d = s.detail.toLowerCase();
+      const prevD = s.previousDetail.toLowerCase();
 
-    // Chỉ tăng số lần mất tập trung khi có sự CHUYỂN TRẠNG THÁI từ FOCUSED sang DISTRACTED hoặc AFK
-    if (previousStatus === "FOCUSED" && (status === "DISTRACTED" || status === "AFK")) {
-      nextDistractions += 1;
+      if (d.includes("điện thoại") || d.includes("phone")) {
+        nextPhoneSeconds += 1;
+        if (!prevD.includes("điện thoại")) nextPhoneCount += 1;
+      }
+      if (d.includes("ngủ") || d.includes("sleep")) {
+        if (!prevD.includes("ngủ")) nextSleepCount += 1;
+      }
+      if (d.includes("ngoài") || s.status === "AFK") {
+        if (s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
+      }
+      if (s.previousStatus === "FOCUSED") nextDistractions += 1;
     }
 
     set({
-      focusedSeconds: nextFocused,
       totalSessionSeconds: nextTotal,
-      previousStatus: status,
-      distractionCount: nextDistractions
+      focusedSeconds: nextFocused,
+      distractedSeconds: nextDistracted,
+      distractionCount: nextDistractions,
+      phoneCount: nextPhoneCount,
+      phoneSeconds: nextPhoneSeconds,
+      sleepCount: nextSleepCount,
+      lookAwayCount: nextLookAwayCount,
+      previousStatus: s.status,
+      previousDetail: s.detail,
     });
   },
 
   resetSessionStats: () => {
     set({
       distractionCount: 0,
+      phoneCount: 0,
+      phoneSeconds: 0,
+      sleepCount: 0,
+      lookAwayCount: 0,
       focusedSeconds: 0,
+      distractedSeconds: 0,
       totalSessionSeconds: 0,
-      previousStatus: get().status
+      previousStatus: get().status,
+      previousDetail: "",
     });
   },
 
   getFocusScore: () => {
     const { focusedSeconds, totalSessionSeconds } = get();
     if (totalSessionSeconds <= 0) return 100;
-    const score = Math.round((focusedSeconds / totalSessionSeconds) * 100);
-    return Math.min(100, Math.max(0, score));
+    return Math.min(100, Math.max(0, Math.round((focusedSeconds / totalSessionSeconds) * 100)));
   },
 
-  generateSessionSummary: () => {
-    const { totalSessionSeconds, distractionCount } = get();
-    if (totalSessionSeconds < 10) return "";
+  analyzeAndFinalizeSession: async (taskName = "Tự do") => {
+    const s = get();
+    const total = Math.max(1, s.totalSessionSeconds);
+    const focused = s.focusedSeconds;
+    const score = Math.min(100, Math.max(0, Math.round((focused / total) * 100)));
+    const grade = score >= 95 ? "S" : score >= 85 ? "A" : score >= 70 ? "B" : score >= 50 ? "C" : "D";
 
-    const score = get().getFocusScore();
-    const countText = distractionCount > 0 ? `${distractionCount} lần xao nhãng` : "Không xao nhãng";
-    return `AI Focus: ${score}% (${countText})`;
-  }
+    const payload = {
+      total_seconds: total,
+      focused_seconds: focused,
+      phone_count: s.phoneCount,
+      phone_seconds: s.phoneSeconds,
+      sleep_count: s.sleepCount,
+      look_away_count: s.lookAwayCount,
+      task_name: taskName,
+    };
+
+    // Gọi API analyze_session của pomo-ai với timeout 1200ms
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`${HTTP_URL}/analyze_session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        s.resetSessionStats();
+        return {
+          score: data.score,
+          grade: data.grade,
+          conclusion: data.conclusion,
+          advice: data.advice,
+          phoneCount: data.phone_count,
+          phoneSeconds: s.phoneSeconds,
+          sleepCount: data.sleep_count,
+          lookAwayCount: data.look_away_count,
+          focusedSeconds: data.focused_seconds,
+          distractedSeconds: s.distractedSeconds,
+          totalSeconds: data.total_seconds,
+        };
+      }
+    } catch {}
+
+    // Fallback phân tích cục bộ tức thì
+    const insights = [score >= 85 ? `Xuất sắc! Bạn tập trung ${score}% trong phiên '${taskName}'.` : `Phiên học đạt ${score}% tập trung.`];
+    if (s.phoneCount > 0) insights.push(`Có ${s.phoneCount} lần dùng điện thoại.`);
+    if (s.sleepCount > 0) insights.push(`Có ${s.sleepCount} lần ngủ gật.`);
+    if (s.lookAwayCount > 0) insights.push(`Có ${s.lookAwayCount} lần nhìn ra ngoài.`);
+
+    const advice = s.phoneCount > 0 ? "Để điện thoại xa bàn ở phiên tiếp theo." : s.sleepCount > 0 ? "Vươn vai rửa mặt nếu buồn ngủ." : "Tiếp tục duy trì phong độ!";
+    const analysis: AiSessionAnalysis = {
+      score,
+      grade,
+      conclusion: insights.join(" "),
+      advice,
+      phoneCount: s.phoneCount,
+      phoneSeconds: s.phoneSeconds,
+      sleepCount: s.sleepCount,
+      lookAwayCount: s.lookAwayCount,
+      focusedSeconds: focused,
+      distractedSeconds: s.distractedSeconds,
+      totalSeconds: total,
+    };
+
+    s.resetSessionStats();
+    return analysis;
+  },
 }));

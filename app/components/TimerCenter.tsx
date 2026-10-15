@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -12,23 +12,15 @@ import { TimerDisplay } from "./timer/TimerDisplay";
 import { TimerTaskInput } from "./timer/TimerTaskInput";
 import { TimerControls } from "./timer/TimerControls";
 import { AiFocusWidget } from "./timer/AiFocusWidget";
+import { ZeroMinuteConfirmModal } from "./timer/ZeroMinuteConfirmModal";
 import { useAiFocusStore } from "../stores/useAiFocusStore";
 
-interface TimerCenterProps {
-  onOpenAiSettings?: () => void;
-}
-
-export function TimerCenter({}: TimerCenterProps = {}) {
+export function TimerCenter() {
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [showZeroConfirm, setShowZeroConfirm] = useState(false);
 
-  // Zustand Settings Store
-  const settings = useSettingsStore((s) => s.settings);
-  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
-
-  // Zustand AI Focus Store
-  const onTimerTick = useAiFocusStore((s) => s.onTimerTick);
-  const resetSessionStats = useAiFocusStore((s) => s.resetSessionStats);
-  const generateSessionSummary = useAiFocusStore((s) => s.generateSessionSummary);
+  const { settings, fetchSettings } = useSettingsStore();
+  const { onTimerTick, resetSessionStats, analyzeAndFinalizeSession, isAiEnabled } = useAiFocusStore();
 
   const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(
     () => ({
@@ -39,82 +31,50 @@ export function TimerCenter({}: TimerCenterProps = {}) {
     [settings.focusDuration, settings.shortBreakDuration]
   );
 
-  // Zustand Pomodoro Global Store
-  const timerType = usePomodoroStore((s) => s.timerType);
-  const setTimerType = usePomodoroStore((s) => s.setTimerType);
-  const focusMode = usePomodoroStore((s) => s.focusMode);
-  const setFocusMode = usePomodoroStore((s) => s.setFocusMode);
-  const isRunning = usePomodoroStore((s) => s.isRunning);
-  const setIsRunning = usePomodoroStore((s) => s.setIsRunning);
-  const seconds = usePomodoroStore((s) => s.seconds);
-  const isOvertime = usePomodoroStore((s) => s.isOvertime);
-  const overtimeSeconds = usePomodoroStore((s) => s.overtimeSeconds);
-  const elapsedSeconds = usePomodoroStore((s) => s.elapsedSeconds);
-  const taskName = usePomodoroStore((s) => s.taskName);
-  const setTaskName = usePomodoroStore((s) => s.setTaskName);
-  const tickTimer = usePomodoroStore((s) => s.tickTimer);
-  const resetTimer = usePomodoroStore((s) => s.resetTimer);
-
-  const currentSession = usePomodoroStore((s) => s.currentSession);
-  const startSession = usePomodoroStore((s) => s.startSession);
-  const completeSession = usePomodoroStore((s) => s.completeSession);
-  const cancelSession = usePomodoroStore((s) => s.cancelSession);
+  const {
+    timerType, setTimerType, focusMode, setFocusMode, isRunning, setIsRunning,
+    seconds, isOvertime, overtimeSeconds, elapsedSeconds, taskName, setTaskName,
+    tickTimer, resetTimer, currentSession, startSession, completeSession, cancelSession
+  } = usePomodoroStore();
 
   const tasks = useTaskStore((s) => s.tasks);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // Khớp task hiện tại nếu có
   const matchedTask = useMemo(() => {
     if (!taskName.trim()) return null;
-    return tasks.find(
-      (t) => t.title.toLowerCase() === taskName.trim().toLowerCase()
-    );
+    return tasks.find((t) => t.title.toLowerCase() === taskName.trim().toLowerCase());
   }, [tasks, taskName]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchSettings();
-    }
+    if (isAuthenticated) fetchSettings();
   }, [fetchSettings, isAuthenticated]);
 
-  // Tự động đồng bộ số giây countdown khi user chỉnh sửa settings lúc timer chưa chạy
   useEffect(() => {
     if (!isRunning && elapsedSeconds === 0) {
       const targetDuration = modeDurations[focusMode].minutes * 60;
-      if (seconds !== targetDuration) {
-        resetTimer(targetDuration);
-      }
+      if (seconds !== targetDuration) resetTimer(targetDuration);
     }
-  }, [
-    settings.focusDuration,
-    settings.shortBreakDuration,
-    focusMode,
-    isRunning,
-    elapsedSeconds,
-    seconds,
-    resetTimer,
-    modeDurations,
-  ]);
+  }, [settings.focusDuration, settings.shortBreakDuration, focusMode, isRunning, elapsedSeconds, seconds, resetTimer, modeDurations]);
 
-  const handleSelectMode = (mode: FocusMode) => {
-    setFocusMode(mode);
-    resetTimer(modeDurations[mode].minutes * 60);
-  };
-
-  const handleSelectTimerType = (type: TimerType) => {
-    setTimerType(type);
-    resetTimer(modeDurations[focusMode].minutes * 60);
+  const handleSelectTab = (tab: "focus" | "break" | "stopwatch") => {
+    if (tab === "stopwatch") {
+      setTimerType(timerType === "stopwatch" ? "pomo" : "stopwatch");
+      resetTimer(modeDurations[focusMode].minutes * 60);
+    } else {
+      const mode = tab === "focus" ? "W" : "SB";
+      setFocusMode(mode);
+      resetTimer(modeDurations[mode].minutes * 60);
+    }
   };
 
   const handleTogglePlay = async () => {
     if (!isRunning) {
       if (!currentSession && elapsedSeconds === 0) {
         resetSessionStats();
-        const plannedMinutes = modeDurations[focusMode].minutes;
         await startSession({
           taskId: matchedTask?.id || null,
           mode: timerType === "pomo" ? FocusSessionMode.Pomo : FocusSessionMode.Stopwatch,
-          durationMinutes: plannedMinutes,
+          durationMinutes: modeDurations[focusMode].minutes,
         });
       }
       setIsRunning(true);
@@ -128,7 +88,6 @@ export function TimerCenter({}: TimerCenterProps = {}) {
     if (isRunning) {
       interval = setInterval(() => {
         tickTimer(modeDurations[focusMode].minutes);
-        // Chỉ đếm giây và xao nhãng khi đang làm việc (W), không tính khi nghỉ (SB / LB)
         onTimerTick(focusMode === "W");
       }, 1000);
     }
@@ -139,49 +98,54 @@ export function TimerCenter({}: TimerCenterProps = {}) {
 
   const handleReset = async () => {
     setIsRunning(false);
-    if (currentSession?.id) {
-      await cancelSession(currentSession.id, elapsedSeconds);
-    }
+    if (currentSession?.id) await cancelSession(currentSession.id, elapsedSeconds);
     resetTimer(modeDurations[focusMode].minutes * 60);
   };
 
-  const handleManualComplete = async () => {
-    setIsRunning(false);
+  const executeSaveSession = async () => {
     if (currentSession?.id) {
       const plannedSeconds = modeDurations[focusMode].minutes * 60;
       const actual = elapsedSeconds;
-      const ot =
-        overtimeSeconds > 0 ? overtimeSeconds : Math.max(0, actual - plannedSeconds);
+      const ot = overtimeSeconds > 0 ? overtimeSeconds : Math.max(0, actual - plannedSeconds);
 
-      // Đính kèm điểm AI Focus vào Note của phiên
-      const aiSummary = generateSessionSummary();
-      const finalNote = [taskName.trim(), aiSummary].filter(Boolean).join(" | ");
+      let aiAnalysis = null;
+      let finalNote = taskName.trim() || undefined;
 
-      await completeSession(currentSession.id, {
-        actualSeconds: actual,
-        overtimeSeconds: ot,
-        note: finalNote || undefined,
-      });
+      if (isAiEnabled && actual > 10) {
+        aiAnalysis = await analyzeAndFinalizeSession(taskName.trim() || (focusMode === "W" ? "Tự do" : "Break"));
+        if (aiAnalysis) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(`pomo_ai_session_${currentSession.id}`, JSON.stringify(aiAnalysis));
+          }
+          finalNote = JSON.stringify({
+            title: taskName.trim() || undefined,
+            ai: { score: aiAnalysis.score, grade: aiAnalysis.grade, ph: aiAnalysis.phoneCount, sl: aiAnalysis.sleepCount, lk: aiAnalysis.lookAwayCount, fb: aiAnalysis.conclusion },
+          });
+        }
+      }
 
-      setNotificationMsg(
-        `✓ Đã hoàn tất & lưu: ${Math.round(actual / 60)}m ${
-          ot > 0 ? `(+${Math.round(ot / 60)}m Overtime)` : ""
-        } ${aiSummary ? `[${aiSummary}]` : ""}`
-      );
+      await completeSession(currentSession.id, { actualSeconds: actual, overtimeSeconds: ot, note: finalNote });
+      const minText = `${Math.round(actual / 60)}m`;
+      setNotificationMsg(`✓ Đã lưu: ${minText} ${ot > 0 ? `(+${Math.round(ot / 60)}m OT)` : ""} ${aiAnalysis ? `[AI: ${aiAnalysis.score}%]` : ""}`);
       setTimeout(() => setNotificationMsg(null), 4000);
     }
 
-    // Luân phiên tối giản 2 trạng thái: Focus (W) <-> Break (SB)
     const nextMode: FocusMode = focusMode === "W" ? "SB" : "W";
     setFocusMode(nextMode);
     resetTimer(modeDurations[nextMode].minutes * 60);
 
     const autoStartFocus = typeof window !== "undefined" && localStorage.getItem("pomodo_auto_start_focus") === "true";
-    if (focusMode === "W" && settings.autoStartBreaks) {
-      setIsRunning(true);
-    } else if (focusMode !== "W" && autoStartFocus) {
-      setIsRunning(true);
+    if (focusMode === "W" && settings.autoStartBreaks) setIsRunning(true);
+    else if (focusMode !== "W" && autoStartFocus) setIsRunning(true);
+  };
+
+  const handleManualComplete = () => {
+    setIsRunning(false);
+    if (elapsedSeconds < 60) {
+      setShowZeroConfirm(true);
+      return;
     }
+    executeSaveSession();
   };
 
   const formatTime = (totalSecs: number) => {
@@ -191,26 +155,24 @@ export function TimerCenter({}: TimerCenterProps = {}) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto py-6 px-4">
-      {/* Session notification banner */}
+    <div className="group flex flex-col items-center justify-center w-full max-w-lg mx-auto py-4 sm:py-6 px-4">
       {notificationMsg && (
         <div className="mb-4 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-in fade-in duration-200 shadow-xs">
           {notificationMsg}
         </div>
       )}
 
-      {/* Mode & Type Selectors */}
       <TimerModeSelector
         timerType={timerType}
         focusMode={focusMode}
         modeDurations={modeDurations}
-        onSelectTimerType={handleSelectTimerType}
-        onSelectFocusMode={handleSelectMode}
+        onSelectTab={handleSelectTab}
+        isRunning={isRunning}
       />
 
-      {/* Center Clock / Dial */}
       <TimerDisplay
         timerType={timerType}
+        focusMode={focusMode}
         seconds={seconds}
         isOvertime={isOvertime}
         overtimeSeconds={overtimeSeconds}
@@ -218,10 +180,8 @@ export function TimerCenter({}: TimerCenterProps = {}) {
         formatTime={formatTime}
       />
 
-      {/* Task input */}
-      <TimerTaskInput taskName={taskName} onTaskNameChange={setTaskName} />
+      <TimerTaskInput taskName={taskName} onTaskNameChange={setTaskName} isRunning={isRunning} />
 
-      {/* Play / Reset / Complete buttons */}
       <TimerControls
         isRunning={isRunning}
         isOvertime={isOvertime}
@@ -231,9 +191,23 @@ export function TimerCenter({}: TimerCenterProps = {}) {
         onManualComplete={handleManualComplete}
       />
 
-      {/* AI Focus Assistant Widget */}
-      <AiFocusWidget isTimerRunning={isRunning && focusMode === "W"} />
+      <div className={`w-full max-w-sm flex justify-center transition-opacity duration-300 ${isRunning ? "opacity-30 group-hover:opacity-100" : "opacity-100"}`}>
+        <AiFocusWidget isTimerRunning={isRunning && focusMode === "W"} />
+      </div>
+
+      <ZeroMinuteConfirmModal
+        isOpen={showZeroConfirm}
+        elapsedSeconds={elapsedSeconds}
+        onExit={() => {
+          setShowZeroConfirm(false);
+          handleReset();
+        }}
+        onResume={() => {
+          setShowZeroConfirm(false);
+          setIsRunning(true);
+        }}
+        onClose={() => setShowZeroConfirm(false)}
+      />
     </div>
   );
 }
-

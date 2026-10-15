@@ -29,9 +29,9 @@ export function StopwatchDial({
     .padStart(2, "0")}`;
 
   // SVG dimensions
-  const size = 320;
+  const size = 280;
   const center = size / 2;
-  const radius = 120;
+  const radius = 115;
   const totalTicks = 60; // 60 ticks around the circle
 
   // Generate tick markers: Ticks are oriented RADIALLY (pointing from center outward like a clock)

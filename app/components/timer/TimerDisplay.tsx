@@ -2,10 +2,11 @@
 
 import React from "react";
 import { StopwatchDial } from "../StopwatchDial";
-import { TimerType } from "./types";
+import { TimerType, FocusMode } from "./types";
 
 interface TimerDisplayProps {
   timerType: TimerType;
+  focusMode: FocusMode;
   seconds: number;
   isOvertime: boolean;
   overtimeSeconds: number;
@@ -15,18 +16,30 @@ interface TimerDisplayProps {
 
 export function TimerDisplay({
   timerType,
+  focusMode,
   seconds,
   isOvertime,
   overtimeSeconds,
   isRunning,
   formatTime,
 }: TimerDisplayProps) {
+  const isFocus = focusMode === "W";
+  const dialLabel = isOvertime
+    ? "OVERTIME"
+    : isRunning
+    ? isFocus
+      ? "FOCUSING..."
+      : "RESTING..."
+    : isFocus
+    ? "FOCUS TIME"
+    : "BREAK TIME";
+
   return (
     <div
-      className={`w-full py-6 sm:py-8 px-6 bg-white/60 dark:bg-neutral-800/40 backdrop-blur-sm border rounded-3xl shadow-sm flex flex-col items-center justify-center mb-8 relative transition-colors ${
+      className={`w-full py-0 sm:py-1 px-4 bg-transparent dark:bg-transparent border border-transparent rounded-3xl flex flex-col items-center justify-center mb-2 sm:mb-3 relative transition-colors ${
         isOvertime
           ? "border-rose-500/50 bg-rose-500/5 dark:bg-rose-950/20 shadow-rose-500/10"
-          : "border-neutral-200/80 dark:border-neutral-800"
+          : ""
       }`}
     >
       {/* Overtime Pulsing Indicator */}
@@ -42,7 +55,7 @@ export function TimerDisplay({
           seconds={seconds}
           isOvertime={isOvertime}
           overtimeSeconds={overtimeSeconds}
-          label={isOvertime ? "OVERTIME" : isRunning ? "FOCUSING..." : "FOCUS TIME"}
+          label={dialLabel}
         />
       ) : (
         <span
