@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Logo } from "./Logo";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useTranslation } from "../stores/useLanguageStore";
 import {
   LayoutDashboard,
   CheckSquare,
@@ -35,6 +36,7 @@ export function Sidebar({
   activeItem = "dashboard",
   onSelectItem,
 }: SidebarProps) {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -46,10 +48,10 @@ export function Sidebar({
   }, []);
 
   const topItems: NavItem[] = [
-    { id: "dashboard", label: "Dashboard / Timer", icon: LayoutDashboard },
-    { id: "task", label: "Task List", icon: CheckSquare },
-    { id: "matrix", label: "Eisenhower Matrix", icon: Grid2X2 },
-    { id: "statistic", label: "Statistics & Reports", icon: BarChart3 },
+    { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
+    { id: "task", label: t.nav.tasks, icon: CheckSquare },
+    { id: "matrix", label: t.nav.matrix, icon: Grid2X2 },
+    { id: "statistic", label: t.nav.statistics, icon: BarChart3 },
   ];
 
   const isUserLoggedIn = mounted && isAuthenticated && !!user;
@@ -201,7 +203,7 @@ export function Sidebar({
                         {user?.displayName || "User"}
                       </span>
                       <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
-                        Free
+                        {t.nav.free}
                       </span>
                     </div>
                   </div>
@@ -221,7 +223,7 @@ export function Sidebar({
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
                   <Sparkles size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />
-                  <span>Premiums</span>
+                  <span>{t.nav.premium}</span>
                 </button>
 
                 {/* 3. Mục Settings */}
@@ -234,7 +236,7 @@ export function Sidebar({
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
                   <Settings size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />
-                  <span>Settings</span>
+                  <span>{t.nav.settings}</span>
                 </button>
 
                 {/* Đường kẻ phân cách */}
@@ -247,7 +249,7 @@ export function Sidebar({
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-rose-500/10 text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer text-left group"
                 >
                   <LogOut size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors shrink-0" />
-                  <span>Log out</span>
+                  <span>{t.nav.logout}</span>
                 </button>
               </div>
             </>

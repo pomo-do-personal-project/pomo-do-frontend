@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { TaskDto, TaskStatus } from "../../types/api";
 import { Plus, Check, Zap, Clock, Timer } from "lucide-react";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 interface OverviewTaskListProps {
   isQuickAddActive: boolean;
@@ -23,6 +24,7 @@ export function OverviewTaskList({
   onAddTask,
   onToggleTask,
 }: OverviewTaskListProps) {
+  const { t } = useTranslation();
   const [isInputExpanded, setIsInputExpanded] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
@@ -43,7 +45,7 @@ export function OverviewTaskList({
             className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700/80 hover:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300 text-sm font-semibold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
           >
             <Plus size={16} strokeWidth={2.2} />
-            <span>Ghi nhanh ý nghĩ phát sinh (Quick Add)</span>
+            <span>{t.overviewPanel.quickAddBtn}</span>
           </button>
         ) : (
           <form
@@ -55,7 +57,7 @@ export function OverviewTaskList({
               autoFocus
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="Ghi nhanh suy nghĩ nảy ra (nhấn Enter)..."
+              placeholder={t.overviewPanel.quickAddInputPlaceholder}
               className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
             />
             <div className="flex justify-end gap-2 text-xs">
@@ -67,14 +69,14 @@ export function OverviewTaskList({
                 }}
                 className="px-3 py-1.5 rounded-lg text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 cursor-pointer"
               >
-                Hủy
+                {t.overviewPanel.cancel}
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
                 className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg shadow-xs cursor-pointer disabled:opacity-50"
               >
-                {isSaving ? "Đang lưu..." : "Lưu nhanh"}
+                {isSaving ? t.settings.timer.saving : t.overviewPanel.saveQuick}
               </button>
             </div>
           </form>
@@ -83,12 +85,12 @@ export function OverviewTaskList({
         {/* Danh sách các task Quick Add đã lưu */}
         <div className="flex flex-col gap-2.5 flex-1 mt-2">
           <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-            Các ý nghĩ đã ghi nhận ({quickAddTasks.length})
+            {t.overviewPanel.savedThoughts} ({quickAddTasks.length})
           </div>
 
           {quickAddTasks.length === 0 ? (
             <div className="text-center py-8 text-xs text-neutral-400 dark:text-neutral-500 italic">
-              Chưa có ghi chú nhanh nào. Khi đang tập trung, hãy ghi lại tại đây!
+              {t.overviewPanel.noThoughts}
             </div>
           ) : (
             quickAddTasks.map((task) => {
@@ -147,11 +149,11 @@ export function OverviewTaskList({
     <div className="flex flex-col gap-2.5 flex-1">
       {isLoading && dailyTasks.length === 0 ? (
         <div className="text-center py-6 text-xs text-neutral-400">
-          Đang tải danh sách công việc...
+          {t.common.loading}
         </div>
       ) : dailyTasks.length === 0 ? (
         <div className="text-center py-6 text-xs text-neutral-400">
-          Chưa có công việc kế hoạch nào hôm nay.
+          {t.overviewPanel.noDailyTasks}
         </div>
       ) : (
         dailyTasks.map((task) => {

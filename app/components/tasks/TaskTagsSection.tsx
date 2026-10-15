@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Tag, Plus, X, Check, Tag as TagIcon, Sparkles } from "lucide-react";
 import { TaskDto, TagDto } from "../../types/api";
 import { useTagStore } from "../../stores/useTagStore";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 const PRESET_COLORS = [
   "#3B82F6", // Blue
@@ -23,6 +24,7 @@ interface TaskTagsSectionProps {
 }
 
 export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
+  const { t } = useTranslation();
   const { tags: allTags, fetchTags, createTag } = useTagStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -107,7 +109,7 @@ export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
           <TagIcon size={14} className="text-neutral-400" />
-          <span>Thẻ phân loại (Tags)</span>
+          <span>{t.tasks.tagsTitle}</span>
         </span>
       </div>
 

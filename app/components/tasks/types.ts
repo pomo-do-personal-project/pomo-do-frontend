@@ -1,10 +1,10 @@
 import { Priority } from "../../types/api";
 
 export type MatrixQuadrant =
-  | "urgent-important" // Q1: Làm ngay (Do first)
-  | "not-urgent-important" // Q2: Lên lịch (Schedule)
-  | "urgent-not-important" // Q3: Cần gấp / Ủy quyền (Delegate)
-  | "not-urgent-not-important"; // Q4: Loại bỏ / Thư giãn (Don't do)
+  | "urgent-important" // Q1: Khẩn cấp & Quan trọng
+  | "not-urgent-important" // Q2: Không khẩn & Quan trọng
+  | "urgent-not-important" // Q3: Khẩn cấp & Không quan trọng
+  | "not-urgent-not-important"; // Q4: Không khẩn & Không quan trọng
 
 export type TaskCategory = "Today" | "Upcoming" | "QuickAdd" | "Calendar";
 
@@ -23,8 +23,8 @@ export const REVERSE_PRIORITY_MAP: Record<Priority, MatrixQuadrant> = {
 };
 
 export const MATRIX_OPTIONS: { id: MatrixQuadrant; label: string; color: string; desc: string }[] = [
-  { id: "urgent-important", label: "Khẩn cấp & Quan trọng", color: "bg-rose-500 text-white", desc: "Làm ngay (Do first)" },
-  { id: "not-urgent-important", label: "Không khẩn & Quan trọng", color: "bg-blue-500 text-white", desc: "Lên lịch (Schedule)" },
-  { id: "urgent-not-important", label: "Khẩn cấp & Không quan trọng", color: "bg-amber-500 text-white", desc: "Ủy quyền (Delegate)" },
-  { id: "not-urgent-not-important", label: "Không khẩn & Không quan trọng", color: "bg-neutral-500 text-white", desc: "Loại bỏ / Thư giãn" },
+  { id: "urgent-important", label: "Khẩn cấp & Quan trọng", color: "bg-rose-500 text-white", desc: "Làm ngay" },
+  { id: "not-urgent-important", label: "Không khẩn & Quan trọng", color: "bg-blue-500 text-white", desc: "Lên lịch" },
+  { id: "urgent-not-important", label: "Khẩn cấp & Không quan trọng", color: "bg-amber-500 text-white", desc: "Ủy quyền" },
+  { id: "not-urgent-not-important", label: "Không khẩn & Không quan trọng", color: "bg-neutral-500 text-white", desc: "Loại bỏ" },
 ];

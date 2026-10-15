@@ -6,6 +6,7 @@ import { ShieldAlert, Check } from "lucide-react";
 import { NotificationSoundCard } from "../notifications/NotificationSoundCard";
 import { NotificationTickingCard } from "../notifications/NotificationTickingCard";
 import { NotificationRemindersCard } from "../notifications/NotificationRemindersCard";
+import { useTranslation } from "../../../stores/useLanguageStore";
 
 interface NotificationsTabProps {
   userEmail?: string;
@@ -13,6 +14,7 @@ interface NotificationsTabProps {
 }
 
 export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProps) {
+  const { t } = useTranslation();
   const { playRingtone, playTickSound, playOvertimeAlert } = useSettingsAudio();
 
   // Notification states & Sound settings
@@ -129,7 +131,7 @@ export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProp
   return (
     <div className="flex flex-col gap-6">
       <h3 className="text-base font-bold text-neutral-900 dark:text-white -mb-2">
-        Notifications
+        {t.settings.notifications.title}
       </h3>
 
       {/* Block 1: Sound Ringtone Settings */}

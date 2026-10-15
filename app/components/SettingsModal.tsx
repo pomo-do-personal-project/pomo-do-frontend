@@ -9,6 +9,8 @@ import { NotificationsTab } from "./settings/tabs/NotificationsTab";
 import { DateTimeTab } from "./settings/tabs/DateTimeTab";
 import { AppearanceTab } from "./settings/tabs/AppearanceTab";
 
+import { useTranslation } from "../stores/useLanguageStore";
+
 export type SettingsTab = "account" | "premium" | "notifications" | "date-time" | "appearance";
 
 interface SettingsModalProps {
@@ -18,6 +20,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose, initialTab = "account" }: SettingsModalProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const user = useAuthStore((s) => s.user);
 
@@ -46,11 +49,11 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
   if (!isOpen) return null;
 
   const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
-    { id: "account", label: "Tài khoản (Account)", icon: User },
-    { id: "premium", label: "Gói Premium", icon: Crown },
-    { id: "notifications", label: "Thông báo (Notifications)", icon: Bell },
-    { id: "date-time", label: "Thời gian (Date & Time)", icon: Clock },
-    { id: "appearance", label: "Giao diện (Appearance)", icon: Palette },
+    { id: "account", label: t.settings.tabs.account, icon: User },
+    { id: "premium", label: t.settings.tabs.premium, icon: Crown },
+    { id: "notifications", label: t.settings.tabs.notifications, icon: Bell },
+    { id: "date-time", label: t.settings.tabs.timer, icon: Clock },
+    { id: "appearance", label: t.settings.tabs.appearance, icon: Palette },
   ];
 
   return (
@@ -64,15 +67,15 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
         className="relative w-full max-w-4xl h-[88vh] max-h-[700px] bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="settings-dialog-title" className="sr-only">Cài đặt ứng dụng</h2>
+        <h2 id="settings-dialog-title" className="sr-only">{t.nav.settings}</h2>
 
         {/* Nút đóng modal góc trên bên phải */}
         <button
           type="button"
           onClick={onClose}
-          aria-label="Đóng cài đặt"
+          aria-label={t.common.close}
           className="absolute top-4 right-4 z-20 p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-          title="Đóng cài đặt"
+          title={t.common.close}
         >
           <X size={20} />
         </button>
@@ -82,7 +85,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
         {/* ======================================================== */}
         <aside className="w-full md:w-68 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800/80 p-3.5 sm:p-4 flex flex-col bg-neutral-50/90 dark:bg-[#191919] shrink-0">
           <div className="flex items-center gap-2.5 px-3 py-2 mb-3">
-            <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">Cài đặt</span>
+            <span className="font-bold text-base text-neutral-900 dark:text-white tracking-tight">{t.nav.settings}</span>
           </div>
 
           <nav className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
@@ -122,7 +125,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
             <NotificationsTab userEmail={user?.email} showNotice={showNotice} />
           )}
           {activeTab === "date-time" && <DateTimeTab showNotice={showNotice} />}
-          {activeTab === "appearance" && <AppearanceTab />}
+          {activeTab === "appearance" && <AppearanceTab showNotice={showNotice} />}
         </main>
 
         {/* In-Modal Toast Notification Cao Cấp */}

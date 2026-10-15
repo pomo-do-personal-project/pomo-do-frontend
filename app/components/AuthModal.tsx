@@ -108,9 +108,9 @@ export function AuthModal({
         <div className="text-center mb-5 mt-1 flex flex-col items-center">
           <Logo size={44} direction="vertical" className="mb-3" textClassName="text-xl font-black" />
           <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight uppercase">
-            {authMode === "signup" && "Sign Up"}
+            {authMode === "signup" && "Đăng ký"}
             {authMode === "otp-verify" && "Xác thực Email"}
-            {authMode === "signin" && "Sign In"}
+            {authMode === "signin" && "Đăng nhập"}
             {authMode === "forgot" && "Quên mật khẩu"}
             {authMode === "reset" && "Đặt lại mật khẩu"}
           </h2>

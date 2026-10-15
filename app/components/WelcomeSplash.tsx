@@ -145,7 +145,7 @@ export function WelcomeSplash({ onFinish, minDurationMs = 2800 }: WelcomeSplashP
             Pomo<span className="text-[#EF3E36]">-do</span>
           </span>
           <span className="text-xs uppercase tracking-widest text-neutral-500 dark:text-neutral-400 font-medium">
-            Stay focused, do more
+            Tập trung sâu, làm hiệu quả
           </span>
         </div>
       </div>

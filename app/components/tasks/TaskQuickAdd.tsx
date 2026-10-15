@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { TaskCategory } from "./types";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 interface TaskQuickAddProps {
   currentCategory: TaskCategory;
@@ -10,6 +11,7 @@ interface TaskQuickAddProps {
 }
 
 export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) {
+  const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
 
@@ -49,8 +51,8 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
           }`}
         >
           {currentCategory === "QuickAdd"
-            ? "Ghi nhanh ý nghĩ phát sinh (Quick Add)"
-            : "Add new task"}
+            ? t.overviewPanel.quickAddBtn
+            : t.tasks.quickAddPlaceholder}
         </span>
       </button>
     );
@@ -81,8 +83,8 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
           onChange={(e) => setTitle(e.target.value)}
           placeholder={
             currentCategory === "QuickAdd"
-              ? "Nhập nhanh ý nghĩ nảy ra khi đang làm việc..."
-              : "Nhập tên công việc mới rồi nhấn Enter..."
+              ? t.overviewPanel.quickAddInputPlaceholder
+              : t.tasks.quickAddPlaceholder
           }
           className="flex-1 bg-transparent text-sm sm:text-base text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none font-medium"
         />
@@ -94,7 +96,7 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
           }}
           className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 px-2 py-1 rounded cursor-pointer"
         >
-          Hủy
+          {t.overviewPanel.cancel}
         </button>
       </div>
     </form>

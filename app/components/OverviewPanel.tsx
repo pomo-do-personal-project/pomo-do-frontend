@@ -60,11 +60,11 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
         {/* Panel Header */}
         <div className="h-14 flex items-center justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 mb-6 shrink-0 -mt-6">
           <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-            Overview
+            Tổng quan
           </h2>
           <button
             onClick={onClose}
-            aria-label="Đóng Overview"
+            aria-label="Đóng Tổng quan"
             className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           >
             <X size={18} strokeWidth={1.75} />

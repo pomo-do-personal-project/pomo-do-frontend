@@ -18,8 +18,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   {
     id: "urgent-important",
     priority: Priority.ImportantUrgent,
-    title: "Urgent & Important",
-    subtitle: "Do First (Làm ngay)",
+    title: "Khẩn cấp & Quan trọng",
+    subtitle: "Làm ngay",
     accentColor: "rose",
     borderColor: "border-rose-400/50 dark:border-rose-500/30",
     activeBorderColor: "border-rose-500 dark:border-rose-400",
@@ -30,8 +30,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   {
     id: "not-urgent-important",
     priority: Priority.ImportantNotUrgent,
-    title: "Not Urgent & Important",
-    subtitle: "Schedule (Lên kế hoạch)",
+    title: "Không khẩn & Quan trọng",
+    subtitle: "Lên kế hoạch",
     accentColor: "blue",
     borderColor: "border-blue-400/50 dark:border-blue-500/30",
     activeBorderColor: "border-blue-500 dark:border-blue-400",
@@ -42,8 +42,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   {
     id: "urgent-not-important",
     priority: Priority.NotImportantUrgent,
-    title: "Urgent & Not Important",
-    subtitle: "Delegate (Ủy quyền / Việc gấp)",
+    title: "Khẩn cấp & Không quan trọng",
+    subtitle: "Ủy quyền",
     accentColor: "amber",
     borderColor: "border-amber-400/50 dark:border-amber-500/30",
     activeBorderColor: "border-amber-500 dark:border-amber-400",
@@ -54,8 +54,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   {
     id: "not-urgent-not-important",
     priority: Priority.NotImportantNotUrgent,
-    title: "Not Urgent & Not Important",
-    subtitle: "Don't Do (Loại bỏ / Thư giãn)",
+    title: "Không khẩn & Không quan trọng",
+    subtitle: "Loại bỏ",
     accentColor: "neutral",
     borderColor: "border-neutral-300 dark:border-neutral-700/60",
     activeBorderColor: "border-neutral-600 dark:border-neutral-300",

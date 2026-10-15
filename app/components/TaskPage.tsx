@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { Priority, TaskStatus } from "../types/api";
+import { Priority } from "../types/api";
 import { TaskCategory } from "./tasks/types";
 import { TaskSidebar } from "./tasks/TaskSidebar";
 import { TaskQuickAdd } from "./tasks/TaskQuickAdd";
 import { TaskList } from "./tasks/TaskList";
 import { TaskDetailDrawer } from "./tasks/TaskDetailDrawer";
 import { AlertTriangle, RotateCcw, Zap } from "lucide-react";
+import { useResizablePanel } from "../hooks/useResizablePanel";
+import { useFilteredTasks } from "./tasks/hooks/useFilteredTasks";
 
-// Re-export types for backward compatibility with MatrixPage and other consumers
 export * from "./tasks/types";
 
 interface TaskPageProps {
@@ -33,72 +34,20 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
   } = useTaskStore();
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
   const [currentCategory, setCurrentCategory] = useState<TaskCategory>("Today");
   const [selectedTag, setSelectedTag] = useState<string>("All");
 
-  // Detail panel resizing
-  const [detailWidth, setDetailWidth] = useState<number>(384);
-  const [isResizing, setIsResizing] = useState(false);
-  const detailWidthRef = useRef<number>(384);
-  const detailPanelRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const savedWidth = localStorage.getItem("pomo-task-detail-width");
-    if (savedWidth) {
-      const parsed = parseInt(savedWidth, 10);
-      if (!isNaN(parsed) && parsed >= 280 && parsed <= 750) {
-        setDetailWidth(parsed);
-        detailWidthRef.current = parsed;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    let animationFrameId: number | null = null;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-      }
-
-      animationFrameId = requestAnimationFrame(() => {
-        const newWidth = window.innerWidth - e.clientX;
-        const clampedWidth = Math.max(300, Math.min(newWidth, Math.min(750, window.innerWidth - 350)));
-        detailWidthRef.current = clampedWidth;
-        setDetailWidth(clampedWidth);
-      });
-    };
-
-    const handleMouseUp = () => {
-      if (isResizing) {
-        setIsResizing(false);
-        if (animationFrameId !== null) {
-          cancelAnimationFrame(animationFrameId);
-        }
-        localStorage.setItem("pomo-task-detail-width", detailWidthRef.current.toString());
-      }
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove, { passive: true });
-      window.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [isResizing]);
+  const {
+    width: detailWidth,
+    isResizing,
+    panelRef: detailPanelRef,
+    startResizing,
+  } = useResizablePanel({
+    storageKey: "pomo-task-detail-width",
+    defaultWidth: 384,
+    minWidth: 280,
+    maxWidth: 750,
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -108,74 +57,25 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
     }
   }, [fetchTasks, isAuthenticated]);
 
-  // Close detail on outside click
   useEffect(() => {
     function handleOutsideDetailClick(event: MouseEvent) {
       if (isResizing || !selectedTask) return;
-
       const target = event.target as HTMLElement | null;
       if (!target) return;
-
-      if (detailPanelRef.current && detailPanelRef.current.contains(target)) {
-        return;
-      }
-
-      if (target.closest("[data-task-item]")) {
-        return;
-      }
-
+      if (detailPanelRef.current && detailPanelRef.current.contains(target)) return;
+      if (target.closest("[data-task-item]")) return;
       selectTask(null);
     }
 
     document.addEventListener("mousedown", handleOutsideDetailClick);
     return () => document.removeEventListener("mousedown", handleOutsideDetailClick);
-  }, [isResizing, selectedTask, selectTask]);
+  }, [isResizing, selectedTask, selectTask, detailPanelRef]);
 
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    tasks.forEach((t) => {
-      t.tags?.forEach((tg) => tagSet.add(tg.name));
-    });
-    return Array.from(tagSet);
-  }, [tasks]);
-
-  const categoryCounts = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    return {
-      Today: tasks.filter((t) => !t.isQuickAdd && (!t.dueDate || t.dueDate.startsWith(todayStr))).length,
-      Upcoming: tasks.filter((t) => !t.isQuickAdd && t.dueDate && !t.dueDate.startsWith(todayStr)).length,
-      QuickAdd: tasks.filter((t) => t.isQuickAdd).length,
-      Calendar: tasks.length,
-    };
-  }, [tasks]);
-
-  const filteredTasks = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    return tasks.filter((t) => {
-      if (currentCategory === "QuickAdd") {
-        if (!t.isQuickAdd) return false;
-      } else if (currentCategory === "Today") {
-        if (t.isQuickAdd) return false;
-        if (t.dueDate && !t.dueDate.startsWith(todayStr)) {
-          return false;
-        }
-      } else if (currentCategory === "Upcoming") {
-        if (t.isQuickAdd) return false;
-        if (!t.dueDate || t.dueDate.startsWith(todayStr)) {
-          return false;
-        }
-      }
-
-      if (selectedTag !== "All") {
-        if (!t.tags?.some((tg) => tg.name === selectedTag)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [tasks, currentCategory, selectedTag]);
+  const { allTags, categoryCounts, filteredTasks } = useFilteredTasks(
+    tasks,
+    currentCategory,
+    selectedTag
+  );
 
   const handleAddNewTask = async (title: string) => {
     const todayStr = new Date().toISOString().split("T")[0];
@@ -204,7 +104,6 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-white dark:bg-neutral-950">
-      {/* 1. Left Category Sidebar */}
       <TaskSidebar
         currentCategory={currentCategory}
         onSelectCategory={setCurrentCategory}
@@ -215,7 +114,6 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
         totalTasks={tasks.length}
       />
 
-      {/* 2. Middle Main Area: Task List */}
       <main className="flex-1 flex flex-col p-8 overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2.5">
@@ -259,10 +157,8 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
           </div>
         )}
 
-        {/* Quick Add Input Bar */}
         <TaskQuickAdd currentCategory={currentCategory} onAddTask={handleAddNewTask} />
 
-        {/* Task List */}
         <TaskList
           tasks={filteredTasks}
           selectedTaskId={selectedTask?.id}
@@ -273,13 +169,12 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
         />
       </main>
 
-      {/* 3. Right Task Detail Drawer */}
       {selectedTask && (
         <TaskDetailDrawer
           task={selectedTask}
           detailWidth={detailWidth}
           isResizing={isResizing}
-          onStartResize={() => setIsResizing(true)}
+          onStartResize={startResizing}
           onClose={() => selectTask(null)}
           onDelete={handleDeleteTask}
           onNavigateToTimer={onNavigateToTimer}

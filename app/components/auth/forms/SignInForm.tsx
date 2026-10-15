@@ -103,7 +103,7 @@ export function SignInForm({
             <span>Đang đăng nhập...</span>
           </>
         ) : (
-          <span>Đăng nhập (Sign In)</span>
+          <span>Đăng nhập</span>
         )}
       </button>
 
@@ -130,7 +130,7 @@ export function SignInForm({
             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
           </svg>
-          <span>Continue with Google</span>
+          <span>Tiếp tục với Google</span>
         </button>
       </div>
 
@@ -141,7 +141,7 @@ export function SignInForm({
           onClick={() => onSwitchMode("signup")}
           className="font-bold text-neutral-900 dark:text-white hover:underline cursor-pointer ml-1"
         >
-          Đăng ký (Sign Up)
+          Đăng ký ngay
         </button>
       </div>
     </form>

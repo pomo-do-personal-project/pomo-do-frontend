@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 export interface StatisticItem {
   id: string;
@@ -29,6 +30,8 @@ export function StatisticDetailChart({
   timeRange,
   onSetTimeRange,
 }: StatisticDetailChartProps) {
+  const { t } = useTranslation();
+
   const filteredData = React.useMemo(() => {
     if (sourceFilter === "all") return items;
     return items.filter((i) => i.sourceType === sourceFilter);
@@ -40,11 +43,19 @@ export function StatisticDetailChart({
   const circumference = 2 * Math.PI * radius;
   let accumulatedOffset = 0;
 
+  const rangeLabels: Record<"Today" | "Week" | "Month", string> = {
+    Today: t.statistics.rangeToday,
+    Week: t.statistics.rangeWeek,
+    Month: t.statistics.rangeMonth,
+  };
+
   return (
     <section className="lg:col-span-2 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
       {/* Header row */}
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">Detail</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">
+          {t.statistics.detailChart}
+        </h2>
 
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex items-center p-0.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold">
@@ -56,7 +67,7 @@ export function StatisticDetailChart({
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
               }`}
             >
-              Tất cả
+              {t.statistics.filterAll}
             </button>
             <button
               onClick={() => onSetSourceFilter("task")}
@@ -66,7 +77,7 @@ export function StatisticDetailChart({
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
               }`}
             >
-              Task
+              {t.statistics.filterTask}
             </button>
             <button
               onClick={() => onSetSourceFilter("list")}
@@ -76,7 +87,7 @@ export function StatisticDetailChart({
                   : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
               }`}
             >
-              List
+              {t.statistics.filterList}
             </button>
           </div>
 
@@ -88,7 +99,7 @@ export function StatisticDetailChart({
               className="hover:text-neutral-900 dark:hover:text-white cursor-pointer px-1 transition-colors flex items-center gap-1.5"
             >
               <ChevronLeft size={13} strokeWidth={2} />
-              <span>{timeRange}</span>
+              <span>{rangeLabels[timeRange]}</span>
               <ChevronRight size={13} strokeWidth={2} />
             </button>
           </div>
@@ -98,7 +109,7 @@ export function StatisticDetailChart({
       {/* Chart Content */}
       {filteredData.length === 0 ? (
         <div className="py-16 text-center text-xs text-neutral-400 dark:text-neutral-500 italic">
-          Chưa có phiên tập trung nào trong {timeRange}. Hãy bắt đầu đếm giờ ở Dashboard!
+          Chưa có phiên tập trung nào trong {rangeLabels[timeRange]}. Hãy bắt đầu đếm giờ ở Tổng quan!
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-8 items-center">
@@ -143,7 +154,7 @@ export function StatisticDetailChart({
                 {totalActualMinutes}
               </span>
               <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
-                phút
+                {t.statistics.minutesUnit}
               </span>
             </div>
           </div>

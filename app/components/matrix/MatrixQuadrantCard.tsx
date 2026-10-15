@@ -95,8 +95,8 @@ export function MatrixQuadrantCard({
             setQuickInput("");
           }}
           className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white dark:bg-neutral-800/80 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer shadow-2xs"
-          title="Thêm task vào ô này"
-          aria-label="Thêm task vào ô này"
+          title="Thêm việc vào ô này"
+          aria-label="Thêm việc vào ô này"
         >
           {isAdding ? <X size={15} strokeWidth={2} /> : <Plus size={15} strokeWidth={2.2} />}
         </button>
@@ -110,7 +110,7 @@ export function MatrixQuadrantCard({
             autoFocus
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Nhập task mới rồi nhấn Enter..."
+            placeholder="Nhập công việc mới rồi nhấn Enter..."
             className="w-full px-3.5 py-2 text-xs sm:text-sm bg-white dark:bg-neutral-800/90 border border-neutral-300 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-400 text-neutral-900 dark:text-white shadow-xs"
           />
         </form>
@@ -191,8 +191,8 @@ export function MatrixQuadrantCard({
                   <button
                     onClick={(e) => onDeleteTask(t.id, e)}
                     className="text-neutral-400 hover:text-rose-500 p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer"
-                    title="Xóa task"
-                    aria-label="Xóa task"
+                    title="Xóa công việc này"
+                    aria-label="Xóa công việc này"
                   >
                     <X size={13} strokeWidth={2} />
                   </button>

@@ -3,6 +3,8 @@
 import React from "react";
 import { Timer, AlertTriangle, Play } from "lucide-react";
 
+import { useTranslation } from "../../../stores/useLanguageStore";
+
 interface NotificationTickingCardProps {
   tickingEnabled: boolean;
   tickingVolume: number;
@@ -26,6 +28,8 @@ export function NotificationTickingCard({
   onPlayTickSound,
   onPlayOvertimeAlert,
 }: NotificationTickingCardProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-neutral-50/80 dark:bg-[#262626] rounded-2xl p-5 border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
       {/* Ticking sound */}
@@ -34,10 +38,10 @@ export function NotificationTickingCard({
           <div>
             <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
               <Timer size={16} className="text-neutral-500 dark:text-neutral-300" />
-              <span>Tiếng tích tắc đồng hồ (Ticking Sound)</span>
+              <span>{t.settings.notifications.tickingTitle}</span>
             </div>
             <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Phát nhịp tích tắc khe khẽ trong lúc đếm ngược để duy trì nhịp tập trung sâu
+              {t.settings.notifications.tickingDesc}
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -55,7 +59,7 @@ export function NotificationTickingCard({
           <div className="pt-2 flex items-center justify-between gap-4 animate-in fade-in duration-200">
             <div className="flex-1 flex items-center gap-3">
               <span className="text-xs text-neutral-500 dark:text-neutral-400 shrink-0">
-                Âm lượng tích tắc:
+                {t.settings.notifications.tickingVolume}
               </span>
               <input
                 type="range"
@@ -76,7 +80,7 @@ export function NotificationTickingCard({
               className="px-2.5 py-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 hover:text-neutral-900 dark:text-neutral-200 dark:hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border border-neutral-200 dark:border-transparent"
             >
               <Play size={11} fill="currentColor" />
-              <span>Nghe thử nhịp</span>
+              <span>{t.settings.notifications.testTick}</span>
             </button>
           </div>
         )}
@@ -87,10 +91,10 @@ export function NotificationTickingCard({
         <div>
           <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-500 dark:text-amber-400" />
-            <span>Cảnh báo quá giờ (+OT Alert)</span>
+            <span>{t.settings.notifications.overtimeAlertTitle}</span>
           </div>
           <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-            Phát âm báo nhắc nhở khi đồng hồ bắt đầu đếm Overtime để bạn không làm quá sức
+            {t.settings.notifications.overtimeAlertDesc}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -100,7 +104,7 @@ export function NotificationTickingCard({
             className="px-2.5 py-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 dark:border-transparent"
           >
             <Play size={11} fill="currentColor" />
-            <span>Nghe thử</span>
+            <span>{t.settings.notifications.testOvertime}</span>
           </button>
           <label className="relative inline-flex items-center cursor-pointer">
             <input

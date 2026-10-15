@@ -32,7 +32,7 @@ export function TaskSubtasksSection({ task }: TaskSubtasksSectionProps) {
   return (
     <div className="mb-8 flex flex-col gap-2 flex-1">
       <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-        Subtasks ({completedCount}/{totalCount})
+        Nhiệm vụ con ({completedCount}/{totalCount})
       </span>
 
       {!isAddingSubtask ? (
@@ -45,7 +45,7 @@ export function TaskSubtasksSection({ task }: TaskSubtasksSectionProps) {
             <Plus size={13} strokeWidth={2.2} />
           </span>
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors">
-            Thêm subtask
+            Thêm nhiệm vụ con
           </span>
         </button>
       ) : (
@@ -59,7 +59,7 @@ export function TaskSubtasksSection({ task }: TaskSubtasksSectionProps) {
               autoFocus
               value={newSubtaskTitle}
               onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              placeholder="Nhập tên subtask..."
+              placeholder="Nhập tên nhiệm vụ con..."
               className="flex-1 text-xs bg-transparent focus:outline-none text-neutral-900 dark:text-white"
             />
             <button
@@ -114,8 +114,8 @@ export function TaskSubtasksSection({ task }: TaskSubtasksSectionProps) {
                 deleteSubtask(task.id, sub.id);
               }}
               className="text-neutral-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
-              title="Xóa subtask"
-              aria-label="Xóa subtask"
+              title="Xóa nhiệm vụ con"
+              aria-label="Xóa nhiệm vụ con"
             >
               <X size={13} strokeWidth={2} />
             </button>

@@ -11,6 +11,9 @@ import { TimerModeSelector } from "./timer/TimerModeSelector";
 import { TimerDisplay } from "./timer/TimerDisplay";
 import { TimerTaskInput } from "./timer/TimerTaskInput";
 import { TimerControls } from "./timer/TimerControls";
+import { AiFocusWidget } from "./timer/AiFocusWidget";
+import { useAiFocusStore } from "../stores/useAiFocusStore";
+
 interface TimerCenterProps {
   onOpenAiSettings?: () => void;
 }
@@ -22,13 +25,18 @@ export function TimerCenter({}: TimerCenterProps = {}) {
   const settings = useSettingsStore((s) => s.settings);
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
+  // Zustand AI Focus Store
+  const onTimerTick = useAiFocusStore((s) => s.onTimerTick);
+  const resetSessionStats = useAiFocusStore((s) => s.resetSessionStats);
+  const generateSessionSummary = useAiFocusStore((s) => s.generateSessionSummary);
+
   const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(
     () => ({
-      W: { label: "W", fullName: "Work / Focus", minutes: settings.focusDuration || 25 },
-      SB: { label: "SB", fullName: "Short Break", minutes: settings.shortBreakDuration || 5 },
-      LB: { label: "LB", fullName: "Long Break", minutes: settings.longBreakDuration || 15 },
+      W: { label: "W", fullName: "Focus", minutes: settings.focusDuration || 25 },
+      SB: { label: "SB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
+      LB: { label: "LB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
     }),
-    [settings.focusDuration, settings.shortBreakDuration, settings.longBreakDuration]
+    [settings.focusDuration, settings.shortBreakDuration]
   );
 
   // Zustand Pomodoro Global Store
@@ -80,12 +88,12 @@ export function TimerCenter({}: TimerCenterProps = {}) {
   }, [
     settings.focusDuration,
     settings.shortBreakDuration,
-    settings.longBreakDuration,
     focusMode,
     isRunning,
     elapsedSeconds,
     seconds,
     resetTimer,
+    modeDurations,
   ]);
 
   const handleSelectMode = (mode: FocusMode) => {
@@ -101,6 +109,7 @@ export function TimerCenter({}: TimerCenterProps = {}) {
   const handleTogglePlay = async () => {
     if (!isRunning) {
       if (!currentSession && elapsedSeconds === 0) {
+        resetSessionStats();
         const plannedMinutes = modeDurations[focusMode].minutes;
         await startSession({
           taskId: matchedTask?.id || null,
@@ -119,12 +128,14 @@ export function TimerCenter({}: TimerCenterProps = {}) {
     if (isRunning) {
       interval = setInterval(() => {
         tickTimer(modeDurations[focusMode].minutes);
+        // Chỉ đếm giây và xao nhãng khi đang làm việc (W), không tính khi nghỉ (SB / LB)
+        onTimerTick(focusMode === "W");
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, tickTimer, focusMode, modeDurations]);
+  }, [isRunning, tickTimer, focusMode, modeDurations, onTimerTick]);
 
   const handleReset = async () => {
     setIsRunning(false);
@@ -142,20 +153,35 @@ export function TimerCenter({}: TimerCenterProps = {}) {
       const ot =
         overtimeSeconds > 0 ? overtimeSeconds : Math.max(0, actual - plannedSeconds);
 
+      // Đính kèm điểm AI Focus vào Note của phiên
+      const aiSummary = generateSessionSummary();
+      const finalNote = [taskName.trim(), aiSummary].filter(Boolean).join(" | ");
+
       await completeSession(currentSession.id, {
         actualSeconds: actual,
         overtimeSeconds: ot,
-        note: taskName.trim() || undefined,
+        note: finalNote || undefined,
       });
 
       setNotificationMsg(
         `✓ Đã hoàn tất & lưu: ${Math.round(actual / 60)}m ${
           ot > 0 ? `(+${Math.round(ot / 60)}m Overtime)` : ""
-        }`
+        } ${aiSummary ? `[${aiSummary}]` : ""}`
       );
-      setTimeout(() => setNotificationMsg(null), 3500);
+      setTimeout(() => setNotificationMsg(null), 4000);
     }
-    resetTimer(modeDurations[focusMode].minutes * 60);
+
+    // Luân phiên tối giản 2 trạng thái: Focus (W) <-> Break (SB)
+    const nextMode: FocusMode = focusMode === "W" ? "SB" : "W";
+    setFocusMode(nextMode);
+    resetTimer(modeDurations[nextMode].minutes * 60);
+
+    const autoStartFocus = typeof window !== "undefined" && localStorage.getItem("pomodo_auto_start_focus") === "true";
+    if (focusMode === "W" && settings.autoStartBreaks) {
+      setIsRunning(true);
+    } else if (focusMode !== "W" && autoStartFocus) {
+      setIsRunning(true);
+    }
   };
 
   const formatTime = (totalSecs: number) => {
@@ -204,6 +230,9 @@ export function TimerCenter({}: TimerCenterProps = {}) {
         onReset={handleReset}
         onManualComplete={handleManualComplete}
       />
+
+      {/* AI Focus Assistant Widget */}
+      <AiFocusWidget isTimerRunning={isRunning && focusMode === "W"} />
     </div>
   );
 }

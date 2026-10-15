@@ -25,10 +25,10 @@ const CATEGORY_ITEMS: {
   icon: LucideIcon;
   color: string;
 }[] = [
-  { id: "Today", label: "Today", icon: CalendarDays, color: "text-neutral-900 dark:text-white" },
-  { id: "Upcoming", label: "Upcoming", icon: FastForward, color: "text-blue-500" },
+  { id: "Today", label: "Hôm nay", icon: CalendarDays, color: "text-neutral-900 dark:text-white" },
+  { id: "Upcoming", label: "Sắp tới", icon: FastForward, color: "text-blue-500" },
   { id: "QuickAdd", label: "Quick Add", icon: Zap, color: "text-amber-500 font-bold" },
-  { id: "Calendar", label: "Calendar", icon: Calendar, color: "text-neutral-400" },
+  { id: "Calendar", label: "Lịch biểu", icon: Calendar, color: "text-neutral-400" },
 ];
 
 export function TaskSidebar({
@@ -44,7 +44,7 @@ export function TaskSidebar({
     <aside className="w-64 border-r border-neutral-200 dark:border-neutral-800 p-4 flex flex-col shrink-0 bg-neutral-50/50 dark:bg-neutral-900/50">
       <div className="flex items-center justify-between px-2 mb-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-          Categories
+          Danh mục
         </h2>
       </div>
 
@@ -87,7 +87,7 @@ export function TaskSidebar({
       {/* Tags / Custom Lists Filter */}
       <div className="flex items-center justify-between px-2 mb-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-          Tags & Lists
+          Thẻ phân loại
         </h3>
       </div>
 

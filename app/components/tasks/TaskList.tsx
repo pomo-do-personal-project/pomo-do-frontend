@@ -22,6 +22,13 @@ export function TaskList({
   onSelectTask,
   onToggleStatus,
 }: TaskListProps) {
+  const categoryNames: Record<TaskCategory, string> = {
+    Today: "Hôm nay",
+    Upcoming: "Sắp tới",
+    QuickAdd: "Quick Add",
+    Calendar: "Lịch biểu",
+  };
+
   if (tasks.length === 0) {
     return (
       <div className="text-center py-12 text-sm text-neutral-400 dark:text-neutral-500">
@@ -29,7 +36,7 @@ export function TaskList({
           ? "Đang tải công việc..."
           : currentCategory === "QuickAdd"
           ? "Chưa có ý nghĩ nảy sinh nào được ghi nhận. Hãy bấm nút trên để thêm nhanh!"
-          : `Chưa có công việc nào trong mục ${currentCategory}. Hãy thêm task mới ở trên!`}
+          : `Chưa có công việc nào trong mục ${categoryNames[currentCategory] || currentCategory}. Hãy thêm công việc mới ở trên!`}
       </div>
     );
   }

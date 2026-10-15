@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Zap, ClipboardList, ChevronDown, Check } from "lucide-react";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 interface OverviewTaskDropdownProps {
   isQuickAddActive: boolean;
@@ -16,6 +17,7 @@ export function OverviewTaskDropdown({
   dailyCount,
   quickAddCount,
 }: OverviewTaskDropdownProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -40,12 +42,12 @@ export function OverviewTaskDropdown({
             {isQuickAddActive ? (
               <>
                 <Zap size={15} strokeWidth={2} className="text-amber-500" />
-                <span>Quick Add (Ghi nhanh)</span>
+                <span>{t.overviewPanel.quickAdd}</span>
               </>
             ) : (
               <>
                 <ClipboardList size={15} strokeWidth={1.75} className="text-blue-500" />
-                <span>Daily Task (Kế hoạch)</span>
+                <span>{t.overviewPanel.dailyTasks}</span>
               </>
             )}
           </span>
@@ -61,7 +63,7 @@ export function OverviewTaskDropdown({
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl z-20 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-full mt-1.5 w-56 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl z-20 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <button
             onClick={() => {
               onSelectMode(false);
@@ -75,7 +77,7 @@ export function OverviewTaskDropdown({
           >
             <div className="flex items-center gap-2">
               <ClipboardList size={14} strokeWidth={1.75} className="text-blue-500" />
-              <span>Daily Task List</span>
+              <span>{t.overviewPanel.dailyTasks}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[11px] text-neutral-400 font-mono">({dailyCount})</span>
@@ -95,7 +97,7 @@ export function OverviewTaskDropdown({
           >
             <div className="flex items-center gap-2">
               <Zap size={14} strokeWidth={2} className="text-amber-500" />
-              <span>Quick Add (Parked)</span>
+              <span>{t.overviewPanel.quickAdd}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[11px] text-neutral-400 font-mono">({quickAddCount})</span>

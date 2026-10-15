@@ -34,7 +34,7 @@ export default function ErrorPage({ error, reset }: ErrorProps) {
           className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-98 cursor-pointer"
         >
           <RotateCcw size={16} strokeWidth={2.2} />
-          <span>Thử lại (Retry)</span>
+          <span>Thử lại ngay</span>
         </button>
       </div>
     </div>
