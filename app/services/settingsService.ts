@@ -22,4 +22,16 @@ export const settingsService = {
     });
     return res.data;
   },
+
+  /**
+   * Gửi thử nghiệm email báo cáo (Weekly hoặc Daily)
+   */
+  async sendTestEmailReport(reportType: "weekly" | "daily", targetEmail?: string): Promise<boolean> {
+    const res = await apiClient<boolean>("/api/settings/email-report/test", {
+      method: "POST",
+      body: JSON.stringify({ reportType, targetEmail }),
+    });
+    return res.success;
+  },
 };
+

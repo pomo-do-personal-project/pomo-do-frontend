@@ -25,6 +25,11 @@ const DEFAULT_SETTINGS: UserSettingsDto = {
   longBreakDuration: 15,
   autoStartBreaks: false,
   themeMode: "light",
+  emailWeeklyReport: false,
+  emailDailyDigest: false,
+  dailyDigestTime: "07:00",
+  weeklyReportTime: "08:00",
+  reportEmail: null,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -75,6 +80,11 @@ export const useSettingsStore = create<SettingsState>()(
           longBreakDuration: data.longBreakDuration ?? current.longBreakDuration,
           autoStartBreaks: data.autoStartBreaks ?? current.autoStartBreaks,
           themeMode: data.themeMode ?? current.themeMode,
+          emailWeeklyReport: data.emailWeeklyReport ?? current.emailWeeklyReport,
+          emailDailyDigest: data.emailDailyDigest ?? current.emailDailyDigest,
+          dailyDigestTime: data.dailyDigestTime ?? current.dailyDigestTime ?? "07:00",
+          weeklyReportTime: data.weeklyReportTime ?? current.weeklyReportTime ?? "08:00",
+          reportEmail: data.reportEmail !== undefined ? data.reportEmail : current.reportEmail,
         };
 
         // Optimistic update

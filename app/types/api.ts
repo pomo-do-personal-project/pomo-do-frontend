@@ -242,6 +242,11 @@ export interface UserSettingsDto {
   longBreakDuration: number;
   autoStartBreaks: boolean;
   themeMode: "light" | "dark" | "system" | string;
+  emailWeeklyReport?: boolean;
+  emailDailyDigest?: boolean;
+  dailyDigestTime?: string;
+  weeklyReportTime?: string;
+  reportEmail?: string | null;
 }
 
 export interface UpdateUserSettingsRequest {
@@ -250,4 +255,15 @@ export interface UpdateUserSettingsRequest {
   longBreakDuration: number;
   autoStartBreaks: boolean;
   themeMode?: string;
+  emailWeeklyReport?: boolean;
+  emailDailyDigest?: boolean;
+  dailyDigestTime?: string;
+  weeklyReportTime?: string;
+  reportEmail?: string | null;
 }
+
+export interface TestEmailReportRequest {
+  reportType: "weekly" | "daily";
+  targetEmail?: string;
+}
+

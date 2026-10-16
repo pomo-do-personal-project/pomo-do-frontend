@@ -107,9 +107,11 @@
       "emailReportTitle": "Báo cáo qua Email",
       "emailReportDesc": "Gửi tổng kết hiệu suất về hộp thư:",
       "emailWeeklyTitle": "Báo cáo năng suất tuần",
-      "emailWeeklyDesc": "Gửi 1 email duy nhất vào sáng Thứ Hai về số Pomodoro & công việc đã hoàn thành",
+      "emailWeeklyDesc": "Gửi 1 email tổng kết số Pomodoro & công việc đã hoàn thành vào sáng Thứ Hai",
+      "emailWeeklyTime": "Giờ gửi sáng Thứ Hai:",
       "emailDailyTitle": "Tóm tắt công việc đầu ngày",
-      "emailDailyDesc": "Gửi 1 email lúc 07:00 sáng tóm tắt các việc cần làm hôm nay giúp bạn bắt đầu ngày mới",
+      "emailDailyDesc": "Gửi 1 email tóm tắt các việc cần làm hôm nay giúp bạn bắt đầu ngày mới hiệu quả",
+      "emailDailyTime": "Giờ gửi mỗi sáng:",
       "comingSoon": "Sắp ra mắt"
     },
     "premium": {

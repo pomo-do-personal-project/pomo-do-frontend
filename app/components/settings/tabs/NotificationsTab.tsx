@@ -6,7 +6,9 @@ import { ShieldAlert, Check } from "lucide-react";
 import { NotificationSoundCard } from "../notifications/NotificationSoundCard";
 import { NotificationTickingCard } from "../notifications/NotificationTickingCard";
 import { NotificationRemindersCard } from "../notifications/NotificationRemindersCard";
+import { NotificationEmailReportCard } from "../notifications/NotificationEmailReportCard";
 import { useTranslation } from "../../../stores/useLanguageStore";
+import { useSettingsStore } from "../../../stores/useSettingsStore";
 
 interface NotificationsTabProps {
   userEmail?: string;
@@ -15,6 +17,7 @@ interface NotificationsTabProps {
 
 export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProps) {
   const { t } = useTranslation();
+  const { settings, updateSettings } = useSettingsStore();
   const { playRingtone, playTickSound, playOvertimeAlert } = useSettingsAudio();
 
   // Notification states & Sound settings
@@ -36,8 +39,17 @@ export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProp
   const [dailyReminderTime, setDailyReminderTime] = useState("08:30");
 
   // Email reports & digest states
-  const [emailWeeklyReport, setEmailWeeklyReport] = useState(false);
-  const [emailDailyDigest, setEmailDailyDigest] = useState(false);
+  const [emailWeeklyReport, setEmailWeeklyReport] = useState(settings.emailWeeklyReport ?? false);
+  const [emailDailyDigest, setEmailDailyDigest] = useState(settings.emailDailyDigest ?? false);
+  const [weeklyReportTime, setWeeklyReportTime] = useState(settings.weeklyReportTime || "08:00");
+  const [dailyDigestTime, setDailyDigestTime] = useState(settings.dailyDigestTime || "07:00");
+
+  useEffect(() => {
+    if (settings.emailWeeklyReport !== undefined) setEmailWeeklyReport(settings.emailWeeklyReport);
+    if (settings.emailDailyDigest !== undefined) setEmailDailyDigest(settings.emailDailyDigest);
+    if (settings.weeklyReportTime) setWeeklyReportTime(settings.weeklyReportTime);
+    if (settings.dailyDigestTime) setDailyDigestTime(settings.dailyDigestTime);
+  }, [settings.emailWeeklyReport, settings.emailDailyDigest, settings.weeklyReportTime, settings.dailyDigestTime]);
 
   useEffect(() => {
     const savedSound = localStorage.getItem("pomodo_sound_enabled");
@@ -68,12 +80,6 @@ export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProp
 
     const savedDailyTime = localStorage.getItem("pomodo_daily_reminder_time");
     if (savedDailyTime) setDailyReminderTime(savedDailyTime);
-
-    const savedEmailWeekly = localStorage.getItem("pomodo_email_weekly");
-    if (savedEmailWeekly !== null) setEmailWeeklyReport(savedEmailWeekly === "true");
-
-    const savedEmailDaily = localStorage.getItem("pomodo_email_daily");
-    if (savedEmailDaily !== null) setEmailDailyDigest(savedEmailDaily === "true");
 
     if (typeof window !== "undefined" && "Notification" in window) {
       setDesktopNotify(Notification.permission === "granted");
@@ -183,14 +189,11 @@ export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProp
         onPlayOvertimeAlert={playOvertimeAlert}
       />
 
-      {/* Block 3: Desktop Push, Daily Reminders & Email Digest */}
+      {/* Block 3: Desktop Push & Daily Reminders */}
       <NotificationRemindersCard
-        userEmail={userEmail}
         desktopNotify={desktopNotify}
         dailyReminderEnabled={dailyReminderEnabled}
         dailyReminderTime={dailyReminderTime}
-        emailWeeklyReport={emailWeeklyReport}
-        emailDailyDigest={emailDailyDigest}
         showNotice={showNotice}
         onToggleDesktopNotify={handleToggleDesktopNotification}
         onToggleDailyReminder={(checked) => {
@@ -205,23 +208,34 @@ export function NotificationsTab({ userEmail, showNotice }: NotificationsTabProp
           localStorage.setItem("pomodo_daily_reminder_time", time);
         }}
         onSendTestDailyNotification={handleSendTestDailyNotification}
-        onToggleEmailWeeklyReport={(checked) => {
+      />
+
+      {/* Block 4: Báo cáo qua Email & Cài đặt giờ gửi */}
+      <NotificationEmailReportCard
+        userEmail={userEmail}
+        emailWeeklyReport={emailWeeklyReport}
+        emailDailyDigest={emailDailyDigest}
+        weeklyReportTime={weeklyReportTime}
+        dailyDigestTime={dailyDigestTime}
+        onToggleEmailWeeklyReport={async (checked) => {
           setEmailWeeklyReport(checked);
-          localStorage.setItem("pomodo_email_weekly", String(checked));
-          showNotice(
-            checked
-              ? "Đã lưu đăng ký nhận Báo cáo tuần qua email (sẽ kích hoạt khi hệ thống gửi mail sẵn sàng)."
-              : "Đã hủy nhận Báo cáo tuần qua email."
-          );
+          await updateSettings({ emailWeeklyReport: checked });
+          showNotice(checked ? `✓ Đã bật nhận Báo cáo tuần lúc ${weeklyReportTime} sáng Thứ Hai.` : "Đã tắt nhận Báo cáo tuần qua email.");
         }}
-        onToggleEmailDailyDigest={(checked) => {
+        onToggleEmailDailyDigest={async (checked) => {
           setEmailDailyDigest(checked);
-          localStorage.setItem("pomodo_email_daily", String(checked));
-          showNotice(
-            checked
-              ? "Đã lưu đăng ký nhận Tóm tắt đầu ngày qua email (sẽ kích hoạt khi hệ thống gửi mail sẵn sàng)."
-              : "Đã hủy nhận Tóm tắt đầu ngày qua email."
-          );
+          await updateSettings({ emailDailyDigest: checked });
+          showNotice(checked ? `✓ Đã bật nhận Tóm tắt công việc lúc ${dailyDigestTime} sáng.` : "Đã tắt nhận Tóm tắt công việc đầu ngày.");
+        }}
+        onWeeklyReportTimeChange={async (time) => {
+          setWeeklyReportTime(time);
+          await updateSettings({ weeklyReportTime: time });
+          showNotice(`✓ Đã lưu giờ gửi báo cáo tuần: ${time} sáng Thứ Hai.`);
+        }}
+        onDailyDigestTimeChange={async (time) => {
+          setDailyDigestTime(time);
+          await updateSettings({ dailyDigestTime: time });
+          showNotice(`✓ Đã lưu giờ gửi tóm tắt hàng ngày: ${time} sáng.`);
         }}
       />
     </div>

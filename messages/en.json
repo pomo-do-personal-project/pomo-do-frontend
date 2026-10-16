@@ -107,9 +107,11 @@
       "emailReportTitle": "Email Digest",
       "emailReportDesc": "Send performance summary to your mailbox:",
       "emailWeeklyTitle": "Weekly Productivity Report",
-      "emailWeeklyDesc": "Receive a single email every Monday morning with your completed Pomodoros and tasks",
+      "emailWeeklyDesc": "Receive a weekly email summarizing your completed Pomodoros and tasks every Monday morning",
+      "emailWeeklyTime": "Monday morning delivery time:",
       "emailDailyTitle": "Daily Morning Digest",
-      "emailDailyDesc": "Receive an email at 07:00 AM summarizing tasks planned for today",
+      "emailDailyDesc": "Receive a morning email summarizing tasks planned for today to kickstart your day",
+      "emailDailyTime": "Daily morning delivery time:",
       "comingSoon": "Coming Soon"
     },
     "premium": {
