@@ -9,9 +9,11 @@ import { TaskSidebar } from "./tasks/TaskSidebar";
 import { TaskQuickAdd } from "./tasks/TaskQuickAdd";
 import { TaskList } from "./tasks/TaskList";
 import { TaskDetailDrawer } from "./tasks/TaskDetailDrawer";
-import { AlertTriangle, RotateCcw, Zap } from "lucide-react";
+import { CalendarTimelineView } from "./calendar/CalendarTimelineView";
+import { AlertTriangle, RotateCcw, Zap, CalendarDays } from "lucide-react";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useFilteredTasks } from "./tasks/hooks/useFilteredTasks";
+import { formatLocalDate } from "../utils/dateUtils";
 
 export * from "./tasks/types";
 
@@ -78,7 +80,7 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
   );
 
   const handleAddNewTask = async (title: string) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = formatLocalDate();
     const isQuick = currentCategory === "QuickAdd";
 
     await createTask({
@@ -122,6 +124,11 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
                 <Zap size={26} strokeWidth={2} className="text-amber-500 shrink-0" />
                 <span>Quick Add (Ý nghĩ phát sinh)</span>
               </>
+            ) : currentCategory === "Calendar" ? (
+              <>
+                <CalendarDays size={26} strokeWidth={2} className="text-neutral-900 dark:text-white shrink-0" />
+                <span>Lịch biểu tập trung</span>
+              </>
             ) : (
               currentCategory
             )}
@@ -157,16 +164,27 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
           </div>
         )}
 
-        <TaskQuickAdd currentCategory={currentCategory} onAddTask={handleAddNewTask} />
-
-        <TaskList
-          tasks={filteredTasks}
-          selectedTaskId={selectedTask?.id}
-          currentCategory={currentCategory}
-          isLoading={isLoading}
-          onSelectTask={selectTask}
-          onToggleStatus={handleToggleTask}
-        />
+        {currentCategory === "Calendar" ? (
+          <CalendarTimelineView
+            tasks={tasks}
+            selectedTaskId={selectedTask?.id}
+            onSelectTask={selectTask}
+            onToggleStatus={handleToggleTask}
+            onNavigateToTimer={onNavigateToTimer}
+          />
+        ) : (
+          <>
+            <TaskQuickAdd currentCategory={currentCategory} onAddTask={handleAddNewTask} />
+            <TaskList
+              tasks={filteredTasks}
+              selectedTaskId={selectedTask?.id}
+              currentCategory={currentCategory}
+              isLoading={isLoading}
+              onSelectTask={selectTask}
+              onToggleStatus={handleToggleTask}
+            />
+          </>
+        )}
       </main>
 
       {selectedTask && (

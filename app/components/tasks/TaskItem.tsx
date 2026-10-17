@@ -3,6 +3,7 @@
 import React from "react";
 import { TaskDto, TaskStatus, Priority } from "../../types/api";
 import { Check, Zap, Clock, ChevronRight } from "lucide-react";
+import { parseTaskDueDate } from "../../utils/dateUtils";
 
 interface TaskItemProps {
   task: TaskDto;
@@ -115,6 +116,18 @@ export function TaskItem({
             <Clock size={11} strokeWidth={1.75} />
             <span>{task.estimatedMinutes || 25}m</span>
           </span>
+
+          {/* Scheduled Time Badge */}
+          {(() => {
+            const dueInfo = parseTaskDueDate(task.dueDate);
+            if (!dueInfo.hasTime) return null;
+            return (
+              <span className="text-[11px] font-mono font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800/80 px-2 py-0.5 rounded-md flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 shrink-0">
+                <Clock size={11} className="text-neutral-400" />
+                <span>{dueInfo.time12h}</span>
+              </span>
+            );
+          })()}
 
           {/* Subtasks summary */}
           {task.subtasks && task.subtasks.length > 0 && (

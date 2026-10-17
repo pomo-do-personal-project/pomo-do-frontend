@@ -102,12 +102,20 @@ export async function apiClient<T>(
     // Kết nối thành công tới server -> cập nhật server online
     useNetworkStore.getState().setServerOnline(true);
 
-    const data: ApiResponse<T> = await res.json().catch(() => ({
-      success: res.ok,
-      data: null,
-      message: res.statusText || "Lỗi giao tiếp máy chủ",
-      errors: [res.statusText],
-    }));
+    const rawData = await res.json().catch(() => null);
+    const data: ApiResponse<T> = rawData && typeof rawData === "object"
+      ? {
+          success: rawData.success ?? res.ok,
+          data: rawData.data ?? null,
+          message: rawData.message || rawData.detail || rawData.title || (res.ok ? "Thành công" : `Yêu cầu thất bại (HTTP ${res.status})`),
+          errors: rawData.errors || (rawData.detail ? [rawData.detail] : [res.statusText || `HTTP ${res.status}`]),
+        }
+      : {
+          success: res.ok,
+          data: null,
+          message: res.statusText || `Máy chủ phản hồi mã ${res.status}`,
+          errors: [res.statusText || `HTTP ${res.status}`],
+        };
 
     // Tự động làm mới token nếu gặp 401 và không phải đang gọi auth endpoints
     if (res.status === 401 && !endpoint.includes("/api/auth/")) {
@@ -124,12 +132,20 @@ export async function apiClient<T>(
           },
         });
 
-        const retryData: ApiResponse<T> = await retryRes.json().catch(() => ({
-          success: retryRes.ok,
-          data: null,
-          message: retryRes.statusText || "Lỗi giao tiếp máy chủ",
-          errors: [retryRes.statusText],
-        }));
+        const rawRetry = await retryRes.json().catch(() => null);
+        const retryData: ApiResponse<T> = rawRetry && typeof rawRetry === "object"
+          ? {
+              success: rawRetry.success ?? retryRes.ok,
+              data: rawRetry.data ?? null,
+              message: rawRetry.message || rawRetry.detail || rawRetry.title || (retryRes.ok ? "Thành công" : `Yêu cầu thất bại (HTTP ${retryRes.status})`),
+              errors: rawRetry.errors || (rawRetry.detail ? [rawRetry.detail] : [retryRes.statusText || `HTTP ${retryRes.status}`]),
+            }
+          : {
+              success: retryRes.ok,
+              data: null,
+              message: retryRes.statusText || `Máy chủ phản hồi mã ${retryRes.status}`,
+              errors: [retryRes.statusText || `HTTP ${retryRes.status}`],
+            };
 
         if (retryRes.ok && retryData.success) {
           return retryData;

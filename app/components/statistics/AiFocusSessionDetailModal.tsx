@@ -16,15 +16,15 @@ export function AiFocusSessionDetailModal({ isOpen, onClose, item }: AiFocusSess
   const ai = item.aiData;
   const hasAi = Boolean(ai && (ai.score !== undefined || ai.fb !== undefined));
 
-  const score: number = hasAi ? (ai.score ?? Math.round(Math.random() * 20 + 80)) : 0;
-  const grade: string = hasAi ? (ai.grade ?? (score >= 90 ? "A" : score >= 75 ? "B" : "C")) : "N/A";
-  const phoneCount: number = hasAi ? (ai.phoneCount ?? ai.ph ?? 0) : 0;
-  const sleepCount: number = hasAi ? (ai.sleepCount ?? ai.sl ?? 0) : 0;
-  const lookAwayCount: number = hasAi ? (ai.lookAwayCount ?? ai.lk ?? 0) : 0;
-  const conclusion: string = hasAi
-    ? (ai.conclusion ?? ai.fb ?? `Phiên '${item.name}' đạt ${score}% độ tập trung.`)
+  const score: number = hasAi && ai ? (ai.score ?? Math.round(Math.random() * 20 + 80)) : 0;
+  const grade: string = hasAi && ai ? (ai.grade ?? (score >= 90 ? "A" : score >= 75 ? "B" : "C")) : "N/A";
+  const phoneCount: number = hasAi && ai ? (ai.phoneCount ?? (typeof ai.ph === "number" ? ai.ph : 0) ?? 0) : 0;
+  const sleepCount: number = hasAi && ai ? (ai.sleepCount ?? (typeof ai.sl === "number" ? ai.sl : 0) ?? 0) : 0;
+  const lookAwayCount: number = hasAi && ai ? (ai.lookAwayCount ?? (typeof ai.lk === "number" ? ai.lk : 0) ?? 0) : 0;
+  const conclusion: string = hasAi && ai
+    ? (ai.conclusion ?? (typeof ai.fb === "string" ? ai.fb : null) ?? `Phiên '${item.name}' đạt ${score}% độ tập trung.`)
     : "Phiên này không bật Camera AI Focus nên chưa có dữ liệu ghi nhận hành vi.";
-  const advice: string = hasAi
+  const advice: string = hasAi && ai
     ? (ai.advice ?? (phoneCount > 0 ? "Để điện thoại xa tầm tay ở các phiên tiếp theo." : "Tiếp tục duy trì phong độ tập trung này!"))
     : "Bật Camera AI ở các phiên tiếp theo để AI hỗ trợ chấm điểm và phân tích nhé!";
 

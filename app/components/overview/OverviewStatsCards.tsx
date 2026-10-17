@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
+import { formatDurationCompact } from "../../utils/dateUtils";
 
 interface OverviewStatsCardsProps {
-  totalHours: number;
+  totalMinutes: number;
   completedCount: number;
   totalTasks: number;
 }
 
 export function OverviewStatsCards({
-  totalHours,
+  totalMinutes,
   completedCount,
   totalTasks,
 }: OverviewStatsCardsProps) {
@@ -20,7 +21,7 @@ export function OverviewStatsCards({
           Đã tập trung
         </span>
         <span className="text-2xl font-bold text-neutral-900 dark:text-white">
-          {totalHours}h
+          {formatDurationCompact(totalMinutes)}
         </span>
       </div>
 

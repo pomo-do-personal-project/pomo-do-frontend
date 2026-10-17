@@ -48,7 +48,6 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
     (acc, t) => acc + (t.status === TaskStatus.Completed ? t.estimatedMinutes || 25 : 0),
     0
   );
-  const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
   return (
     <aside
@@ -73,7 +72,7 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
 
         {/* Stats Section */}
         <OverviewStatsCards
-          totalHours={totalHours}
+          totalMinutes={totalMinutes}
           completedCount={completedCount}
           totalTasks={tasks.length}
         />

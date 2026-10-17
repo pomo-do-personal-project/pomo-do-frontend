@@ -1,58 +1,7 @@
 import { create } from "zustand";
+import { AiFocusStatus, AiFocusState, AiSessionAnalysis } from "../types/aiFocus";
 
-export type AiFocusStatus = "FOCUSED" | "DISTRACTED" | "AFK" | "DISCONNECTED";
-export type AiSensitivity = "standard" | "relaxed" | "strict";
-
-export interface AiSessionAnalysis {
-  score: number;
-  grade: "S" | "A" | "B" | "C" | "D";
-  conclusion: string;
-  advice: string;
-  phoneCount: number;
-  phoneSeconds: number;
-  sleepCount: number;
-  lookAwayCount: number;
-  focusedSeconds: number;
-  distractedSeconds: number;
-  totalSeconds: number;
-}
-
-interface AiFocusState {
-  isConnected: boolean;
-  isAiEnabled: boolean;
-  isConnecting: boolean;
-  error: string | null;
-
-  status: AiFocusStatus;
-  detail: string;
-  isFocused: boolean;
-  activeScreen: number | null;
-  totalScreens: number;
-  image: string | null;
-  showCameraPreview: boolean;
-
-  distractionCount: number;
-  phoneCount: number;
-  phoneSeconds: number;
-  sleepCount: number;
-  lookAwayCount: number;
-  focusedSeconds: number;
-  distractedSeconds: number;
-  totalSessionSeconds: number;
-  previousStatus: AiFocusStatus;
-  previousDetail: string;
-
-  toggleAiEnabled: () => void;
-  toggleCameraPreview: () => void;
-  connect: () => void;
-  disconnect: () => void;
-  addScreen: () => Promise<boolean>;
-  resetScreens: () => Promise<boolean>;
-  onTimerTick: (isWorkTimerRunning: boolean) => void;
-  resetSessionStats: () => void;
-  getFocusScore: () => number;
-  analyzeAndFinalizeSession: (taskName?: string) => Promise<AiSessionAnalysis>;
-}
+export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState } from "../types/aiFocus";
 
 const WS_URL = process.env.NEXT_PUBLIC_AI_WS_URL || "ws://localhost:8001/ws";
 const HTTP_URL = WS_URL.replace("ws://", "http://").replace("/ws", "");

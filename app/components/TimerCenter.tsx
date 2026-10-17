@@ -5,7 +5,7 @@ import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { FocusSessionMode } from "../types/api";
+import { FocusSessionMode, TaskStatus, TaskDto } from "../types/api";
 import { TimerType, FocusMode, ModeDurationInfo } from "./timer/types";
 import { TimerModeSelector } from "./timer/TimerModeSelector";
 import { TimerDisplay } from "./timer/TimerDisplay";
@@ -13,23 +13,28 @@ import { TimerTaskInput } from "./timer/TimerTaskInput";
 import { TimerControls } from "./timer/TimerControls";
 import { AiFocusWidget } from "./timer/AiFocusWidget";
 import { ZeroMinuteConfirmModal } from "./timer/ZeroMinuteConfirmModal";
+import { SessionCompleteModal, SessionCompleteModalProps } from "./timer/SessionCompleteModal";
 import { useAiFocusStore } from "../stores/useAiFocusStore";
 
+interface CompletedSessionData {
+  durationMinutes: number;
+  actualSeconds: number;
+  overtimeSeconds: number;
+  task?: TaskDto | null;
+  aiAnalysis: SessionCompleteModalProps["aiAnalysis"];
+}
+
 export function TimerCenter() {
-  const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [showZeroConfirm, setShowZeroConfirm] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completedSessionData, setCompletedSessionData] = useState<CompletedSessionData | null>(null);
 
   const { settings, fetchSettings } = useSettingsStore();
   const { onTimerTick, resetSessionStats, analyzeAndFinalizeSession, isAiEnabled } = useAiFocusStore();
 
-  const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(
-    () => ({
-      W: { label: "W", fullName: "Focus", minutes: settings.focusDuration || 25 },
-      SB: { label: "SB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
-      LB: { label: "LB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
-    }),
-    [settings.focusDuration, settings.shortBreakDuration]
-  );
+  const tasks = useTaskStore((s) => s.tasks);
+  const updateTask = useTaskStore((s) => s.updateTask);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const {
     timerType, setTimerType, focusMode, setFocusMode, isRunning, setIsRunning,
@@ -37,13 +42,22 @@ export function TimerCenter() {
     tickTimer, resetTimer, currentSession, startSession, completeSession, cancelSession
   } = usePomodoroStore();
 
-  const tasks = useTaskStore((s) => s.tasks);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
   const matchedTask = useMemo(() => {
     if (!taskName.trim()) return null;
     return tasks.find((t) => t.title.toLowerCase() === taskName.trim().toLowerCase());
   }, [tasks, taskName]);
+
+  const activeFocusMinutes = useMemo(() => (
+    matchedTask?.estimatedMinutes && matchedTask.estimatedMinutes > 0
+      ? matchedTask.estimatedMinutes
+      : settings.focusDuration || 25
+  ), [matchedTask?.estimatedMinutes, settings.focusDuration]);
+
+  const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(() => ({
+    W: { label: "W", fullName: "Focus", minutes: activeFocusMinutes },
+    SB: { label: "SB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
+    LB: { label: "LB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
+  }), [activeFocusMinutes, settings.shortBreakDuration]);
 
   useEffect(() => {
     if (isAuthenticated) fetchSettings();
@@ -54,17 +68,14 @@ export function TimerCenter() {
       const targetDuration = modeDurations[focusMode].minutes * 60;
       if (seconds !== targetDuration) resetTimer(targetDuration);
     }
-  }, [settings.focusDuration, settings.shortBreakDuration, focusMode, isRunning, elapsedSeconds, seconds, resetTimer, modeDurations]);
+  }, [modeDurations, focusMode, isRunning, elapsedSeconds, seconds, resetTimer]);
 
   const handleSelectTab = (tab: "focus" | "break" | "stopwatch") => {
-    if (tab === "stopwatch") {
-      setTimerType(timerType === "stopwatch" ? "pomo" : "stopwatch");
-      resetTimer(modeDurations[focusMode].minutes * 60);
-    } else {
-      const mode = tab === "focus" ? "W" : "SB";
-      setFocusMode(mode);
-      resetTimer(modeDurations[mode].minutes * 60);
-    }
+    const isSw = tab === "stopwatch";
+    const nextMode = tab === "focus" ? "W" : "SB";
+    if (isSw) setTimerType(timerType === "stopwatch" ? "pomo" : "stopwatch");
+    else setFocusMode(nextMode);
+    resetTimer(modeDurations[isSw ? focusMode : nextMode].minutes * 60);
   };
 
   const handleTogglePlay = async () => {
@@ -76,6 +87,14 @@ export function TimerCenter() {
           mode: timerType === "pomo" ? FocusSessionMode.Pomo : FocusSessionMode.Stopwatch,
           durationMinutes: modeDurations[focusMode].minutes,
         });
+
+        if (matchedTask && (matchedTask.status === TaskStatus.Todo || matchedTask.status === TaskStatus.Completed)) {
+          updateTask(matchedTask.id, {
+            ...matchedTask,
+            status: TaskStatus.InProgress,
+            tagIds: matchedTask.tags?.map((t) => t.id),
+          });
+        }
       }
       setIsRunning(true);
     } else {
@@ -91,9 +110,7 @@ export function TimerCenter() {
         onTimerTick(focusMode === "W");
       }, 1000);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [isRunning, tickTimer, focusMode, modeDurations, onTimerTick]);
 
   const handleReset = async () => {
@@ -125,70 +142,81 @@ export function TimerCenter() {
       }
 
       await completeSession(currentSession.id, { actualSeconds: actual, overtimeSeconds: ot, note: finalNote });
-      const minText = `${Math.round(actual / 60)}m`;
-      setNotificationMsg(`✓ Đã lưu: ${minText} ${ot > 0 ? `(+${Math.round(ot / 60)}m OT)` : ""} ${aiAnalysis ? `[AI: ${aiAnalysis.score}%]` : ""}`);
-      setTimeout(() => setNotificationMsg(null), 4000);
+      if (focusMode === "W") {
+        setCompletedSessionData({
+          durationMinutes: modeDurations[focusMode].minutes,
+          actualSeconds: actual,
+          overtimeSeconds: ot,
+          task: matchedTask,
+          aiAnalysis,
+        });
+        setShowCompleteModal(true);
+      }
     }
 
-    const nextMode: FocusMode = focusMode === "W" ? "SB" : "W";
+    const isW = focusMode === "W";
+    const nextMode: FocusMode = isW ? "SB" : "W";
     setFocusMode(nextMode);
     resetTimer(modeDurations[nextMode].minutes * 60);
 
     const autoStartFocus = typeof window !== "undefined" && localStorage.getItem("pomodo_auto_start_focus") === "true";
-    if (focusMode === "W" && settings.autoStartBreaks) setIsRunning(true);
-    else if (focusMode !== "W" && autoStartFocus) setIsRunning(true);
+    if (isW) {
+      if (!currentSession?.id && settings.autoStartBreaks) setIsRunning(true);
+      else setIsRunning(false);
+    } else if (autoStartFocus) {
+      setIsRunning(true);
+    }
+  };
+
+  const handleConfirmTaskStatus = async (isCompleted: boolean) => {
+    if (isCompleted && matchedTask) {
+      await updateTask(matchedTask.id, {
+        ...matchedTask,
+        status: TaskStatus.Completed,
+        tagIds: matchedTask.tags?.map((t) => t.id),
+      });
+      setTaskName("");
+    }
+  };
+
+  const handleCloseCompleteModal = () => {
+    setShowCompleteModal(false);
+    setIsRunning(Boolean(settings.autoStartBreaks));
+  };
+
+  const handleStartBreak = () => {
+    setFocusMode("SB");
+    resetTimer(modeDurations["SB"].minutes * 60);
+    setIsRunning(true);
   };
 
   const handleManualComplete = () => {
     setIsRunning(false);
-    if (elapsedSeconds < 60) {
-      setShowZeroConfirm(true);
-      return;
-    }
-    executeSaveSession();
+    if (elapsedSeconds < 60) setShowZeroConfirm(true);
+    else executeSaveSession();
   };
 
-  const formatTime = (totalSecs: number) => {
-    const mins = Math.floor(totalSecs / 60);
-    const secs = totalSecs % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  const formatTime = (totalSecs: number) =>
+    `${Math.floor(totalSecs / 60).toString().padStart(2, "0")}:${(totalSecs % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="group flex flex-col items-center justify-center w-full max-w-lg mx-auto py-4 sm:py-6 px-4">
-      {notificationMsg && (
-        <div className="mb-4 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-in fade-in duration-200 shadow-xs">
-          {notificationMsg}
-        </div>
-      )}
-
       <TimerModeSelector
-        timerType={timerType}
-        focusMode={focusMode}
-        modeDurations={modeDurations}
-        onSelectTab={handleSelectTab}
-        isRunning={isRunning}
+        timerType={timerType} focusMode={focusMode} modeDurations={modeDurations}
+        onSelectTab={handleSelectTab} isRunning={isRunning}
       />
 
       <TimerDisplay
-        timerType={timerType}
-        focusMode={focusMode}
-        seconds={seconds}
-        isOvertime={isOvertime}
-        overtimeSeconds={overtimeSeconds}
-        isRunning={isRunning}
-        formatTime={formatTime}
+        timerType={timerType} focusMode={focusMode} seconds={seconds}
+        isOvertime={isOvertime} overtimeSeconds={overtimeSeconds}
+        isRunning={isRunning} formatTime={formatTime}
       />
 
       <TimerTaskInput taskName={taskName} onTaskNameChange={setTaskName} isRunning={isRunning} />
 
       <TimerControls
-        isRunning={isRunning}
-        isOvertime={isOvertime}
-        elapsedSeconds={elapsedSeconds}
-        onTogglePlay={handleTogglePlay}
-        onReset={handleReset}
-        onManualComplete={handleManualComplete}
+        isRunning={isRunning} isOvertime={isOvertime} elapsedSeconds={elapsedSeconds}
+        onTogglePlay={handleTogglePlay} onReset={handleReset} onManualComplete={handleManualComplete}
       />
 
       <div className={`w-full max-w-sm flex justify-center transition-opacity duration-300 ${isRunning ? "opacity-30 group-hover:opacity-100" : "opacity-100"}`}>
@@ -196,17 +224,19 @@ export function TimerCenter() {
       </div>
 
       <ZeroMinuteConfirmModal
-        isOpen={showZeroConfirm}
-        elapsedSeconds={elapsedSeconds}
-        onExit={() => {
-          setShowZeroConfirm(false);
-          handleReset();
-        }}
-        onResume={() => {
-          setShowZeroConfirm(false);
-          setIsRunning(true);
-        }}
+        isOpen={showZeroConfirm} elapsedSeconds={elapsedSeconds}
+        onExit={() => { setShowZeroConfirm(false); handleReset(); }}
+        onResume={() => { setShowZeroConfirm(false); setIsRunning(true); }}
         onClose={() => setShowZeroConfirm(false)}
+      />
+
+      <SessionCompleteModal
+        isOpen={showCompleteModal} onClose={handleCloseCompleteModal}
+        durationMinutes={completedSessionData?.durationMinutes || 25}
+        actualSeconds={completedSessionData?.actualSeconds || 0}
+        overtimeSeconds={completedSessionData?.overtimeSeconds || 0}
+        task={completedSessionData?.task} aiAnalysis={completedSessionData?.aiAnalysis}
+        onConfirmTaskStatus={handleConfirmTaskStatus} onStartBreak={handleStartBreak}
       />
     </div>
   );

@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TaskDto, Priority } from "../../types/api";
+import { TaskDto, Priority, TaskStatus } from "../../types/api";
 import { Zap } from "lucide-react";
 import { TaskSubtasksSection } from "./TaskSubtasksSection";
 import { TaskDetailBottomBar } from "./TaskDetailBottomBar";
 import { TaskTagsSection } from "./TaskTagsSection";
 import { DigitalTimePicker } from "./DigitalTimePicker";
 import { TaskPrioritySelect } from "./TaskPrioritySelect";
+import { TaskStatusSelect } from "./TaskStatusSelect";
+import { TaskDueTimePicker } from "./TaskDueTimePicker";
 import { useTaskDetailActions } from "./hooks/useTaskDetailActions";
 
 interface TaskDetailDrawerProps {
@@ -33,9 +35,6 @@ export function TaskDetailDrawer({
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPriority, setEditPriority] = useState<Priority>(task.priority);
   const [editEstimatedMinutes, setEditEstimatedMinutes] = useState<number>(task.estimatedMinutes || 30);
-  const [editDueDate, setEditDueDate] = useState<string>(
-    task.dueDate ? task.dueDate.split("T")[0] : new Date().toISOString().split("T")[0]
-  );
 
   const {
     isSaving,
@@ -49,9 +48,6 @@ export function TaskDetailDrawer({
     setEditTitle(task.title);
     setEditPriority(task.priority);
     setEditEstimatedMinutes(task.estimatedMinutes || 30);
-    setEditDueDate(
-      task.dueDate ? task.dueDate.split("T")[0] : new Date().toISOString().split("T")[0]
-    );
   }, [task]);
 
   return (
@@ -86,7 +82,11 @@ export function TaskDetailDrawer({
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
             }}
-            className="text-lg font-bold text-neutral-900 dark:text-white bg-transparent focus:outline-none flex-1 min-w-0 truncate"
+            className={`text-lg font-bold bg-transparent focus:outline-none flex-1 min-w-0 truncate transition-colors ${
+              task.status === TaskStatus.Completed
+                ? "line-through text-neutral-400 dark:text-neutral-500"
+                : "text-neutral-900 dark:text-white"
+            }`}
             placeholder="Tên công việc"
           />
 
@@ -100,7 +100,7 @@ export function TaskDetailDrawer({
         </div>
       </div>
 
-      {/* Detail Frame (Due Date, Estimation) */}
+      {/* Detail Frame (Status, Due Date & Time, Estimation) */}
       <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40 mb-6 flex flex-col gap-3.5 pointer-events-auto">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
@@ -115,20 +115,19 @@ export function TaskDetailDrawer({
         </div>
 
         <div className="flex items-center justify-between text-xs">
-          <span className="text-neutral-600 dark:text-neutral-400 font-medium">Hạn chót</span>
-          <input
-            type="date"
-            value={editDueDate}
-            onChange={(e) => {
-              const val = e.target.value;
-              setEditDueDate(val);
-              handleAutoSave({ dueDate: val });
-            }}
-            className="px-2.5 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 rounded-lg text-xs font-semibold text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer [color-scheme:light] dark:[color-scheme:dark] shadow-2xs transition-colors"
+          <span className="text-neutral-600 dark:text-neutral-400 font-medium">Trạng thái</span>
+          <TaskStatusSelect
+            status={task.status}
+            onChange={(newStatus) => handleAutoSave({ status: newStatus })}
           />
         </div>
 
-        <div className="flex items-center justify-between text-xs">
+        <TaskDueTimePicker
+          dueDate={task.dueDate}
+          onSaveDueDate={(val) => handleAutoSave({ dueDate: val })}
+        />
+
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-neutral-200/50 dark:border-neutral-800/50">
           <span className="text-neutral-600 dark:text-neutral-400 font-medium">Ước tính</span>
           <DigitalTimePicker
             valueMinutes={editEstimatedMinutes}

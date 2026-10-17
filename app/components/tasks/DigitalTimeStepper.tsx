@@ -83,9 +83,9 @@ export function DigitalTimeStepper({
           type="button"
           onClick={() => {
             setActiveUnit("mm");
-            onAdjustMinutes(5);
+            onAdjustMinutes(minutes < 5 ? 1 : 5);
           }}
-          title="Tăng 5 phút"
+          title={minutes < 5 ? "Tăng 1 phút" : "Tăng 5 phút"}
           className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
         >
           <ChevronUp size={16} strokeWidth={2.5} />
@@ -99,9 +99,9 @@ export function DigitalTimeStepper({
           type="button"
           onClick={() => {
             setActiveUnit("mm");
-            onAdjustMinutes(-5);
+            onAdjustMinutes(minutes <= 5 ? -1 : -5);
           }}
-          title="Giảm 5 phút"
+          title={minutes <= 5 ? "Giảm 1 phút" : "Giảm 5 phút"}
           className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
         >
           <ChevronDown size={16} strokeWidth={2.5} />

@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useTranslation } from "../../stores/useLanguageStore";
 import { AiFocusSessionDetailModal } from "./AiFocusSessionDetailModal";
+import { AiSessionDetailData } from "../../types/aiFocus";
+
+export type { AiSessionDetailData };
 
 export interface StatisticItem {
   id: string;
@@ -14,7 +17,7 @@ export interface StatisticItem {
   pomos: number;
   color: string;
   sourceType: "task" | "list";
-  aiData?: any;
+  aiData?: AiSessionDetailData | null;
   sessionId?: string;
 }
 
@@ -193,8 +196,8 @@ export function StatisticDetailChart({
                         {item.name}
                       </span>
                       {hasAiScore && (
-                        <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20 shrink-0">
-                          🎯 {item.aiData.score}%
+                        <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20 shrink-0">
+                          AI {item.aiData?.score}%
                         </span>
                       )}
                     </div>

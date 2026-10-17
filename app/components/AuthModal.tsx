@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslation } from "../stores/useLanguageStore";
 import { Logo } from "./Logo";
 import { X, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { SignInForm } from "./auth/forms/SignInForm";
@@ -25,6 +27,8 @@ export function AuthModal({
   onAuthSuccess,
   initialEmail,
 }: AuthModalProps) {
+  const router = useRouter();
+  const { language } = useTranslation();
   const [authMode, setAuthMode] = useState<
     "signup" | "otp-verify" | "signin" | "forgot" | "reset"
   >(initialMode);
@@ -194,6 +198,11 @@ export function AuthModal({
             initialEmail={email}
             onSuccess={(currUser) => {
               if (onAuthSuccess) onAuthSuccess(currUser);
+              if (currUser?.isAdmin) {
+                router.push(`/${language}/admin/users`);
+                onClose();
+                return;
+              }
               setTimeout(() => onClose(), 1000);
             }}
             onSwitchMode={(mode) => {

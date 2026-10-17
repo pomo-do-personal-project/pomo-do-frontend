@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Clock, X } from "lucide-react";
 import { DigitalTimeStepper } from "./DigitalTimeStepper";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface DigitalTimePickerProps {
   valueMinutes: number;
@@ -16,7 +17,8 @@ export function DigitalTimePicker({
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const initialMins = valueMinutes && valueMinutes > 0 ? valueMinutes : 25;
+  const focusDuration = useSettingsStore((s) => s.settings.focusDuration) || 25;
+  const initialMins = valueMinutes && valueMinutes > 0 ? valueMinutes : focusDuration;
   const [hours, setHours] = useState(() => Math.floor(initialMins / 60));
   const [minutes, setMinutes] = useState(() => initialMins % 60);
   const [activeUnit, setActiveUnit] = useState<"hh" | "mm">("mm");
@@ -27,12 +29,12 @@ export function DigitalTimePicker({
 
   useEffect(() => {
     if (!isOpen) {
-      const validM = valueMinutes && valueMinutes > 0 ? valueMinutes : 25;
+      const validM = valueMinutes && valueMinutes > 0 ? valueMinutes : focusDuration;
       setHours(Math.floor(validM / 60));
       setMinutes(validM % 60);
       latestTotalRef.current = validM;
     }
-  }, [valueMinutes, isOpen]);
+  }, [valueMinutes, isOpen, focusDuration]);
 
   const flushSave = () => {
     if (debounceTimerRef.current) {
@@ -61,8 +63,8 @@ export function DigitalTimePicker({
     let clampedH = Math.max(0, Math.min(23, newH));
     let clampedM = Math.max(0, Math.min(59, newM));
 
-    if (clampedH === 0 && clampedM < 5) {
-      clampedM = 5;
+    if (clampedH === 0 && clampedM < 1) {
+      clampedM = 1;
     }
 
     setHours(clampedH);
@@ -82,7 +84,7 @@ export function DigitalTimePicker({
 
   const adjustHours = (delta: number) => {
     let nextH = Math.max(0, Math.min(23, hours + delta));
-    let nextM = (nextH === 0 && minutes < 5) ? 5 : minutes;
+    let nextM = (nextH === 0 && minutes < 1) ? 1 : minutes;
     handleUpdate(nextH, nextM);
   };
 
@@ -98,11 +100,11 @@ export function DigitalTimePicker({
         nextM = 60 + nextM;
         nextH -= 1;
       } else {
-        nextM = 5;
+        nextM = 1;
       }
     }
 
-    if (nextH === 0 && nextM < 5) nextM = 5;
+    if (nextH === 0 && nextM < 1) nextM = 1;
     handleUpdate(nextH, nextM);
   };
 
@@ -120,12 +122,12 @@ export function DigitalTimePicker({
 
       const direction = steps < 0 ? 1 : -1;
       if (unit === "hh") adjustHours(direction);
-      if (unit === "mm") adjustMinutes(direction * 5);
+      if (unit === "mm") adjustMinutes(direction * (minutes < 5 ? 1 : 5));
     }
   };
 
-  const totalMinutes = Math.max(5, hours * 60 + minutes);
-  const pomos = (totalMinutes / 25).toFixed(1).replace(".0", "");
+  const totalMinutes = Math.max(1, hours * 60 + minutes);
+  const pomos = (totalMinutes / focusDuration).toFixed(1).replace(".0", "");
   const displayLabel = hours > 0 ? `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}` : `${minutes}m`;
 
   return (

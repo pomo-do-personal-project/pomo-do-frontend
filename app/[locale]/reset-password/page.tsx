@@ -59,11 +59,12 @@ function ResetPasswordForm() {
         newPassword,
       });
       setIsSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError) {
         setErrorMsg(err.message + (err.errors?.length ? `: ${err.errors.join(", ")}` : ""));
       } else {
-        setErrorMsg(err?.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+        const fallback = err instanceof Error ? err.message : "Không thể đặt lại mật khẩu. Vui lòng thử lại.";
+        setErrorMsg(fallback);
       }
     } finally {
       setIsLoading(false);

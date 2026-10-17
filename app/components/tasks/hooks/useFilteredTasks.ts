@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { TaskDto } from "../../../types/api";
 import { TaskCategory } from "../types";
+import { parseTaskDueDate, formatLocalDate } from "../../../utils/dateUtils";
 
 export function useFilteredTasks(
   tasks: TaskDto[],
@@ -18,29 +19,37 @@ export function useFilteredTasks(
   }, [tasks]);
 
   const categoryCounts = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = formatLocalDate();
     return {
-      Today: tasks.filter((t) => !t.isQuickAdd && (!t.dueDate || t.dueDate.startsWith(todayStr))).length,
-      Upcoming: tasks.filter((t) => !t.isQuickAdd && t.dueDate && !t.dueDate.startsWith(todayStr)).length,
+      Today: tasks.filter((t) => {
+        if (t.isQuickAdd) return false;
+        if (!t.dueDate) return true;
+        return parseTaskDueDate(t.dueDate).dateStr === todayStr;
+      }).length,
+      Upcoming: tasks.filter((t) => {
+        if (t.isQuickAdd) return false;
+        if (!t.dueDate) return false;
+        return parseTaskDueDate(t.dueDate).dateStr !== todayStr;
+      }).length,
       QuickAdd: tasks.filter((t) => t.isQuickAdd).length,
       Calendar: tasks.length,
     };
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = formatLocalDate();
 
     return tasks.filter((t) => {
       if (currentCategory === "QuickAdd") {
         if (!t.isQuickAdd) return false;
       } else if (currentCategory === "Today") {
         if (t.isQuickAdd) return false;
-        if (t.dueDate && !t.dueDate.startsWith(todayStr)) {
+        if (t.dueDate && parseTaskDueDate(t.dueDate).dateStr !== todayStr) {
           return false;
         }
       } else if (currentCategory === "Upcoming") {
         if (t.isQuickAdd) return false;
-        if (!t.dueDate || t.dueDate.startsWith(todayStr)) {
+        if (!t.dueDate || parseTaskDueDate(t.dueDate).dateStr === todayStr) {
           return false;
         }
       }

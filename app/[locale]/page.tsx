@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "../components/Sidebar";
 import { TimerCenter } from "../components/TimerCenter";
 import { OverviewPanel } from "../components/OverviewPanel";
@@ -10,6 +11,7 @@ import { StatisticPage } from "../components/StatisticPage";
 import { AuthModal } from "../components/AuthModal";
 import { SettingsModal, SettingsTab } from "../components/SettingsModal";
 import { OfflineBanner } from "../components/OfflineBanner";
+import { SystemBroadcastBanner } from "../components/SystemBroadcastBanner";
 import { WelcomeSplash } from "../components/WelcomeSplash";
 import { useAuthStore } from "../stores/useAuthStore";
 import { usePomodoroStore } from "../stores/usePomodoroStore";
@@ -24,8 +26,9 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const { t } = useTranslation();
-  const [activeView, setActiveView] = useState("dashboard"); // "dashboard" | "task" | "matrix" | ...
+  const router = useRouter();
+  const { t, language } = useTranslation();
+  const [activeView, setActiveView] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -40,6 +43,13 @@ export default function Home() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // Tự động chuyển hướng sang trang Admin nếu có quyền Admin
+  useEffect(() => {
+    if (isAuthenticated && user?.isAdmin) {
+      router.replace(`/${language}/admin/users`);
+    }
+  }, [isAuthenticated, user?.isAdmin, language, router]);
 
   // Global Pomodoro Timer State để hiển thị Mini Timer trên Header khi sang trang khác
   const isTimerRunning = usePomodoroStore((s) => s.isRunning);
@@ -91,8 +101,9 @@ export default function Home() {
           isSidebarOpen ? "ml-16" : "ml-0"
         } ${isOverviewOpen && activeView === "dashboard" ? "mr-80 sm:mr-96" : "mr-0"}`}
       >
-        {/* Offline Network Warning Banner */}
+        {/* Offline Network & Broadcast Banners */}
         <OfflineBanner />
+        <SystemBroadcastBanner />
 
         {/* Top Header Bar */}
         <header className="w-full h-14 px-5 flex items-center justify-between border-b border-neutral-200/50 dark:border-neutral-800/50 shrink-0">

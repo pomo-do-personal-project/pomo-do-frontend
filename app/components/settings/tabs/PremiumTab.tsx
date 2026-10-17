@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Crown, Sparkles } from "lucide-react";
+import { Crown, Check } from "lucide-react";
 import { useTranslation } from "../../../stores/useLanguageStore";
 
 interface PremiumTabProps {
@@ -28,16 +28,16 @@ export function PremiumTab({ showNotice }: PremiumTabProps) {
       </div>
 
       <div className="bg-neutral-50/80 dark:bg-[#262626] rounded-2xl p-4 border border-neutral-200 dark:border-neutral-800 flex flex-col gap-3 text-xs">
-        <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-          <Sparkles size={14} className="text-amber-500" />
+        <div className="flex items-center gap-2.5 text-neutral-700 dark:text-neutral-300">
+          <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
           <span>{t.settings.premium.feature1}</span>
         </div>
-        <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-          <Sparkles size={14} className="text-amber-500" />
+        <div className="flex items-center gap-2.5 text-neutral-700 dark:text-neutral-300">
+          <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
           <span>{t.settings.premium.feature2}</span>
         </div>
-        <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-          <Sparkles size={14} className="text-amber-500" />
+        <div className="flex items-center gap-2.5 text-neutral-700 dark:text-neutral-300">
+          <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
           <span>{t.settings.premium.feature3}</span>
         </div>
       </div>
@@ -47,12 +47,12 @@ export function PremiumTab({ showNotice }: PremiumTabProps) {
         onClick={() =>
           showNotice(
             t.settings.premium.trialNotice,
-            <Sparkles size={18} className="text-amber-500" />
+            <Crown size={18} className="text-amber-500" />
           )
         }
         className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700/80 text-amber-600 dark:text-amber-400 font-bold text-sm rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2 border border-amber-500/30"
       >
-        <Sparkles size={16} />
+        <Crown size={16} />
         <span>{t.settings.premium.comingSoon}</span>
       </button>
     </div>
