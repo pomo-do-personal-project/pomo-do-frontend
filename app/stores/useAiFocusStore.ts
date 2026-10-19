@@ -59,7 +59,7 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
           if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ action: "frame", image: frameBase64 }));
           }
-        }, 8);
+        }, 5);
 
         if (!cameraOk) {
           set({ error: "Vui lòng cấp quyền truy cập Camera trên trình duyệt" });

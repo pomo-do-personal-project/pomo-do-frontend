@@ -35,10 +35,10 @@ class CameraStreamer {
       this.video.muted = true;
       await this.video.play();
 
-      // Nâng kích thước lên 640x480 để hình ảnh rõ nét, không bị vỡ/mờ
+      // Tối ưu tỉ lệ 4:3 sắc nét (440x330): Khớp hoàn hảo khung widget (350px), siêu nhẹ (~15KB) giúp triệt tiêu độ trễ mạng
       this.canvas = document.createElement("canvas");
-      this.canvas.width = 640;
-      this.canvas.height = 480;
+      this.canvas.width = 440;
+      this.canvas.height = 330;
 
       const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return false;
@@ -57,14 +57,14 @@ class CameraStreamer {
           try {
             this.isWaitingForServer = true;
             ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-            // Chất lượng 0.75 giúp ảnh rõ nét, chi tiết cao
-            const dataUrl = this.canvas.toDataURL("image/jpeg", 0.75);
+            // Chất lượng 0.65 cân bằng tuyệt đối giữa độ nét cao và độ trễ siêu thấp
+            const dataUrl = this.canvas.toDataURL("image/jpeg", 0.65);
             onFrame(dataUrl);
 
-            // Timeout an toàn: Nếu sau 1.5 giây server chưa phản hồi thì tự cho phép gửi frame kế tiếp
+            // Timeout an toàn: Nếu sau 700ms server chưa phản hồi thì tự cho phép gửi frame kế tiếp
             setTimeout(() => {
               this.isWaitingForServer = false;
-            }, 1500);
+            }, 700);
           } catch (e) {
             this.isWaitingForServer = false;
             console.error("[CameraStreamer] Lỗi chụp frame:", e);
