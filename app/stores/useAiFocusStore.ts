@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { AiFocusStatus, AiFocusState, AiSessionAnalysis } from "../types/aiFocus";
+import { cameraStreamer } from "../lib/cameraStreamer";
 
 export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState } from "../types/aiFocus";
 
@@ -50,8 +51,19 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
     set({ isConnecting: true, error: null });
     try {
       socket = new WebSocket(WS_URL);
-      socket.onopen = () => {
+      socket.onopen = async () => {
         set({ isConnected: true, isConnecting: false, error: null, status: "AFK", detail: "Đã kết nối AI" });
+
+        // Tự động yêu cầu quyền camera trình duyệt và bắt đầu truyền frames
+        const cameraOk = await cameraStreamer.start((frameBase64) => {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ action: "frame", image: frameBase64 }));
+          }
+        }, 8);
+
+        if (!cameraOk) {
+          set({ error: "Vui lòng cấp quyền truy cập Camera trên trình duyệt" });
+        }
       };
       socket.onmessage = (event) => {
         try {
@@ -72,21 +84,27 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
           }
         } catch {}
       };
-      socket.onerror = () => set({ isConnected: false, isConnecting: false, error: "Lỗi kết nối AI" });
+      socket.onerror = () => {
+        cameraStreamer.stop();
+        set({ isConnected: false, isConnecting: false, error: "Lỗi kết nối AI" });
+      };
       socket.onclose = () => {
+        cameraStreamer.stop();
         set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt" });
         socket = null;
         if (get().isAiEnabled) reconnectTimer = setTimeout(() => get().connect(), 3000);
       };
     } catch (err: any) {
+      cameraStreamer.stop();
       set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", error: err?.message || "Lỗi" });
     }
   },
 
   disconnect: () => {
+    cameraStreamer.stop();
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     if (socket) { try { socket.close(); } catch {} socket = null; }
-    set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt" });
+    set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt", image: null });
   },
 
   addScreen: async () => {
