@@ -4,7 +4,7 @@ import { AiFocusStatus, AiFocusState, AiSessionAnalysis } from "../types/aiFocus
 export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState } from "../types/aiFocus";
 
 const WS_URL = process.env.NEXT_PUBLIC_AI_WS_URL || "ws://localhost:8001/ws";
-const HTTP_URL = WS_URL.replace("ws://", "http://").replace("/ws", "");
+const HTTP_URL = process.env.NEXT_PUBLIC_AI_API_URL || WS_URL.replace("wss://", "https://").replace("ws://", "http://").replace(/\/ws\/?$/, "");
 
 let socket: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
