@@ -69,6 +69,7 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
         try {
           const data = JSON.parse(event.data);
           if (data.event === "focus_update") {
+            cameraStreamer.notifyServerReady();
             set({
               status: (data.status as AiFocusStatus) || "AFK",
               detail: data.detail || "",

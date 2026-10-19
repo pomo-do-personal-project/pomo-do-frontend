@@ -9,8 +9,9 @@ class CameraStreamer {
   private canvas: HTMLCanvasElement | null = null;
   private timer: NodeJS.Timeout | null = null;
   private isStreaming = false;
+  private isWaitingForServer = false;
 
-  public async start(onFrame: (frameBase64: string) => void, fps = 8): Promise<boolean> {
+  public async start(onFrame: (frameBase64: string) => void, fps = 6): Promise<boolean> {
     if (this.isStreaming) return true;
 
     try {
@@ -18,12 +19,11 @@ class CameraStreamer {
         throw new Error("Trình duyệt không hỗ trợ mở Camera.");
       }
 
-      // Yêu cầu quyền truy cập Camera từ người dùng
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
-          frameRate: { max: 15 },
+          frameRate: { max: 12 },
           facingMode: "user",
         },
         audio: false,
@@ -35,31 +35,39 @@ class CameraStreamer {
       this.video.muted = true;
       await this.video.play();
 
+      // Nâng kích thước lên 640x480 để hình ảnh rõ nét, không bị vỡ/mờ
       this.canvas = document.createElement("canvas");
-      this.canvas.width = 480;
-      this.canvas.height = 360;
+      this.canvas.width = 640;
+      this.canvas.height = 480;
 
       const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return false;
 
       this.isStreaming = true;
+      this.isWaitingForServer = false;
       const intervalMs = Math.round(1000 / fps);
 
-      let isBusy = false;
       this.timer = setInterval(() => {
-        if (!this.isStreaming || !this.video || !this.canvas || isBusy) return;
+        if (!this.isStreaming || !this.video || !this.canvas) return;
+
+        // Cơ chế Backpressure: Chỉ gửi frame mới khi server Render đã xử lý xong frame trước
+        if (this.isWaitingForServer) return;
 
         if (this.video.readyState >= 2) {
-          isBusy = true;
           try {
+            this.isWaitingForServer = true;
             ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-            // Nén ảnh JPEG chất lượng vừa đủ (0.55) để truyền siêu nhanh qua mạng
-            const dataUrl = this.canvas.toDataURL("image/jpeg", 0.55);
+            // Chất lượng 0.75 giúp ảnh rõ nét, chi tiết cao
+            const dataUrl = this.canvas.toDataURL("image/jpeg", 0.75);
             onFrame(dataUrl);
+
+            // Timeout an toàn: Nếu sau 1.5 giây server chưa phản hồi thì tự cho phép gửi frame kế tiếp
+            setTimeout(() => {
+              this.isWaitingForServer = false;
+            }, 1500);
           } catch (e) {
+            this.isWaitingForServer = false;
             console.error("[CameraStreamer] Lỗi chụp frame:", e);
-          } finally {
-            isBusy = false;
           }
         }
       }, intervalMs);
@@ -72,8 +80,14 @@ class CameraStreamer {
     }
   }
 
+  // Báo cho CameraStreamer biết server đã phản hồi xong, sẵn sàng gửi frame mới
+  public notifyServerReady(): void {
+    this.isWaitingForServer = false;
+  }
+
   public stop(): void {
     this.isStreaming = false;
+    this.isWaitingForServer = false;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
