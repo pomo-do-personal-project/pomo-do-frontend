@@ -59,6 +59,16 @@ export function mapHistoryToStatisticItems(
     const name = title || matchedTask?.title || (session.mode === FocusSessionMode.Pomo ? "Tự do" : "Stopwatch");
     const color = PALETTE[index % PALETTE.length];
 
+    const sessionEntry = {
+      sessionId: session.id,
+      actualMinutes: session.actualMinutes,
+      overtimeMinutes: session.overtimeMinutes,
+      durationMinutes: session.durationMinutes || 25,
+      isCompleted: session.isCompleted,
+      startedAt: session.startedAt,
+      aiData,
+    };
+
     if (!map.has(key)) {
       map.set(key, {
         id: key,
@@ -71,6 +81,7 @@ export function mapHistoryToStatisticItems(
         sourceType: isTask ? "task" : "list",
         aiData,
         sessionId: session.id,
+        sessions: [sessionEntry],
       });
     } else {
       const existing = map.get(key)!;
@@ -82,6 +93,11 @@ export function mapHistoryToStatisticItems(
       existing.overtimeMinutes += session.overtimeMinutes;
       if (!existing.aiData && aiData) existing.aiData = aiData;
       if (session.isCompleted) existing.pomos += 1;
+      if (existing.sessions) {
+        existing.sessions.push(sessionEntry);
+      } else {
+        existing.sessions = [sessionEntry];
+      }
     }
   });
 

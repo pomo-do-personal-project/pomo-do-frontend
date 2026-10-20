@@ -230,6 +230,15 @@ export const usePomodoroStore = create<PomodoroState>()(
       partialize: (state) => ({
         summary: state.summary,
         history: state.history,
+        currentSession: state.currentSession,
+        taskName: state.taskName,
+        focusMode: state.focusMode,
+        timerType: state.timerType,
+        seconds: state.seconds,
+        elapsedSeconds: state.elapsedSeconds,
+        isOvertime: state.isOvertime,
+        overtimeSeconds: state.overtimeSeconds,
+        isRunning: state.isRunning,
       }),
     }
   )

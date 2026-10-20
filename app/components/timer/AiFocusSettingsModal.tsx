@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Sliders, ShieldCheck, Monitor, RotateCcw, Plus } from "lucide-react";
 import { useAiFocusStore } from "../../stores/useAiFocusStore";
 
@@ -21,8 +22,27 @@ export function AiFocusSettingsModal({ isOpen, onClose }: AiFocusSettingsModalPr
     resetScreens,
   } = useAiFocusStore();
 
+  const [mounted, setMounted] = useState(false);
   const [screenCountdown, setScreenCountdown] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = origOverflow;
+    };
+  }, [isOpen, onClose]);
 
   // Countdown xử lý thêm màn hình làm việc
   useEffect(() => {
@@ -39,11 +59,19 @@ export function AiFocusSettingsModal({ isOpen, onClose }: AiFocusSettingsModalPr
     return () => clearTimeout(t);
   }, [screenCountdown, addScreen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl max-h-[88vh] overflow-y-auto bg-white dark:bg-neutral-900 rounded-3xl p-4 sm:p-5 border border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col gap-3.5 sm:gap-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Click outside to close */}
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 w-full max-w-xl max-h-[88vh] overflow-y-auto bg-white dark:bg-neutral-900 rounded-3xl p-4 sm:p-5 border border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col gap-3.5 sm:gap-4 text-left"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-center gap-2.5">
@@ -151,6 +179,7 @@ export function AiFocusSettingsModal({ isOpen, onClose }: AiFocusSettingsModalPr
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

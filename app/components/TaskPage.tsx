@@ -129,6 +129,10 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
                 <CalendarDays size={26} strokeWidth={2} className="text-neutral-900 dark:text-white shrink-0" />
                 <span>Lịch biểu tập trung</span>
               </>
+            ) : currentCategory === "Today" ? (
+              <span>Hôm nay</span>
+            ) : currentCategory === "Upcoming" ? (
+              <span>Sắp tới</span>
             ) : (
               currentCategory
             )}

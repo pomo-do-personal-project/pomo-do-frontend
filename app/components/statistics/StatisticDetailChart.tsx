@@ -8,6 +8,16 @@ import { AiSessionDetailData } from "../../types/aiFocus";
 
 export type { AiSessionDetailData };
 
+export interface StatisticSessionEntry {
+  sessionId: string;
+  actualMinutes: number;
+  overtimeMinutes: number;
+  durationMinutes: number;
+  isCompleted: boolean;
+  startedAt?: string;
+  aiData?: AiSessionDetailData | null;
+}
+
 export interface StatisticItem {
   id: string;
   name: string;
@@ -19,6 +29,7 @@ export interface StatisticItem {
   sourceType: "task" | "list";
   aiData?: AiSessionDetailData | null;
   sessionId?: string;
+  sessions?: StatisticSessionEntry[];
 }
 
 interface StatisticDetailChartProps {

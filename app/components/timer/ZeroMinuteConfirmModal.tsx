@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Clock, X, LogOut, Play } from "lucide-react";
 
 interface ZeroMinuteConfirmModalProps {
   isOpen: boolean;
   elapsedSeconds: number;
+  isBreak?: boolean;
   onExit: () => void;
   onResume: () => void;
   onClose: () => void;
@@ -14,25 +16,46 @@ interface ZeroMinuteConfirmModalProps {
 export function ZeroMinuteConfirmModal({
   isOpen,
   elapsedSeconds,
+  isBreak = false,
   onExit,
   onResume,
   onClose,
 }: ZeroMinuteConfirmModalProps) {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = origOverflow;
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 shadow-2xl flex flex-col gap-4 text-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Click outside to close */}
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 shadow-2xl flex flex-col gap-4 text-center"
+      >
         {/* Close Button */}
         <button
           type="button"
@@ -51,13 +74,15 @@ export function ZeroMinuteConfirmModal({
         {/* Title & Description */}
         <div className="flex flex-col gap-2">
           <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
-            Phiên học dưới 1 phút
+            {isBreak ? "Phiên nghỉ ngơi dưới 1 phút" : "Phiên học dưới 1 phút"}
           </h3>
           <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed font-medium">
-            Những phiên dưới 1 phút thì hệ thống sẽ không lưu, bạn có muốn thoát không?
+            {isBreak
+              ? "Thời gian nghỉ ngơi dưới 1 phút, bạn có muốn thoát khỏi phiên nghỉ không?"
+              : "Phiên học dưới 1 phút sẽ không được lưu vào báo cáo thống kê. Bạn có chắc chắn muốn thoát?"}
           </p>
-          <span className="text-xs text-neutral-400 dark:text-neutral-500">
-            (Thời gian hiện tại: {elapsedSeconds} giây)
+          <span className="text-xs text-neutral-400 font-mono">
+            Thời gian đã trôi qua: {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s
           </span>
         </div>
 
@@ -77,10 +102,11 @@ export function ZeroMinuteConfirmModal({
             className="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Play size={14} className="fill-current" />
-            Tiếp tục học
+            {isBreak ? "Tiếp tục nghỉ" : "Tiếp tục học"}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { usePomodoroStore } from "../../../stores/usePomodoroStore";
-import { Button } from "../../ui/Button";
-import { Timer, Coffee, ChevronUp, ChevronDown } from "lucide-react";
-
+import { Timer, Coffee, ChevronUp, ChevronDown, Check } from "lucide-react";
 import { useTranslation } from "../../../stores/useLanguageStore";
 
 interface DateTimeTabProps {
@@ -25,51 +23,100 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
   useEffect(() => {
     setFocusDuration(settings.focusDuration || 25);
     setShortBreakDuration(settings.shortBreakDuration || 5);
-    setAutoStartBreaks(settings.autoStartBreaks || false);
+    const savedAutoBreak = localStorage.getItem("pomodo_auto_start_breaks");
+    if (savedAutoBreak !== null) {
+      setAutoStartBreaks(savedAutoBreak === "true");
+    } else {
+      setAutoStartBreaks(settings.autoStartBreaks || false);
+    }
 
     const savedAutoFocus = localStorage.getItem("pomodo_auto_start_focus");
     if (savedAutoFocus !== null) setAutoStartFocus(savedAutoFocus === "true");
   }, [settings]);
 
-  const handleSaveTimer = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Tự động lưu cài đặt ngay khi người dùng thay đổi
+  const persistSettings = async (updates: Partial<{
+    focusDuration: number;
+    shortBreakDuration: number;
+    longBreakDuration: number;
+    autoStartBreaks: boolean;
+  }>) => {
     try {
-      await updateSettings({
-        focusDuration,
-        shortBreakDuration,
-        longBreakDuration: settings.longBreakDuration || 15,
-        autoStartBreaks,
-      });
-      localStorage.setItem("pomodo_auto_start_focus", String(autoStartFocus));
+      await updateSettings(updates);
 
       // Đồng bộ ngay lập tức sang runtime Pomodoro Store khi đồng hồ đang ở trạng thái rảnh
       const pomo = usePomodoroStore.getState();
       if (!pomo.isRunning && pomo.elapsedSeconds === 0) {
-        if (pomo.focusMode === "W") {
-          pomo.resetTimer(focusDuration * 60);
-        } else {
-          pomo.resetTimer(shortBreakDuration * 60);
+        if (updates.focusDuration !== undefined && pomo.focusMode === "W") {
+          pomo.resetTimer(updates.focusDuration * 60);
+        } else if (updates.shortBreakDuration !== undefined && pomo.focusMode !== "W") {
+          pomo.resetTimer(updates.shortBreakDuration * 60);
         }
       }
 
       setSavedSuccess(true);
-      showNotice(t.settings.timer.saved);
-      setTimeout(() => setSavedSuccess(false), 2500);
+      setTimeout(() => setSavedSuccess(false), 2000);
     } catch {
       showNotice(t.settings.timer.saveError);
     }
   };
 
+  const handleFocusChange = (val: number) => {
+    const clamped = Math.max(1, Math.min(180, val));
+    setFocusDuration(clamped);
+    persistSettings({ focusDuration: clamped });
+  };
+
+  const handleBreakChange = (val: number) => {
+    const clamped = Math.max(1, Math.min(60, val));
+    setShortBreakDuration(clamped);
+    persistSettings({ shortBreakDuration: clamped });
+  };
+
+  const handleToggleAutoBreak = (checked: boolean) => {
+    setAutoStartBreaks(checked);
+    localStorage.setItem("pomodo_auto_start_breaks", String(checked));
+    persistSettings({ autoStartBreaks: checked });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pomodo_settings_changed"));
+    }
+  };
+
+  const handleToggleAutoFocus = (checked: boolean) => {
+    setAutoStartFocus(checked);
+    localStorage.setItem("pomodo_auto_start_focus", String(checked));
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2000);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("pomodo_settings_changed"));
+    }
+  };
+
   return (
-    <form onSubmit={handleSaveTimer} className="max-w-xl mx-auto flex flex-col gap-5 py-2 animate-in fade-in duration-150">
-      {/* HEADER TIÊU ĐỀ */}
-      <div className="pb-1 border-b border-neutral-200 dark:border-neutral-800/80">
-        <h2 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
-          {t.settings.timer.title}
-        </h2>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-          {t.settings.timer.subtitle}
-        </p>
+    <div className="max-w-xl mx-auto flex flex-col gap-5 py-2 animate-in fade-in duration-150">
+      {/* HEADER TIÊU ĐỀ KÈM TRẠNG THÁI TỰ ĐỘNG LƯU */}
+      <div className="flex items-center justify-between pb-1 border-b border-neutral-200 dark:border-neutral-800/80">
+        <div>
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            {t.settings.timer.title}
+          </h2>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            {t.settings.timer.subtitle}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-medium">
+          {isSaving ? (
+            <span className="text-amber-500 animate-pulse text-[11px] font-mono">Đang lưu...</span>
+          ) : savedSuccess ? (
+            <span className="text-emerald-500 text-[11px] font-medium animate-in fade-in flex items-center gap-1">
+              <Check size={13} strokeWidth={2.5} />
+              Đã tự động lưu
+            </span>
+          ) : (
+            <span className="text-neutral-400 text-[11px]">Tự động lưu thay đổi</span>
+          )}
+        </div>
       </div>
 
       {/* KHỐI 1: THỜI LƯỢNG TẬP TRUNG & NGHỈ NGƠI */}
@@ -96,7 +143,14 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
               min="1"
               max="180"
               value={focusDuration}
-              onChange={(e) => setFocusDuration(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                setFocusDuration(isNaN(v) ? 1 : v);
+              }}
+              onBlur={(e) => {
+                const v = parseInt(e.target.value) || 1;
+                handleFocusChange(v);
+              }}
               className="w-10 text-right font-mono font-bold text-sm bg-transparent border-none text-neutral-900 dark:text-white focus:outline-none p-0 select-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
 
@@ -104,7 +158,7 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-150">
               <button
                 type="button"
-                onClick={() => setFocusDuration((prev) => Math.min(180, prev + 1))}
+                onClick={() => handleFocusChange(focusDuration + 1)}
                 className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
                 title="+1 min"
                 aria-label="+1 min"
@@ -113,7 +167,7 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setFocusDuration((prev) => Math.max(1, prev - 1))}
+                onClick={() => handleFocusChange(focusDuration - 1)}
                 className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
                 title="-1 min"
                 aria-label="-1 min"
@@ -146,7 +200,14 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
               min="1"
               max="60"
               value={shortBreakDuration}
-              onChange={(e) => setShortBreakDuration(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                setShortBreakDuration(isNaN(v) ? 1 : v);
+              }}
+              onBlur={(e) => {
+                const v = parseInt(e.target.value) || 1;
+                handleBreakChange(v);
+              }}
               className="w-10 text-right font-mono font-bold text-sm bg-transparent border-none text-neutral-900 dark:text-white focus:outline-none p-0 select-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
 
@@ -154,7 +215,7 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-150">
               <button
                 type="button"
-                onClick={() => setShortBreakDuration((prev) => Math.min(60, prev + 1))}
+                onClick={() => handleBreakChange(shortBreakDuration + 1)}
                 className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
                 title="+1 min"
                 aria-label="+1 min"
@@ -163,7 +224,7 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setShortBreakDuration((prev) => Math.max(1, prev - 1))}
+                onClick={() => handleBreakChange(shortBreakDuration - 1)}
                 className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
                 title="-1 min"
                 aria-label="-1 min"
@@ -199,7 +260,7 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             <input
               type="checkbox"
               checked={autoStartBreaks}
-              onChange={(e) => setAutoStartBreaks(e.target.checked)}
+              onChange={(e) => handleToggleAutoBreak(e.target.checked)}
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -220,25 +281,13 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             <input
               type="checkbox"
               checked={autoStartFocus}
-              onChange={(e) => setAutoStartFocus(e.target.checked)}
+              onChange={(e) => handleToggleAutoFocus(e.target.checked)}
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
           </label>
         </div>
       </div>
-
-      <div className="flex items-center justify-end gap-2.5">
-        <Button
-          type="submit"
-          variant="primary"
-          size="sm"
-          disabled={isSaving}
-          className="min-w-[100px] bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 font-semibold shadow-xs"
-        >
-          {isSaving ? t.settings.timer.saving : savedSuccess ? `✓ ${t.settings.timer.saved}` : t.settings.timer.save}
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
