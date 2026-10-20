@@ -11,11 +11,14 @@ import {
 
 interface AuthState {
   user: UserDto | null;
+  accessToken: string | null;
+  refreshTokenString: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
   // Actions
+  setTokens: (accessToken: string | null, refreshTokenString: string | null) => void;
   login: (data: LoginRequest) => Promise<boolean>;
   register: (data: RegisterRequest) => Promise<boolean>;
   sendOtp: (email: string, purpose?: OtpPurpose) => Promise<string>;
@@ -31,13 +34,21 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      accessToken: null,
+      refreshTokenString: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
 
       clearError: () => set({ error: null }),
 
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setUser: (user) => set({
+        user,
+        isAuthenticated: !!user,
+        ...(user ? {} : { accessToken: null, refreshTokenString: null }),
+      }),
+
+      setTokens: (accessToken, refreshTokenString) => set({ accessToken, refreshTokenString }),
 
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
@@ -46,6 +57,8 @@ export const useAuthStore = create<AuthState>()(
           if (authData) {
             set({
               user: authData.user,
+              accessToken: authData.accessToken,
+              refreshTokenString: authData.refreshToken,
               isAuthenticated: true,
               isLoading: false,
               error: null,
@@ -60,6 +73,8 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: msg,
             isAuthenticated: false,
+            accessToken: null,
+            refreshTokenString: null,
           });
           throw err;
         }
@@ -122,7 +137,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          await authService.logout();
+          const rt = get().refreshTokenString || undefined;
+          await authService.logout(rt);
         } finally {
           const { clearAllUserData } = await import("../lib/sessionManager");
           clearAllUserData();
@@ -131,10 +147,22 @@ export const useAuthStore = create<AuthState>()(
 
       refreshToken: async (token?: string) => {
         try {
-          const authData = await authService.refreshToken(token);
+          const tokenToSend = token || get().refreshTokenString || undefined;
+          const authData = await authService.refreshToken(tokenToSend);
           if (authData) {
             if ("user" in authData && authData.user) {
-              set({ user: authData.user, isAuthenticated: true });
+              set({
+                user: authData.user,
+                accessToken: authData.accessToken,
+                refreshTokenString: authData.refreshToken,
+                isAuthenticated: true,
+              });
+            } else if ("accessToken" in authData) {
+              set({
+                accessToken: authData.accessToken,
+                refreshTokenString: authData.refreshToken,
+                isAuthenticated: true,
+              });
             }
             return true;
           }
@@ -154,6 +182,8 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
+        refreshTokenString: state.refreshTokenString,
         isAuthenticated: state.isAuthenticated,
       }),
     }

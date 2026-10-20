@@ -39,14 +39,29 @@ async function executeRefreshToken(): Promise<boolean> {
 
   refreshPromise = (async () => {
     try {
+      const { useAuthStore } = await import("../stores/useAuthStore");
+      const currentRefreshToken = useAuthStore.getState().refreshTokenString;
+
       const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(currentRefreshToken ? { refreshToken: currentRefreshToken } : {}),
       });
 
-      return refreshRes.ok;
+      if (refreshRes.ok) {
+        const raw = await refreshRes.json().catch(() => null);
+        const data = raw?.data;
+        if (data?.accessToken) {
+          useAuthStore.getState().setTokens(
+            data.accessToken,
+            data.refreshToken || currentRefreshToken
+          );
+        }
+        return true;
+      }
+
+      return false;
     } catch {
       return false;
     } finally {
@@ -60,7 +75,7 @@ async function executeRefreshToken(): Promise<boolean> {
 /**
  * Universal type-safe fetch client for Pomo-Do backend
  * Features:
- * - Cookie-based HttpOnly JWT auth
+ * - Cookie-based HttpOnly JWT auth + Bearer Header Fallback (Dual Resilience)
  * - Automatic 401 refresh-token interceptor & retry (Single-Flight Mutex)
  * - Global Offline & Network Error detection
  */
@@ -88,6 +103,17 @@ export async function apiClient<T>(
   const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
+
+  // Tự động gắn Authorization Bearer token nếu có trong store (Fallback chống chặn 3rd-party cookie)
+  try {
+    const { useAuthStore } = await import("../stores/useAuthStore");
+    const accessToken = useAuthStore.getState().accessToken;
+    if (accessToken) {
+      defaultHeaders["Authorization"] = `Bearer ${accessToken}`;
+    }
+  } catch {
+    // Không ném lỗi nếu môi trường không có store
+  }
 
   try {
     const res = await fetch(url, {
@@ -122,14 +148,20 @@ export async function apiClient<T>(
       const refreshSuccess = await executeRefreshToken();
 
       if (refreshSuccess) {
-        // Thử lại request ban đầu sau khi cookie token đã được làm mới
+        // Cập nhật lại Authorization header với Access Token mới nhất sau khi refresh
+        const { useAuthStore } = await import("../stores/useAuthStore");
+        const newAccessToken = useAuthStore.getState().accessToken;
+        const retryHeaders: HeadersInit = {
+          ...defaultHeaders,
+          ...(headers as any),
+          ...(newAccessToken ? { Authorization: `Bearer ${newAccessToken}` } : {}),
+        };
+
+        // Thử lại request ban đầu sau khi token đã được làm mới
         const retryRes = await fetch(url, {
           credentials: "include",
           ...restOptions,
-          headers: {
-            ...defaultHeaders,
-            ...headers,
-          },
+          headers: retryHeaders,
         });
 
         const rawRetry = await retryRes.json().catch(() => null);

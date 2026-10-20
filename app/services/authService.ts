@@ -69,10 +69,11 @@ export const authService = {
   /**
    * Đăng xuất & xóa phiên (hủy cookie và thu hồi token trên backend)
    */
-  async logout() {
+  async logout(refreshToken?: string) {
     try {
       await apiClient("/api/auth/logout", {
         method: "POST",
+        body: JSON.stringify(refreshToken ? { refreshToken } : {}),
       }).catch(() => {});
     } catch {
       // Ignored
