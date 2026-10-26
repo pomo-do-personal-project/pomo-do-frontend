@@ -40,9 +40,10 @@ export const createTaskSlice: StateCreator<
           ? tasks.find((t) => t.id === get().selectedTask?.id) || null
           : null,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = typeof err === "object" && err !== null ? (err as Record<string, unknown>) : null;
       const is401 =
-        err?.statusCode === 401 || err?.message?.toLowerCase().includes("unauthorized");
+        errObj?.statusCode === 401 || (err instanceof Error ? err.message : String(err)).toLowerCase().includes("unauthorized");
       if (is401) {
         set({
           tasks: [],
@@ -56,7 +57,7 @@ export const createTaskSlice: StateCreator<
       } else {
         set({
           isLoading: false,
-          error: err?.message || "Không thể kết nối đến máy chủ backend",
+          error: (err instanceof Error ? err.message : String(err)) || "Không thể kết nối đến máy chủ backend",
         });
       }
     }
@@ -76,10 +77,10 @@ export const createTaskSlice: StateCreator<
       }
       set({ isSaving: false });
       return null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         isSaving: false,
-        error: err?.message || "Không thể tạo công việc mới",
+        error: (err instanceof Error ? err.message : String(err)) || "Không thể tạo công việc mới",
       });
       throw err;
     }
@@ -99,10 +100,10 @@ export const createTaskSlice: StateCreator<
       }
       set({ isSaving: false });
       return null;
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         isSaving: false,
-        error: err?.message || "Không thể cập nhật công việc",
+        error: (err instanceof Error ? err.message : String(err)) || "Không thể cập nhật công việc",
       });
       throw err;
     }
@@ -142,7 +143,7 @@ export const createTaskSlice: StateCreator<
         return true;
       }
       return false;
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Rollback
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === id ? { ...t, priority: prevPriority } : t)),
@@ -150,7 +151,7 @@ export const createTaskSlice: StateCreator<
           state.selectedTask?.id === id
             ? { ...state.selectedTask, priority: prevPriority }
             : state.selectedTask,
-        error: err?.message || "Không thể chuyển đổi góc ma trận",
+        error: (err instanceof Error ? err.message : String(err)) || "Không thể chuyển đổi góc ma trận",
       }));
       return false;
     }
@@ -180,7 +181,7 @@ export const createTaskSlice: StateCreator<
           selectedTask: state.selectedTask?.id === id ? updated : state.selectedTask,
         }));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Rollback
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === id ? { ...t, status: task.status } : t)),
@@ -188,7 +189,7 @@ export const createTaskSlice: StateCreator<
           state.selectedTask?.id === id
             ? { ...state.selectedTask, status: task.status }
             : state.selectedTask,
-        error: err?.message || "Lỗi cập nhật trạng thái",
+        error: (err instanceof Error ? err.message : String(err)) || "Lỗi cập nhật trạng thái",
       }));
     }
   },
@@ -209,11 +210,11 @@ export const createTaskSlice: StateCreator<
         return false;
       }
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({
         tasks: prevTasks,
         selectedTask: prevSelected,
-        error: err?.message || "Không thể xóa công việc",
+        error: (err instanceof Error ? err.message : String(err)) || "Không thể xóa công việc",
       });
       return false;
     }

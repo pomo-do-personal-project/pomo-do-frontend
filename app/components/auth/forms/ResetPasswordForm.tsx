@@ -57,11 +57,11 @@ export function ResetPasswordForm({
       setTimeout(() => {
         onSuccess();
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message + (err.errors?.length ? `: ${err.errors.join(", ")}` : ""));
       } else {
-        setError(err?.message || "Không thể đặt lại mật khẩu.");
+        setError((err instanceof Error ? err.message : String(err)) || "Không thể đặt lại mật khẩu.");
       }
     } finally {
       setIsSubmitting(false);

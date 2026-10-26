@@ -15,6 +15,9 @@ export interface UserSettingsDto {
   dailyDigestTime?: string;
   weeklyReportTime?: string;
   reportEmail?: string | null;
+  wallpaperUrl?: string | null;
+  alarmSoundUrl?: string | null;
+  ambientSoundUrl?: string | null;
 }
 
 export interface UpdateUserSettingsRequest {
@@ -28,6 +31,9 @@ export interface UpdateUserSettingsRequest {
   dailyDigestTime?: string;
   weeklyReportTime?: string;
   reportEmail?: string | null;
+  wallpaperUrl?: string | null;
+  alarmSoundUrl?: string | null;
+  ambientSoundUrl?: string | null;
 }
 
 export interface TestEmailReportRequest {

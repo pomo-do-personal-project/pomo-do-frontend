@@ -113,6 +113,18 @@ export default async function LocaleLayout({
                   } else {
                     document.documentElement.classList.remove('dark');
                   }
+                  var colors = localStorage.getItem('pomodo_theme_colors');
+                  if (colors) {
+                    var c = JSON.parse(colors);
+                    var r = document.documentElement.style;
+                    if (c.canvasBg) r.setProperty('--canvas-bg', c.canvasBg);
+                    if (c.surfaceBg) r.setProperty('--surface-bg', c.surfaceBg);
+                    if (c.surfaceElevated) r.setProperty('--surface-elevated', c.surfaceElevated);
+                    if (c.borderSubtle) r.setProperty('--border-subtle', c.borderSubtle);
+                    if (c.textMuted) r.setProperty('--text-muted', c.textMuted);
+                    if (c.textHighlight) r.setProperty('--text-highlight', c.textHighlight);
+                    if (c.accentPrimary) r.setProperty('--accent-primary', c.accentPrimary);
+                  }
                 } catch (e) {}
               })();
             `,

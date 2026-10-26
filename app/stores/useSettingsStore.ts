@@ -30,6 +30,9 @@ const DEFAULT_SETTINGS: UserSettingsDto = {
   dailyDigestTime: "07:00",
   weeklyReportTime: "08:00",
   reportEmail: null,
+  wallpaperUrl: null,
+  alarmSoundUrl: null,
+  ambientSoundUrl: null,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -66,9 +69,9 @@ export const useSettingsStore = create<SettingsState>()(
           } else {
             set({ isLoading: false });
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
           // Khi offline hoặc chưa đăng nhập, tiếp tục dùng local cache
-          set({ isLoading: false, error: err?.message || null });
+          set({ isLoading: false, error: (err instanceof Error ? err.message : String(err)) || null });
         }
       },
 
@@ -85,6 +88,9 @@ export const useSettingsStore = create<SettingsState>()(
           dailyDigestTime: data.dailyDigestTime ?? current.dailyDigestTime ?? "07:00",
           weeklyReportTime: data.weeklyReportTime ?? current.weeklyReportTime ?? "08:00",
           reportEmail: data.reportEmail !== undefined ? data.reportEmail : current.reportEmail,
+          wallpaperUrl: data.wallpaperUrl !== undefined ? data.wallpaperUrl : current.wallpaperUrl,
+          alarmSoundUrl: data.alarmSoundUrl !== undefined ? data.alarmSoundUrl : current.alarmSoundUrl,
+          ambientSoundUrl: data.ambientSoundUrl !== undefined ? data.ambientSoundUrl : current.ambientSoundUrl,
         };
 
         // Optimistic update
@@ -102,8 +108,8 @@ export const useSettingsStore = create<SettingsState>()(
           }
           set({ isSaving: false });
           return true;
-        } catch (err: any) {
-          set({ isSaving: false, error: err?.message || "Không thể lưu cài đặt lên máy chủ." });
+        } catch (err: unknown) {
+          set({ isSaving: false, error: (err instanceof Error ? err.message : String(err)) || "Không thể lưu cài đặt lên máy chủ." });
           return false;
         }
       },

@@ -45,9 +45,7 @@ export function Sidebar({
 
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  React.useEffect(() => { setMounted(true); }, []);
 
   const topItems: NavItem[] = [
     { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
@@ -58,7 +56,6 @@ export function Sidebar({
 
   const isUserLoggedIn = mounted && isAuthenticated && !!user;
 
-  // Lấy 2 ký tự đầu hoặc chữ cái đầu của tên
   const userInitials = React.useMemo(() => {
     if (!user) return "U";
     if (user.displayName) {
@@ -68,31 +65,34 @@ export function Sidebar({
     return user.email.slice(0, 2).toUpperCase();
   }, [user]);
 
-  const handleAccountClick = () => {
-    if (!isUserLoggedIn) onSelectItem?.("info");
-    else setShowUserMenu((prev) => !prev);
-  };
-
-  const handleLogout = () => {
-    setShowUserMenu(false);
-    onSelectItem?.("logout");
-  };
+  const handleAccountClick = () => { if (!isUserLoggedIn) onSelectItem?.("info"); else setShowUserMenu((prev) => !prev); };
+  const handleLogout = () => { setShowUserMenu(false); onSelectItem?.("logout"); };
 
   return (
     <aside
-      className={`fixed top-0 left-0 bottom-0 z-30 flex flex-col bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-neutral-200/80 dark:border-neutral-800/80 select-none shadow-sm transition-[width] duration-300 ease-in-out ${isOpen ? "w-18 visible" : "w-0 overflow-hidden invisible border-none"}`}
+      className={`hidden md:flex fixed top-0 left-0 bottom-0 z-30 flex-col select-none shadow-2xl transition-all duration-300 ease-in-out ${
+        isOpen ? "w-18 visible" : "w-0 overflow-hidden invisible border-none"
+      }`}
+      style={{
+        background: "var(--surface-bg, #16171b)",
+        borderRight: "1px solid rgba(0, 0, 0, 0.08)",
+        color: "#ffffff",
+      }}
     >
-      <div className="h-14 w-18 flex items-center justify-center border-b border-neutral-200/60 dark:border-neutral-800/60 shrink-0 relative">
+      <div
+        className="h-14 w-18 flex items-center justify-center shrink-0 relative"
+        style={{ borderBottom: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))" }}
+      >
         <button
           onClick={onToggle}
           title="Thu gọn Sidebar"
           aria-label="Thu gọn Sidebar"
-          className="w-10 h-10 relative flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all group"
+          className="w-10 h-10 relative flex items-center justify-center overflow-hidden cursor-pointer hover:bg-white/10 active:scale-95 transition-all rounded-xl group"
         >
           <div className="w-full h-full p-0.5 group-hover:opacity-10 transition-opacity duration-200 flex items-center justify-center">
             <Logo iconOnly size={36} />
           </div>
-          <span className="hidden group-hover:flex absolute inset-0 items-center justify-center text-neutral-800 dark:text-neutral-100">
+          <span className="hidden group-hover:flex absolute inset-0 items-center justify-center text-white">
             <ChevronsLeft size={20} strokeWidth={2} />
           </span>
         </button>
@@ -108,36 +108,43 @@ export function Sidebar({
               <button
                 onClick={() => { setShowUserMenu(false); onSelectItem?.(item.id); }}
                 aria-label={item.label}
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${isActive
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
-                  : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? "bg-white/25 text-white shadow-sm ring-1 ring-white/30 backdrop-blur-md"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
               >
                 <IconComponent size={22} strokeWidth={isActive ? 2 : 1.75} />
               </button>
 
-              <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 text-xs font-semibold rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 whitespace-nowrap">
+              <div className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 px-3 py-1.5 bg-neutral-900/95 text-white text-xs font-semibold rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 whitespace-nowrap border border-white/10 backdrop-blur-md">
                 {item.label}
-                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-neutral-900 dark:border-r-neutral-100" />
+                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-[1px] border-4 border-transparent border-r-neutral-900" />
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="py-3 w-18 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-col items-center gap-2 overflow-visible shrink-0 relative">
+      <div
+        className="py-3 w-18 flex flex-col items-center gap-2 overflow-visible shrink-0 relative"
+        style={{ borderTop: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))" }}
+      >
         <div className="relative group flex justify-center">
           <button
             onClick={handleAccountClick}
             aria-label={isUserLoggedIn ? `User ${user?.displayName || user?.email}` : "Sign in / Register"}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${isUserLoggedIn
-              ? "border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 shadow-xs hover:border-neutral-400 dark:hover:border-neutral-600 active:scale-95"
-              : "border-dashed border-neutral-400 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-neutral-900 dark:hover:border-white hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60"}`}
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${
+              isUserLoggedIn
+                ? "border-white/20 hover:border-white/40 bg-white/10 shadow-xs active:scale-95"
+                : "border-dashed border-white/30 text-white/70 hover:border-white hover:text-white hover:bg-white/10"
+            }`}
           >
             {isUserLoggedIn ? (
               user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.displayName || "Avatar"} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold select-none shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-bold select-none shadow-xs ring-1 ring-white/30">
                   {userInitials}
                 </div>
               )
@@ -190,10 +197,7 @@ export function Sidebar({
                 {/* 2. Premiums */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    onSelectItem?.("premiums");
-                  }}
+                  onClick={() => { setShowUserMenu(false); onSelectItem?.("premiums"); }}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
                   <Sparkles size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />
@@ -203,10 +207,7 @@ export function Sidebar({
                 {/* 3. Settings */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    onSelectItem?.("settings");
-                  }}
+                  onClick={() => { setShowUserMenu(false); onSelectItem?.("settings"); }}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
                 >
                   <Settings size={16} strokeWidth={1.75} className="text-neutral-500 dark:text-neutral-400 shrink-0" />

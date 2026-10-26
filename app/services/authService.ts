@@ -94,4 +94,28 @@ export const authService = {
 
     return res.data;
   },
+
+  /**
+   * Đăng nhập hoặc đăng ký bằng Google ID Token
+   */
+  async googleAuth(idToken: string) {
+    const res = await apiClient<AuthResponse>("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
+
+    return res.data;
+  },
+
+  /**
+   * Đăng nhập hoặc đăng ký bằng Supabase Access Token
+   */
+  async supabaseAuth(accessToken: string) {
+    const res = await apiClient<AuthResponse>("/api/auth/supabase", {
+      method: "POST",
+      body: JSON.stringify({ accessToken }),
+    });
+
+    return res.data;
+  },
 };

@@ -1,7 +1,8 @@
 import { ApiResponse } from "../types/api";
 import { useNetworkStore } from "../stores/useNetworkStore";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
+const rawBase = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
+const API_BASE_URL = rawBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -85,7 +86,19 @@ export async function apiClient<T>(
 ): Promise<ApiResponse<T>> {
   const { params, headers, ...restOptions } = options;
 
-  let url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  let url: string;
+  if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+    url = endpoint;
+  } else {
+    const cleanEndpoint = endpoint.startsWith("/api/") || endpoint === "/api"
+      ? endpoint
+      : endpoint.startsWith("api/")
+      ? `/${endpoint}`
+      : endpoint.startsWith("/")
+      ? `/api${endpoint}`
+      : `/api/${endpoint}`;
+    url = `${API_BASE_URL}${cleanEndpoint}`;
+  }
 
   if (params) {
     const searchParams = new URLSearchParams();
@@ -153,7 +166,7 @@ export async function apiClient<T>(
         const newAccessToken = useAuthStore.getState().accessToken;
         const retryHeaders: HeadersInit = {
           ...defaultHeaders,
-          ...(headers as any),
+          ...(headers as Record<string, string>),
           ...(newAccessToken ? { Authorization: `Bearer ${newAccessToken}` } : {}),
         };
 

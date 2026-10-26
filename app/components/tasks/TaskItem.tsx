@@ -4,6 +4,7 @@ import React from "react";
 import { TaskDto, TaskStatus, Priority } from "../../types/api";
 import { Check, Zap, Clock, ChevronRight } from "lucide-react";
 import { parseTaskDueDate } from "../../utils/dateUtils";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TaskItemProps {
   task: TaskDto;
@@ -18,6 +19,7 @@ export function TaskItem({
   onSelect,
   onToggleStatus,
 }: TaskItemProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const isCompleted = task.status === TaskStatus.Completed;
 
   const getMatrixBadgeColor = (p: Priority) => {
@@ -39,10 +41,14 @@ export function TaskItem({
     <div
       data-task-item="true"
       onClick={() => onSelect(task)}
-      className={`px-4 py-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer select-none ${
+      className={`px-4 py-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer select-none backdrop-blur-md ${
         isSelected
-          ? "bg-neutral-100 dark:bg-neutral-800/90 border-neutral-400 dark:border-neutral-600 shadow-xs"
-          : "bg-white dark:bg-neutral-900 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 shadow-2xs"
+          ? wallpaperUrl
+            ? "bg-white/25 border-white/40 shadow-md ring-1 ring-white/30 text-white"
+            : "bg-white border-neutral-300 shadow-md ring-1 ring-neutral-400 text-neutral-900"
+          : wallpaperUrl
+          ? "bg-white/15 hover:bg-white/20 border-white/15 hover:border-white/30 shadow-xs text-white"
+          : "bg-white hover:bg-neutral-50/90 border-neutral-200/90 hover:border-neutral-300 shadow-2xs text-neutral-800"
       }`}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -54,18 +60,24 @@ export function TaskItem({
           className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
             isCompleted
               ? "bg-emerald-500 border-emerald-500 text-white"
-              : "border-neutral-400 dark:border-neutral-600 hover:border-neutral-600"
+              : wallpaperUrl
+              ? "border-white/40 hover:border-white bg-black/20 text-white"
+              : "border-neutral-300 hover:border-neutral-500 bg-neutral-100/80 text-neutral-700"
           }`}
         >
           {isCompleted && <Check size={13} strokeWidth={2.5} />}
         </button>
 
-        <div className="flex items-center gap-2 truncate">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
-            className={`text-sm sm:text-base truncate ${
+            className={`text-sm sm:text-base truncate font-medium min-w-0 ${
               isCompleted
-                ? "line-through text-neutral-400 dark:text-neutral-500"
-                : "text-neutral-800 dark:text-neutral-200 font-medium"
+                ? wallpaperUrl
+                  ? "line-through text-white/40"
+                  : "line-through text-neutral-400"
+                : wallpaperUrl
+                ? "text-white drop-shadow-xs"
+                : "text-neutral-900"
             }`}
           >
             {task.title}
@@ -73,7 +85,7 @@ export function TaskItem({
 
           {/* QuickAdd Badge */}
           {task.isQuickAdd && (
-            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/15 border border-amber-400/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
               <Zap size={10} strokeWidth={2} />
               <span>Quick</span>
             </span>
@@ -85,7 +97,11 @@ export function TaskItem({
               {task.tags.slice(0, 2).map((t) => (
                 <span
                   key={t.id}
-                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-neutral-200/80 dark:border-neutral-700/80 bg-neutral-100/60 dark:bg-neutral-800/60 text-neutral-600 dark:text-neutral-300 truncate max-w-[90px]"
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md flex items-center gap-1 border truncate max-w-[90px] ${
+                    wallpaperUrl
+                      ? "border-white/15 bg-white/15 text-white"
+                      : "border-neutral-200 bg-neutral-100 text-neutral-700"
+                  }`}
                   title={t.name}
                 >
                   <span
@@ -96,7 +112,11 @@ export function TaskItem({
                 </span>
               ))}
               {task.tags.length > 2 && (
-                <span className="text-[10px] text-neutral-400 font-mono">
+                <span
+                  className={`text-[10px] font-mono ${
+                    wallpaperUrl ? "text-white/60" : "text-neutral-500"
+                  }`}
+                >
                   +{task.tags.length - 2}
                 </span>
               )}
@@ -112,7 +132,13 @@ export function TaskItem({
           </span>
 
           {/* Estimated time tag */}
-          <span className="text-[11px] font-mono text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md flex items-center gap-1">
+          <span
+            className={`text-[11px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1 border ${
+              wallpaperUrl
+                ? "text-white/80 bg-white/15 border-white/10 backdrop-blur-xs"
+                : "text-neutral-600 bg-neutral-100 border-neutral-200/80"
+            }`}
+          >
             <Clock size={11} strokeWidth={1.75} />
             <span>{task.estimatedMinutes || 25}m</span>
           </span>
@@ -122,8 +148,14 @@ export function TaskItem({
             const dueInfo = parseTaskDueDate(task.dueDate);
             if (!dueInfo.hasTime) return null;
             return (
-              <span className="text-[11px] font-mono font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800/80 px-2 py-0.5 rounded-md flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 shrink-0">
-                <Clock size={11} className="text-neutral-400" />
+              <span
+                className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded-md flex items-center gap-1 border shrink-0 ${
+                  wallpaperUrl
+                    ? "text-white/90 bg-white/15 border-white/15 backdrop-blur-xs"
+                    : "text-neutral-700 bg-neutral-100 border-neutral-200"
+                }`}
+              >
+                <Clock size={11} className={wallpaperUrl ? "text-white/70" : "text-neutral-500"} />
                 <span>{dueInfo.time12h}</span>
               </span>
             );
@@ -131,14 +163,26 @@ export function TaskItem({
 
           {/* Subtasks summary */}
           {task.subtasks && task.subtasks.length > 0 && (
-            <span className="text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                wallpaperUrl
+                  ? "text-white/80 bg-white/15 border-white/10"
+                  : "text-neutral-600 bg-neutral-100 border-neutral-200"
+              }`}
+            >
               {task.subtasks.filter((s) => s.isCompleted).length}/{task.subtasks.length}
             </span>
           )}
         </div>
       </div>
 
-      <span className="text-neutral-400 dark:text-neutral-500 px-2 flex items-center">
+      <span
+        className={`px-2 flex items-center ${
+          wallpaperUrl
+            ? "text-white/40 group-hover:text-white"
+            : "text-neutral-400 group-hover:text-neutral-700"
+        }`}
+      >
         <ChevronRight size={16} strokeWidth={1.75} />
       </span>
     </div>

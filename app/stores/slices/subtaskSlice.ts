@@ -31,8 +31,8 @@ export const createSubtaskSlice: StateCreator<
         return newSub;
       }
       return null;
-    } catch (err: any) {
-      set({ error: err?.message || "Không thể thêm subtask" });
+    } catch (err: unknown) {
+      set({ error: (err instanceof Error ? err.message : String(err)) || "Không thể thêm subtask" });
       throw err;
     }
   },
@@ -74,14 +74,14 @@ export const createSubtaskSlice: StateCreator<
           };
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Refetch task on error
       const current = await taskService.getTaskById(taskId);
       if (current) {
         set((state) => ({
           tasks: state.tasks.map((t) => (t.id === taskId ? current : t)),
           selectedTask: state.selectedTask?.id === taskId ? current : state.selectedTask,
-          error: err?.message || "Lỗi cập nhật subtask",
+          error: (err instanceof Error ? err.message : String(err)) || "Lỗi cập nhật subtask",
         }));
       }
     }
@@ -108,8 +108,8 @@ export const createSubtaskSlice: StateCreator<
         return updatedSub;
       }
       return null;
-    } catch (err: any) {
-      set({ error: err?.message || "Không thể cập nhật subtask" });
+    } catch (err: unknown) {
+      set({ error: (err instanceof Error ? err.message : String(err)) || "Không thể cập nhật subtask" });
       throw err;
     }
   },
@@ -133,14 +133,14 @@ export const createSubtaskSlice: StateCreator<
 
     try {
       return await taskService.deleteSubtask(taskId, subtaskId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Refetch on error
       const current = await taskService.getTaskById(taskId);
       if (current) {
         set((state) => ({
           tasks: state.tasks.map((t) => (t.id === taskId ? current : t)),
           selectedTask: state.selectedTask?.id === taskId ? current : state.selectedTask,
-          error: err?.message || "Lỗi xóa subtask",
+          error: (err instanceof Error ? err.message : String(err)) || "Lỗi xóa subtask",
         }));
       }
       return false;

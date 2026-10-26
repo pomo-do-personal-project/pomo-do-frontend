@@ -17,32 +17,19 @@ export function AiFocusSessionDetailModal({ isOpen, onClose, item }: AiFocusSess
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Sync selected session when item opens or changes
-  useEffect(() => {
-    if (item?.sessions && item.sessions.length > 0) {
-      const firstWithAi = item.sessions.find((s) => s.aiData);
-      setSelectedSessionId(firstWithAi ? firstWithAi.sessionId : item.sessions[0].sessionId);
-    } else {
-      setSelectedSessionId(null);
-    }
-  }, [item, isOpen]);
-
-  // Lock body scroll and listen for Escape key
-  useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    const origOverflow = document.body.style.overflow;
+    const firstWithAi = item?.sessions?.find((s) => s.aiData);
+    setSelectedSessionId(firstWithAi ? firstWithAi.sessionId : item?.sessions?.[0]?.sessionId ?? null);
+
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = origOverflow;
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = orig;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, item, onClose]);
 
   if (!isOpen || !item || !mounted) return null;
 
@@ -53,26 +40,26 @@ export function AiFocusSessionDetailModal({ isOpen, onClose, item }: AiFocusSess
 
   const hasAi = Boolean(activeAi && (activeAi.score !== undefined || activeAi.fb !== undefined));
 
-  const score: number = hasAi && activeAi ? (activeAi.score ?? Math.round(Math.random() * 20 + 80)) : 0;
-  const grade: string = hasAi && activeAi ? (activeAi.grade ?? (score >= 90 ? "A" : score >= 75 ? "B" : "C")) : "N/A";
-  const phoneCount: number = hasAi && activeAi ? (activeAi.phoneCount ?? (typeof activeAi.ph === "number" ? activeAi.ph : 0) ?? 0) : 0;
-  const sleepCount: number = hasAi && activeAi ? (activeAi.sleepCount ?? (typeof activeAi.sl === "number" ? activeAi.sl : 0) ?? 0) : 0;
-  const lookAwayCount: number = hasAi && activeAi ? (activeAi.lookAwayCount ?? (typeof activeAi.lk === "number" ? activeAi.lk : 0) ?? 0) : 0;
-  const conclusion: string = hasAi && activeAi
+  const score = hasAi && activeAi ? (activeAi.score ?? 85) : 0;
+  const grade = hasAi && activeAi ? (activeAi.grade ?? (score >= 90 ? "A" : score >= 75 ? "B" : "C")) : "N/A";
+  const phoneCount = hasAi && activeAi ? (activeAi.phoneCount ?? (typeof activeAi.ph === "number" ? activeAi.ph : 0) ?? 0) : 0;
+  const sleepCount = hasAi && activeAi ? (activeAi.sleepCount ?? (typeof activeAi.sl === "number" ? activeAi.sl : 0) ?? 0) : 0;
+  const lookAwayCount = hasAi && activeAi ? (activeAi.lookAwayCount ?? (typeof activeAi.lk === "number" ? activeAi.lk : 0) ?? 0) : 0;
+  const conclusion = hasAi && activeAi
     ? (activeAi.conclusion ?? (typeof activeAi.fb === "string" ? activeAi.fb : null) ?? `Phiên '${item.name}' đạt ${score}% độ tập trung.`)
     : "Phiên này không bật Camera AI Focus nên chưa có dữ liệu ghi nhận hành vi.";
-  const advice: string = hasAi && activeAi
+  const advice = hasAi && activeAi
     ? (activeAi.advice ?? (phoneCount > 0 ? "Để điện thoại xa tầm tay ở các phiên tiếp theo." : "Tiếp tục duy trì phong độ tập trung này!"))
     : "Bật Camera AI ở các phiên tiếp theo để AI hỗ trợ chấm điểm và phân tích nhé!";
 
   const focusedMins = Math.max(0, Math.round(activeActualMins * (score / 100)));
   const distractedMins = Math.max(0, activeActualMins - focusedMins);
-
-  const gradeColor =
-    grade === "S" ? "text-amber-500 bg-amber-500/10 border-amber-500/30"
-    : grade === "A" ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30"
-    : grade === "B" ? "text-blue-500 bg-blue-500/10 border-blue-500/30"
-    : "text-rose-500 bg-rose-500/10 border-rose-500/30";
+  const gradeColors: Record<string, string> = {
+    S: "text-amber-500 bg-amber-500/10 border-amber-500/30",
+    A: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
+    B: "text-blue-500 bg-blue-500/10 border-blue-500/30",
+  };
+  const gradeColor = gradeColors[grade] || "text-rose-500 bg-rose-500/10 border-rose-500/30";
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">

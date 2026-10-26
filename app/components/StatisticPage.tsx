@@ -102,9 +102,9 @@ export function StatisticPage() {
   const totalFocusHours = (totalActualMinutes / 60).toFixed(1);
 
   return (
-    <div className="flex-1 flex flex-col items-center p-6 md:p-10 overflow-y-auto max-w-5xl mx-auto w-full transition-colors">
+    <div className="flex-1 flex flex-col items-center min-w-0 max-w-full w-full p-3.5 sm:p-6 md:p-10 pb-20 md:pb-10 overflow-y-auto max-w-5xl mx-auto transition-colors">
       {/* 1. Linear-style Top Tab Selector with Inline Badges */}
-      <div className="inline-flex items-center p-1 bg-neutral-200/70 dark:bg-neutral-800/80 rounded-2xl border border-neutral-300 dark:border-neutral-700 shadow-2xs mb-8 gap-1">
+      <div className="inline-flex items-center p-1 bg-neutral-200/70 dark:bg-neutral-800/80 rounded-2xl border border-neutral-300 dark:border-neutral-700 shadow-2xs mb-6 sm:mb-8 gap-1">
         <button
           onClick={() => setActiveTab("focus")}
           className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
@@ -150,7 +150,7 @@ export function StatisticPage() {
       {activeTab === "focus" && (
         <>
           {/* Detail Donut Chart & Streaks */}
-          <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="w-full min-w-0 max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <StatisticDetailChart
               items={processedItems}
               sourceFilter={sourceFilter}

@@ -16,6 +16,7 @@ import {
   RemoveFormatting,
   ChevronDown,
 } from "lucide-react";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 interface GmailFormatBarProps {
   onApplyFormat: (
@@ -34,6 +35,8 @@ export function GmailFormatBar({
   onUndo,
   onRedo,
 }: GmailFormatBarProps) {
+  const { language } = useTranslation();
+  const isVi = language === "vi";
   const [isFontMenuOpen, setIsFontMenuOpen] = useState(false);
   const [isSizeMenuOpen, setIsSizeMenuOpen] = useState(false);
   const fontMenuRef = useRef<HTMLDivElement>(null);
@@ -60,7 +63,7 @@ export function GmailFormatBar({
       <button
         type="button"
         onClick={onUndo}
-        title="Hoàn tác (Undo)"
+        title={isVi ? "Hoàn tác" : "Undo"}
         className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer"
       >
         <Undo2 size={14} />
@@ -68,7 +71,7 @@ export function GmailFormatBar({
       <button
         type="button"
         onClick={onRedo}
-        title="Làm lại (Redo)"
+        title={isVi ? "Làm lại" : "Redo"}
         className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer"
       >
         <Redo2 size={14} />
@@ -128,21 +131,21 @@ export function GmailFormatBar({
               onClick={() => { onApplyFormat("h1"); setIsSizeMenuOpen(false); }}
               className="w-full px-3 py-1.5 text-left text-xs font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
             >
-              Lớn (Tiêu đề 1)
+              {isVi ? "Lớn (Tiêu đề 1)" : "Large (Heading 1)"}
             </button>
             <button
               type="button"
               onClick={() => { onApplyFormat("h2"); setIsSizeMenuOpen(false); }}
               className="w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
             >
-              Vừa (Tiêu đề 2)
+              {isVi ? "Vừa (Tiêu đề 2)" : "Medium (Heading 2)"}
             </button>
             <button
               type="button"
               onClick={() => { onApplyFormat("clear"); setIsSizeMenuOpen(false); }}
               className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
             >
-              Bình thường
+              {isVi ? "Bình thường" : "Normal"}
             </button>
           </div>
         )}

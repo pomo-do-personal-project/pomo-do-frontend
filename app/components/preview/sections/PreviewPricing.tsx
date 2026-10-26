@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ShieldCheck, Check } from "lucide-react";
+import { useTranslation } from "../../../stores/useLanguageStore";
 
 interface PreviewPricingProps {
   onOpenAuthModal: (mode: "signin" | "signup") => void;
@@ -10,6 +11,7 @@ interface PreviewPricingProps {
 export const PreviewPricing = React.memo(function PreviewPricing({
   onOpenAuthModal,
 }: PreviewPricingProps) {
+  const { language } = useTranslation();
   const [hasSubscribedPro, setHasSubscribedPro] = useState(false);
 
   return (
@@ -39,7 +41,9 @@ export const PreviewPricing = React.memo(function PreviewPricing({
               <span className="text-xs font-bold text-rose-600 uppercase tracking-widest block mb-1">
                 GÓI HIỆN TẠI
               </span>
-              <h3 className="text-2xl font-black text-neutral-900">Miễn phí (Free)</h3>
+              <h3 className="text-2xl font-black text-neutral-900">
+                {language === "vi" ? "Miễn phí" : "Free"}
+              </h3>
               <p className="text-xs text-neutral-500 mt-2">
                 Dành cho mọi cá nhân mong muốn xây dựng thói quen tập trung kỷ luật.
               </p>
@@ -63,7 +67,9 @@ export const PreviewPricing = React.memo(function PreviewPricing({
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Check size={16} className="text-emerald-500 shrink-0" />
-                  <span>Hỗ trợ Chế độ ngoại tuyến (Offline Mode)</span>
+                  <span>
+                    {language === "vi" ? "Hỗ trợ Chế độ ngoại tuyến" : "Offline Mode Support"}
+                  </span>
                 </div>
               </div>
             </div>

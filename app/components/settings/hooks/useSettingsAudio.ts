@@ -7,8 +7,7 @@ let globalAudioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioCtx) return null;
+  const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   if (!globalAudioCtx || globalAudioCtx.state === "closed") {
     globalAudioCtx = new AudioCtx();
   }
@@ -18,10 +17,20 @@ function getAudioContext(): AudioContext | null {
   return globalAudioCtx;
 }
 
+import { useSettingsStore } from "../../../stores/useSettingsStore";
+
 export function useSettingsAudio() {
   // 1. Bộ phát âm thanh chuông kết thúc phiên (Ringtone)
   const playRingtone = (type: RingtoneType, vol = 80) => {
     try {
+      const customAlarmUrl = useSettingsStore.getState().settings.alarmSoundUrl;
+      if (customAlarmUrl) {
+        const audio = new Audio(customAlarmUrl);
+        audio.volume = Math.max(0.05, Math.min(1, vol / 100));
+        audio.play().catch(() => {});
+        return;
+      }
+
       const ctx = getAudioContext();
       if (!ctx) return;
 

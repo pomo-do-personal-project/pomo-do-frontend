@@ -10,7 +10,7 @@ interface TaskEisenhowerDistributionCardProps {
 }
 
 export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistributionCardProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const { q1, q2, q3, q4, total, q2Percent, q1Percent } = useMemo(() => {
     const counts = { q1: 0, q2: 0, q3: 0, q4: 0 };
@@ -31,8 +31,8 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
   const quadrants = [
     {
       id: "q1",
-      name: "Q1: Khẩn cấp & Quan trọng",
-      subtitle: "Làm ngay (Do first)",
+      name: `Q1: ${t.matrix.quadrants["urgent-important"].title}`,
+      subtitle: t.matrix.quadrants["urgent-important"].subtitle,
       count: q1,
       percent: total > 0 ? Math.round((q1 / total) * 100) : 0,
       color: "bg-rose-500",
@@ -42,8 +42,8 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
     },
     {
       id: "q2",
-      name: "Q2: Quan trọng & Không khẩn",
-      subtitle: "Lên kế hoạch (Schedule)",
+      name: `Q2: ${t.matrix.quadrants["not-urgent-important"].title}`,
+      subtitle: t.matrix.quadrants["not-urgent-important"].subtitle,
       count: q2,
       percent: total > 0 ? Math.round((q2 / total) * 100) : 0,
       color: "bg-blue-500",
@@ -54,8 +54,8 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
     },
     {
       id: "q3",
-      name: "Q3: Khẩn cấp & Không quan trọng",
-      subtitle: "Ủy quyền (Delegate)",
+      name: `Q3: ${t.matrix.quadrants["urgent-not-important"].title}`,
+      subtitle: t.matrix.quadrants["urgent-not-important"].subtitle,
       count: q3,
       percent: total > 0 ? Math.round((q3 / total) * 100) : 0,
       color: "bg-amber-500",
@@ -65,8 +65,8 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
     },
     {
       id: "q4",
-      name: "Q4: Không khẩn & Không quan trọng",
-      subtitle: "Loại bỏ (Don't do)",
+      name: `Q4: ${t.matrix.quadrants["not-urgent-not-important"].title}`,
+      subtitle: t.matrix.quadrants["not-urgent-not-important"].subtitle,
       count: q4,
       percent: total > 0 ? Math.round((q4 / total) * 100) : 0,
       color: "bg-neutral-400 dark:bg-neutral-500",
@@ -77,7 +77,7 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
   ];
 
   return (
-    <section className="lg:col-span-2 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
+    <section className="lg:col-span-2 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
@@ -150,7 +150,9 @@ export function TaskEisenhowerDistributionCard({ tasks }: TaskEisenhowerDistribu
       <div className="mt-5 p-3.5 rounded-2xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 flex items-start gap-2.5">
         <Sparkles size={16} className="text-amber-500 shrink-0 mt-0.5" />
         <div className="text-xs text-neutral-700 dark:text-neutral-300">
-          <strong className="text-neutral-900 dark:text-white">Đánh giá ma trận: </strong>
+          <strong className="text-neutral-900 dark:text-white">
+            {language === "vi" ? "Đánh giá ma trận: " : "Matrix Assessment: "}
+          </strong>
           {q2Percent >= 40
             ? t.statistics.balanceGood
             : q1Percent >= 50

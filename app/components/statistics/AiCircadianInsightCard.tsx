@@ -42,7 +42,7 @@ export function AiCircadianInsightCard({ insight, isLoading }: AiCircadianInsigh
   const profileInfo = getProfileBadge(insight?.circadianProfile);
 
   return (
-    <section className="w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 md:p-8 shadow-xs transition-colors mb-8">
+    <section className="w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 md:p-8 shadow-xs transition-colors mb-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">

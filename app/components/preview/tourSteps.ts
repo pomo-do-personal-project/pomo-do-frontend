@@ -143,7 +143,7 @@ export function createPreviewTourSteps(actions: TourActions): DemoStep[] {
       x: 55,
       y: 13,
       isClick: false,
-      label: "Chuyển sang tab phân tích nhiệm vụ (Task)",
+      label: "Chuyển sang tab phân tích nhiệm vụ",
     },
     {
       screen: "stat-task",

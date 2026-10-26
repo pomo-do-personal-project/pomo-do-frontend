@@ -20,6 +20,8 @@ interface AuthState {
   // Actions
   setTokens: (accessToken: string | null, refreshTokenString: string | null) => void;
   login: (data: LoginRequest) => Promise<boolean>;
+  loginWithGoogle: (idToken: string) => Promise<boolean>;
+  loginWithSupabase: (accessToken: string) => Promise<boolean>;
   register: (data: RegisterRequest) => Promise<boolean>;
   sendOtp: (email: string, purpose?: OtpPurpose) => Promise<string>;
   forgotPassword: (email: string) => Promise<string>;
@@ -55,27 +57,48 @@ export const useAuthStore = create<AuthState>()(
         try {
           const authData = await authService.login(credentials);
           if (authData) {
-            set({
-              user: authData.user,
-              accessToken: authData.accessToken,
-              refreshTokenString: authData.refreshToken,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-            });
+            set({ user: authData.user, accessToken: authData.accessToken, refreshTokenString: authData.refreshToken, isAuthenticated: true, isLoading: false, error: null });
             return true;
           }
           set({ isLoading: false, error: "Đăng nhập thất bại" });
           return false;
-        } catch (err: any) {
-          const msg = err?.message || "Đăng nhập thất bại";
-          set({
-            isLoading: false,
-            error: msg,
-            isAuthenticated: false,
-            accessToken: null,
-            refreshTokenString: null,
-          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Đăng nhập thất bại";
+          set({ isLoading: false, error: msg, isAuthenticated: false, accessToken: null, refreshTokenString: null });
+          throw err;
+        }
+      },
+
+      loginWithGoogle: async (idToken: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const authData = await authService.googleAuth(idToken);
+          if (authData) {
+            set({ user: authData.user, accessToken: authData.accessToken, refreshTokenString: authData.refreshToken, isAuthenticated: true, isLoading: false, error: null });
+            return true;
+          }
+          set({ isLoading: false, error: "Đăng nhập Google thất bại" });
+          return false;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Đăng nhập Google thất bại";
+          set({ isLoading: false, error: msg, isAuthenticated: false, accessToken: null, refreshTokenString: null });
+          throw err;
+        }
+      },
+
+      loginWithSupabase: async (accessToken: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const authData = await authService.supabaseAuth(accessToken);
+          if (authData) {
+            set({ user: authData.user, accessToken: authData.accessToken, refreshTokenString: authData.refreshToken, isAuthenticated: true, isLoading: false, error: null });
+            return true;
+          }
+          set({ isLoading: false, error: "Đăng nhập Supabase thất bại" });
+          return false;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Đăng nhập Supabase thất bại";
+          set({ isLoading: false, error: msg, isAuthenticated: false, accessToken: null, refreshTokenString: null });
           throw err;
         }
       },
@@ -86,8 +109,8 @@ export const useAuthStore = create<AuthState>()(
           const message = await authService.sendOtp({ email, purpose });
           set({ isLoading: false });
           return message;
-        } catch (err: any) {
-          const msg = err?.message || "Không thể gửi mã OTP";
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Không thể gửi mã OTP";
           set({ isLoading: false, error: msg });
           throw err;
         }
@@ -99,12 +122,9 @@ export const useAuthStore = create<AuthState>()(
           const user = await authService.register(data);
           set({ isLoading: false });
           return !!user;
-        } catch (err: any) {
-          const msg = err?.message || "Đăng ký thất bại";
-          set({
-            isLoading: false,
-            error: msg,
-          });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Đăng ký thất bại";
+          set({ isLoading: false, error: msg });
           throw err;
         }
       },
@@ -115,8 +135,8 @@ export const useAuthStore = create<AuthState>()(
           const message = await authService.forgotPassword({ email });
           set({ isLoading: false });
           return message;
-        } catch (err: any) {
-          const msg = err?.message || "Không thể gửi yêu cầu đặt lại mật khẩu";
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Không thể gửi yêu cầu đặt lại mật khẩu";
           set({ isLoading: false, error: msg });
           throw err;
         }
@@ -128,8 +148,8 @@ export const useAuthStore = create<AuthState>()(
           const message = await authService.resetPassword(data);
           set({ isLoading: false });
           return message;
-        } catch (err: any) {
-          const msg = err?.message || "Không thể đặt lại mật khẩu";
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Không thể đặt lại mật khẩu";
           set({ isLoading: false, error: msg });
           throw err;
         }

@@ -4,6 +4,7 @@ import React from "react";
 import { TaskDto } from "../../types/api";
 import { TaskItem } from "./TaskItem";
 import { TaskCategory } from "./types";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TaskListProps {
   tasks: TaskDto[];
@@ -22,6 +23,7 @@ export function TaskList({
   onSelectTask,
   onToggleStatus,
 }: TaskListProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const categoryNames: Record<TaskCategory, string> = {
     Today: "Hôm nay",
     Upcoming: "Sắp tới",
@@ -31,7 +33,11 @@ export function TaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-12 text-sm text-neutral-400 dark:text-neutral-500">
+      <div
+        className={`text-center py-12 text-sm font-medium ${
+          wallpaperUrl ? "text-white/70 drop-shadow-sm" : "text-neutral-500"
+        }`}
+      >
         {isLoading
           ? "Đang tải công việc..."
           : currentCategory === "QuickAdd"

@@ -134,15 +134,16 @@ export const usePomodoroStore = create<PomodoroState>()(
           if (summary) {
             set({ summary });
           }
-        } catch (err: any) {
-          const is401 = err?.statusCode === 401 || err?.message?.toLowerCase().includes("unauthorized");
+        } catch (err: unknown) {
+          const errObj = typeof err === "object" && err !== null ? (err as Record<string, unknown>) : null;
+          const is401 = errObj?.statusCode === 401 || (err instanceof Error ? err.message : String(err)).toLowerCase().includes("unauthorized");
           if (is401) {
             set({ summary: null, history: [] });
             if (typeof window !== "undefined") {
               localStorage.removeItem("pomo-pomodoro-cache");
             }
           } else {
-            console.warn("Fetch summary error:", err?.message);
+            console.warn("Fetch summary error:", (err instanceof Error ? err.message : String(err)));
           }
         }
       },
@@ -152,10 +153,10 @@ export const usePomodoroStore = create<PomodoroState>()(
         try {
           const history = await pomodoroService.getHistory(fromUtc, toUtc);
           set({ history, isLoading: false });
-        } catch (err: any) {
+        } catch (err: unknown) {
           set({
             isLoading: false,
-            error: err?.message || "Không thể tải lịch sử tập trung",
+            error: (err instanceof Error ? err.message : String(err)) || "Không thể tải lịch sử tập trung",
           });
         }
       },
@@ -169,8 +170,8 @@ export const usePomodoroStore = create<PomodoroState>()(
             return session;
           }
           return null;
-        } catch (err: any) {
-          set({ error: err?.message || "Không thể khởi tạo phiên tập trung" });
+        } catch (err: unknown) {
+          set({ error: (err instanceof Error ? err.message : String(err)) || "Không thể khởi tạo phiên tập trung" });
           return null;
         }
       },
@@ -188,8 +189,8 @@ export const usePomodoroStore = create<PomodoroState>()(
             return completed;
           }
           return null;
-        } catch (err: any) {
-          set({ error: err?.message || "Không thể lưu phiên tập trung" });
+        } catch (err: unknown) {
+          set({ error: (err instanceof Error ? err.message : String(err)) || "Không thể lưu phiên tập trung" });
           return null;
         }
       },
@@ -198,8 +199,8 @@ export const usePomodoroStore = create<PomodoroState>()(
         try {
           await pomodoroService.cancelSession(sessionId, { actualSeconds });
           set({ currentSession: null });
-        } catch (err: any) {
-          console.warn("Cancel session error:", err?.message);
+        } catch (err: unknown) {
+          console.warn("Cancel session error:", (err instanceof Error ? err.message : String(err)));
           set({ currentSession: null });
         }
       },
@@ -218,8 +219,8 @@ export const usePomodoroStore = create<PomodoroState>()(
             return session;
           }
           return null;
-        } catch (err: any) {
-          set({ error: err?.message || "Không thể thực hiện tua nhanh phiên tập trung" });
+        } catch (err: unknown) {
+          set({ error: (err instanceof Error ? err.message : String(err)) || "Không thể thực hiện tua nhanh phiên tập trung" });
           return null;
         }
       },

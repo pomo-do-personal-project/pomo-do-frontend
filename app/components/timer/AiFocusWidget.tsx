@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAiFocusStore } from "../../stores/useAiFocusStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import { Power, ChevronDown, ChevronUp, Maximize2, Sparkles, Settings } from "lucide-react";
 import { AiFocusVideoPreview } from "./AiFocusVideoPreview";
 import { AiFocusControls } from "./AiFocusControls";
@@ -14,20 +15,12 @@ interface AiFocusWidgetProps {
 }
 
 export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
-  const isConnected = useAiFocusStore((s) => s.isConnected);
-  const isAiEnabled = useAiFocusStore((s) => s.isAiEnabled);
-  const isConnecting = useAiFocusStore((s) => s.isConnecting);
-  const status = useAiFocusStore((s) => s.status);
-  const detail = useAiFocusStore((s) => s.detail);
-  const activeScreen = useAiFocusStore((s) => s.activeScreen);
-  const totalScreens = useAiFocusStore((s) => s.totalScreens);
-  const distractionCount = useAiFocusStore((s) => s.distractionCount);
-  const getFocusScore = useAiFocusStore((s) => s.getFocusScore);
-  const image = useAiFocusStore((s) => s.image);
-
-  const toggleAiEnabled = useAiFocusStore((s) => s.toggleAiEnabled);
-  const addScreen = useAiFocusStore((s) => s.addScreen);
-  const resetScreens = useAiFocusStore((s) => s.resetScreens);
+  const {
+    isConnected, isAiEnabled, isConnecting, status, detail,
+    activeScreen, totalScreens, distractionCount, getFocusScore, image,
+    toggleAiEnabled, addScreen, resetScreens
+  } = useAiFocusStore();
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
 
   const [countdown, setCountdown] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -89,12 +82,18 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
 
   return (
     <div
-      className={`w-full max-w-sm mt-3 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xs flex flex-col transition-all duration-200 ${
+      className={`w-full max-w-sm mt-3 rounded-2xl flex flex-col transition-all duration-200 ${
+        wallpaperUrl
+          ? "bg-neutral-950/80 backdrop-blur-xl border border-white/15 text-white shadow-2xl"
+          : "bg-white/90 backdrop-blur-xl border border-neutral-200/90 text-neutral-900 shadow-md"
+      } ${
         isCollapsed ? "p-2 sm:px-3 sm:py-2.5 gap-0" : "p-3.5 gap-3"
       }`}
     >
       {toastMessage && (
-        <div className="px-3 py-1 mb-2 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-semibold text-center animate-in fade-in duration-150">
+        <div className={`px-3 py-1 mb-2 rounded-xl text-xs font-semibold text-center animate-in fade-in duration-150 backdrop-blur-md ${
+          wallpaperUrl ? "bg-white/20 text-white" : "bg-neutral-900 text-white"
+        }`}>
           {toastMessage}
         </div>
       )}
@@ -115,20 +114,24 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Sparkles size={13} className="text-amber-500 dark:text-amber-400" />
-            <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+            <Sparkles size={13} className="text-amber-500" />
+            <span className={`text-xs font-bold transition-colors ${
+              wallpaperUrl
+                ? "text-white/90 group-hover:text-white"
+                : "text-neutral-800 group-hover:text-neutral-950"
+            }`}>
               Camera AI Focus
             </span>
           </div>
 
           {isTimerRunning && isAiEnabled && (
-            <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            <span className="text-[11px] font-mono font-bold text-emerald-600 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
               {focusScore}%
             </span>
           )}
 
           {isCollapsed && isAiEnabled && distractionCount > 0 && (
-            <span className="text-[10px] font-semibold text-rose-500 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-semibold text-rose-600 bg-rose-500/15 px-1.5 py-0.5 rounded">
               {distractionCount} xao nhãng
             </span>
           )}
@@ -143,7 +146,9 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
             className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
               isAiEnabled
                 ? "bg-emerald-500 text-white shadow-xs"
-                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                : wallpaperUrl
+                ? "bg-white/10 hover:bg-white/20 text-white/80 border border-white/10"
+                : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-200"
             }`}
           >
             <Power size={11} />
@@ -155,18 +160,26 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
             type="button"
             onClick={() => setIsSettingsOpen(true)}
             title="Cài đặt & Hiệu chuẩn AI"
-            className="p-1 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+            className={`p-1 rounded-xl cursor-pointer transition-colors ${
+              wallpaperUrl
+                ? "text-white/60 hover:text-white hover:bg-white/15"
+                : "text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100"
+            }`}
           >
             <Settings size={13} />
           </button>
 
-          {/* Nút phóng to toàn màn hình (khi mở rộng) */}
+          {/* Nút phóng to toàn màn hình */}
           {!isCollapsed && (
             <button
               type="button"
               onClick={() => setIsEnlarged(true)}
               title="Phóng to khung hình chi tiết"
-              className="p-1 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+              className={`p-1 rounded-xl cursor-pointer transition-colors ${
+                wallpaperUrl
+                  ? "text-white/60 hover:text-white hover:bg-white/15"
+                  : "text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100"
+              }`}
             >
               <Maximize2 size={13} />
             </button>
@@ -177,7 +190,11 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
             type="button"
             onClick={toggleCollapsed}
             title={isCollapsed ? "Mở rộng khung AI" : "Thu nhỏ gọn"}
-            className="p-1 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
+            className={`p-1 rounded-xl cursor-pointer transition-colors ${
+              wallpaperUrl
+                ? "text-white/60 hover:text-white hover:bg-white/15"
+                : "text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100"
+            }`}
           >
             {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
@@ -211,26 +228,16 @@ export function AiFocusWidget({ isTimerRunning = false }: AiFocusWidgetProps) {
 
       {/* Modal phóng to toàn màn hình */}
       <AiFocusModal
-        isOpen={isEnlarged}
-        onClose={() => setIsEnlarged(false)}
-        isAiEnabled={isAiEnabled}
-        image={image}
-        isConnecting={isConnecting}
-        borderClass={statusInfo.borderClass}
-        countdown={countdown}
-        totalScreens={totalScreens}
-        isConnected={isConnected}
-        indicator={statusInfo.indicator}
-        onEnable={toggleAiEnabled}
-        onAddScreen={handleAddScreen}
-        onReset={handleReset}
+        isOpen={isEnlarged} onClose={() => setIsEnlarged(false)}
+        isAiEnabled={isAiEnabled} image={image} isConnecting={isConnecting}
+        borderClass={statusInfo.borderClass} countdown={countdown}
+        totalScreens={totalScreens} isConnected={isConnected}
+        indicator={statusInfo.indicator} onEnable={toggleAiEnabled}
+        onAddScreen={handleAddScreen} onReset={handleReset}
       />
 
       {/* Modal Cài đặt & Hiệu chuẩn Studio */}
-      <AiFocusSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      <AiFocusSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

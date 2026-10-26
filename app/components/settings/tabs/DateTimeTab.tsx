@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { usePomodoroStore } from "../../../stores/usePomodoroStore";
-import { Timer, Coffee, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { Timer, Coffee, Check } from "lucide-react";
 import { useTranslation } from "../../../stores/useLanguageStore";
+import { DurationStepper } from "./DurationStepper";
 
 interface DateTimeTabProps {
   showNotice: (message: string, icon?: React.ReactNode) => void;
@@ -137,49 +138,13 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             </div>
           </div>
 
-          <div className="relative group flex items-center gap-1 py-1 px-1.5 rounded-lg hover:bg-neutral-100/80 dark:hover:bg-neutral-800/50 transition-colors">
-            <input
-              type="number"
-              min="1"
-              max="180"
-              value={focusDuration}
-              onChange={(e) => {
-                const v = parseInt(e.target.value);
-                setFocusDuration(isNaN(v) ? 1 : v);
-              }}
-              onBlur={(e) => {
-                const v = parseInt(e.target.value) || 1;
-                handleFocusChange(v);
-              }}
-              className="w-10 text-right font-mono font-bold text-sm bg-transparent border-none text-neutral-900 dark:text-white focus:outline-none p-0 select-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-
-            {/* Nút lên / xuống cùng màu nền, chỉ hiện khi di chuột vào */}
-            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              <button
-                type="button"
-                onClick={() => handleFocusChange(focusDuration + 1)}
-                className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
-                title="+1 min"
-                aria-label="+1 min"
-              >
-                <ChevronUp size={11} strokeWidth={2.5} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFocusChange(focusDuration - 1)}
-                className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
-                title="-1 min"
-                aria-label="-1 min"
-              >
-                <ChevronDown size={11} strokeWidth={2.5} />
-              </button>
-            </div>
-
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 select-none">
-              {t.settings.timer.minutes}
-            </span>
-          </div>
+          <DurationStepper
+            value={focusDuration}
+            min={1}
+            max={180}
+            unitLabel={t.settings.timer.minutes}
+            onChange={handleFocusChange}
+          />
         </div>
 
         {/* Hàng 2: Nghỉ ngơi */}
@@ -194,49 +159,13 @@ export function DateTimeTab({ showNotice }: DateTimeTabProps) {
             </div>
           </div>
 
-          <div className="relative group flex items-center gap-1 py-1 px-1.5 rounded-lg hover:bg-neutral-100/80 dark:hover:bg-neutral-800/50 transition-colors">
-            <input
-              type="number"
-              min="1"
-              max="60"
-              value={shortBreakDuration}
-              onChange={(e) => {
-                const v = parseInt(e.target.value);
-                setShortBreakDuration(isNaN(v) ? 1 : v);
-              }}
-              onBlur={(e) => {
-                const v = parseInt(e.target.value) || 1;
-                handleBreakChange(v);
-              }}
-              className="w-10 text-right font-mono font-bold text-sm bg-transparent border-none text-neutral-900 dark:text-white focus:outline-none p-0 select-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-
-            {/* Nút lên / xuống cùng màu nền, chỉ hiện khi di chuột vào */}
-            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              <button
-                type="button"
-                onClick={() => handleBreakChange(shortBreakDuration + 1)}
-                className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
-                title="+1 min"
-                aria-label="+1 min"
-              >
-                <ChevronUp size={11} strokeWidth={2.5} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleBreakChange(shortBreakDuration - 1)}
-                className="p-0.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white bg-transparent transition-colors cursor-pointer leading-none"
-                title="-1 min"
-                aria-label="-1 min"
-              >
-                <ChevronDown size={11} strokeWidth={2.5} />
-              </button>
-            </div>
-
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 select-none">
-              {t.settings.timer.minutes}
-            </span>
-          </div>
+          <DurationStepper
+            value={shortBreakDuration}
+            min={1}
+            max={60}
+            unitLabel={t.settings.timer.minutes}
+            onChange={handleBreakChange}
+          />
         </div>
       </div>
 

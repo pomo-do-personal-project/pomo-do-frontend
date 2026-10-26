@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Bell,
+  Sparkles,
   LogOut,
   X,
 } from "lucide-react";
@@ -53,6 +54,11 @@ export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
       label: "Thông báo",
       icon: Bell,
       href: `/${language}/admin/notifications`,
+    },
+    {
+      label: "Kho tài nguyên",
+      icon: Sparkles,
+      href: `/${language}/admin/assets`,
     },
   ];
 

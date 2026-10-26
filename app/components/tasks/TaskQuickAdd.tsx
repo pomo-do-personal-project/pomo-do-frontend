@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { TaskCategory } from "./types";
 import { useTranslation } from "../../stores/useLanguageStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TaskQuickAddProps {
   currentCategory: TaskCategory;
@@ -11,6 +12,7 @@ interface TaskQuickAddProps {
 }
 
 export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -28,26 +30,30 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
       <button
         type="button"
         onClick={() => setIsAdding(true)}
-        className={`w-full mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl text-left cursor-pointer transition-all group shadow-2xs border-2 border-dashed ${
+        className={`w-full mb-6 flex items-center gap-3 px-4 py-3 rounded-2xl text-left cursor-pointer transition-all group backdrop-blur-md border-2 border-dashed ${
           currentCategory === "QuickAdd"
-            ? "bg-amber-50/40 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-700"
-            : "bg-neutral-100/50 hover:bg-neutral-100 dark:bg-neutral-900/50 dark:hover:bg-neutral-900 border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500"
+            ? "bg-amber-500/20 hover:bg-amber-500/30 border-amber-400/50 text-amber-800 dark:text-white"
+            : wallpaperUrl
+            ? "bg-black/20 hover:bg-black/30 border-white/20 hover:border-white/40 text-white shadow-sm"
+            : "bg-white hover:bg-neutral-50/90 border-neutral-300 hover:border-neutral-400 text-neutral-800 shadow-2xs"
         }`}
       >
         <span
           className={`w-6 h-6 rounded-lg flex items-center justify-center text-base font-bold shrink-0 group-hover:scale-105 transition-transform ${
             currentCategory === "QuickAdd"
-              ? "bg-amber-500 text-white"
-              : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+              ? "bg-amber-500 text-white shadow-xs"
+              : wallpaperUrl
+              ? "bg-white/20 text-white"
+              : "bg-neutral-100 text-neutral-700"
           }`}
         >
           <Plus size={16} strokeWidth={2.2} />
         </span>
         <span
           className={`text-sm sm:text-base font-medium transition-colors ${
-            currentCategory === "QuickAdd"
-              ? "text-amber-800 dark:text-amber-300"
-              : "text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200"
+            wallpaperUrl
+              ? "text-white/70 group-hover:text-white"
+              : "text-neutral-500 group-hover:text-neutral-800"
           }`}
         >
           {currentCategory === "QuickAdd"
@@ -61,17 +67,21 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
   return (
     <form onSubmit={handleSubmit} className="mb-6">
       <div
-        className={`flex items-center gap-3 px-4 py-3 bg-transparent border-2 rounded-2xl shadow-2xs transition-colors ${
+        className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-colors border-2 ${
           currentCategory === "QuickAdd"
-            ? "border-amber-500"
-            : "border-neutral-900 dark:border-white"
+            ? "border-amber-400 bg-amber-500/10"
+            : wallpaperUrl
+            ? "bg-black/35 backdrop-blur-xl border-white/40"
+            : "bg-white border-neutral-300 shadow-md"
         }`}
       >
         <span
           className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
             currentCategory === "QuickAdd"
               ? "bg-amber-500 text-white"
-              : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+              : wallpaperUrl
+              ? "bg-white/25 text-white"
+              : "bg-neutral-100 text-neutral-700"
           }`}
         >
           <Plus size={16} strokeWidth={2.2} />
@@ -86,7 +96,11 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
               ? t.overviewPanel.quickAddInputPlaceholder
               : t.tasks.quickAddPlaceholder
           }
-          className="flex-1 bg-transparent text-sm sm:text-base text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none font-medium"
+          className={`flex-1 bg-transparent text-sm sm:text-base focus:outline-none font-medium ${
+            wallpaperUrl
+              ? "text-white placeholder:text-white/50"
+              : "text-neutral-900 placeholder:text-neutral-400"
+          }`}
         />
         <button
           type="button"
@@ -94,7 +108,11 @@ export function TaskQuickAdd({ currentCategory, onAddTask }: TaskQuickAddProps) 
             setIsAdding(false);
             setTitle("");
           }}
-          className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 px-2 py-1 rounded cursor-pointer"
+          className={`text-xs px-2 py-1 rounded cursor-pointer transition-colors ${
+            wallpaperUrl
+              ? "text-white/60 hover:text-white"
+              : "text-neutral-500 hover:text-neutral-800"
+          }`}
         >
           {t.overviewPanel.cancel}
         </button>

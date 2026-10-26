@@ -13,19 +13,18 @@ import { SettingsModal, SettingsTab } from "../components/SettingsModal";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { SystemBroadcastBanner } from "../components/SystemBroadcastBanner";
 import { WelcomeSplash } from "../components/WelcomeSplash";
+import { MiniTimerWidget } from "../components/workspace/MiniTimerWidget";
+import { AmbientSoundWidget } from "../components/workspace/AmbientSoundWidget";
 import { useAuthStore } from "../stores/useAuthStore";
-import { usePomodoroStore } from "../stores/usePomodoroStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
 import { useTranslation } from "../stores/useLanguageStore";
-import {
-  ChevronsRight,
-  Play,
-  Pause,
-  Timer,
-  PanelRightOpen,
-  PanelRightClose,
-} from "lucide-react";
+import { useOAuthHashListener } from "../hooks/useOAuthHashListener";
+import { initThemePalette } from "../lib/themeManager";
+import { ChevronsRight, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { MobileBottomNav } from "../components/MobileBottomNav";
 
 export default function Home() {
+  useOAuthHashListener();
   const router = useRouter();
   const { t, language } = useTranslation();
   const [activeView, setActiveView] = useState("dashboard");
@@ -43,6 +42,12 @@ export default function Home() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
+
+  // Khởi tạo bảng màu chủ đề đã lưu (nếu có)
+  useEffect(() => {
+    initThemePalette();
+  }, []);
 
   // Tự động chuyển hướng sang trang Admin nếu có quyền Admin
   useEffect(() => {
@@ -51,23 +56,21 @@ export default function Home() {
     }
   }, [isAuthenticated, user?.isAdmin, language, router]);
 
-  // Global Pomodoro Timer State để hiển thị Mini Timer trên Header khi sang trang khác
-  const isTimerRunning = usePomodoroStore((s) => s.isRunning);
-  const timerSeconds = usePomodoroStore((s) => s.seconds);
-  const isOvertime = usePomodoroStore((s) => s.isOvertime);
-  const overtimeSeconds = usePomodoroStore((s) => s.overtimeSeconds);
-  const timerFocusMode = usePomodoroStore((s) => s.focusMode);
-  const timerType = usePomodoroStore((s) => s.timerType);
-  const setIsRunning = usePomodoroStore((s) => s.setIsRunning);
-
-  const formatMiniTime = (totalSeconds: number) => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
   return (
-    <div className="min-h-screen bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex relative overflow-x-hidden transition-colors duration-200">
+    <div
+      className="min-h-screen text-neutral-900 dark:text-neutral-100 flex relative overflow-x-hidden transition-colors duration-300"
+      style={{ backgroundColor: "var(--canvas-bg, #fafafa)" }}
+    >
+      {/* Dynamic Workspace Wallpaper Backdrop */}
+      {wallpaperUrl && (
+        <div
+          className="fixed inset-0 z-0 bg-cover bg-center transition-all duration-700 pointer-events-none"
+          style={{ backgroundImage: `url(${wallpaperUrl})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/35 pointer-events-none" />
+        </div>
+      )}
+
       {/* 1. Sidebar with true width stretch transition */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -95,86 +98,59 @@ export default function Home() {
         }}
       />
 
-      {/* Main Page Content Wrapper (smoothly shifts/stretches with both sidebar and overview panel) */}
+      {/* Main Page Content Wrapper */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-16" : "ml-0"
-        } ${isOverviewOpen && activeView === "dashboard" ? "mr-80 sm:mr-96" : "mr-0"}`}
+        className={`flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden min-h-screen relative z-10 transition-all duration-300 ease-in-out pb-16 md:pb-0 ${
+          isSidebarOpen ? "md:ml-16 ml-0" : "ml-0"
+        } ${isOverviewOpen && activeView === "dashboard" ? "mr-0 md:mr-80 lg:mr-96" : "mr-0"}`}
       >
         {/* Offline Network & Broadcast Banners */}
         <OfflineBanner />
         <SystemBroadcastBanner />
 
         {/* Top Header Bar */}
-        <header className="w-full h-14 px-5 flex items-center justify-between border-b border-neutral-200/50 dark:border-neutral-800/50 shrink-0">
-          {/* Left: Trigger button when sidebar is closed */}
+        <header
+          className="w-full h-14 px-3 sm:px-5 flex items-center justify-between shrink-0 transition-colors duration-300"
+          style={{
+            borderBottom: wallpaperUrl ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid var(--border-subtle, rgba(0,0,0,0.1))",
+            color: wallpaperUrl ? "#ffffff" : "inherit",
+          }}
+        >
+          {/* Left: Trigger button when sidebar is closed (Desktop only) */}
           <div className="flex items-center gap-3">
             {!isSidebarOpen ? (
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 title={t.nav.expandSidebar}
                 aria-label={t.nav.expandSidebar}
-                className="p-2 rounded-xl text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 cursor-pointer group"
+                className={`hidden md:flex p-2 rounded-xl transition-all duration-200 cursor-pointer group ${
+                  wallpaperUrl
+                    ? "text-white/80 hover:text-white hover:bg-white/10"
+                    : "text-neutral-500 hover:text-neutral-900 hover:bg-black/5"
+                }`}
               >
-                <ChevronsRight size={18} strokeWidth={1.75} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                <ChevronsRight
+                  size={18}
+                  strokeWidth={1.75}
+                  className="opacity-70 group-hover:opacity-100 transition-opacity"
+                />
               </button>
             ) : (
               <div className="w-6" />
             )}
           </div>
 
-          {/* Center: Mini Timer Widget */}
-          {activeView !== "dashboard" && (
-            <div
-              onClick={() => setActiveView("dashboard")}
-              title={t.nav.dashboard}
-              className={`flex items-center gap-2 px-3 py-1 rounded-xl border transition-all duration-200 cursor-pointer shadow-2xs group ${
-                isOvertime
-                  ? "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse"
-                  : isTimerRunning
-                  ? "bg-neutral-100 dark:bg-neutral-800/80 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
-                  : "bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
-                <Timer size={14} strokeWidth={2} className={isTimerRunning ? "text-emerald-500 animate-spin-slow" : "text-neutral-400"} />
-                <span>{timerType === "pomo" ? (timerFocusMode === "W" ? t.timer.focus : t.timer.break) : t.timer.stopwatch}:</span>
-              </span>
-              <span className="font-mono text-xs font-semibold">
-                {isOvertime ? `+${formatMiniTime(overtimeSeconds)} OT` : formatMiniTime(timerSeconds)}
-              </span>
-              {isTimerRunning ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsRunning(false);
-                  }}
-                  title={t.timer.pause}
-                  aria-label={t.timer.pause}
-                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 cursor-pointer"
-                >
-                  <Pause size={12} strokeWidth={2.5} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsRunning(true);
-                  }}
-                  title={t.timer.start}
-                  aria-label={t.timer.start}
-                  className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 cursor-pointer"
-                >
-                  <Play size={12} strokeWidth={2.5} />
-                </button>
-              )}
-            </div>
+          {/* Center: Mini Timer Widget when not on dashboard */}
+          {activeView !== "dashboard" ? (
+            <MiniTimerWidget onNavigateToDashboard={() => setActiveView("dashboard")} />
+          ) : (
+            <div />
           )}
 
-          {/* Right Action: Panel Toggle */}
-          <div className="flex items-center">
+          {/* Right Action: Ambient Audio Widget & Overview Toggle */}
+          <div className="flex items-center gap-2">
+            <AmbientSoundWidget />
+
             {activeView === "dashboard" ? (
               <button
                 type="button"
@@ -183,8 +159,10 @@ export default function Home() {
                 aria-label={isOverviewOpen ? t.overviewPanel.closePanel : t.nav.openOverview}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                   isOverviewOpen
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs"
-                    : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    ? "bg-neutral-900 text-white shadow-xs"
+                    : wallpaperUrl
+                    ? "text-white/80 hover:text-white hover:bg-white/10"
+                    : "text-neutral-500 hover:text-neutral-900 hover:bg-black/5"
                 }`}
               >
                 {isOverviewOpen ? (
@@ -193,15 +171,17 @@ export default function Home() {
                   <PanelRightOpen size={18} strokeWidth={1.75} className="shrink-0" />
                 )}
               </button>
-            ) : (
-              <div className="w-9 h-9" />
-            )}
+            ) : null}
           </div>
         </header>
 
         {/* 2. Main Content Landmark */}
-        <main className="flex-1 flex flex-col min-h-0">
-          <div className={`flex-1 flex items-center justify-center p-4 ${activeView === "dashboard" ? "" : "hidden"}`}>
+        <main className="flex-1 flex flex-col min-w-0 min-h-0 w-full max-w-full">
+          <div
+            className={`flex-1 flex items-center justify-center p-2 sm:p-4 overflow-y-auto ${
+              activeView === "dashboard" ? "" : "hidden"
+            }`}
+          >
             <TimerCenter />
           </div>
 
@@ -242,6 +222,19 @@ export default function Home() {
           onFinish={() => setShowWelcome(false)}
         />
       )}
+
+      {/* 7. Mobile Bottom Navigation */}
+      <MobileBottomNav
+        activeItem={activeView}
+        onSelectItem={(viewId) => {
+          setActiveView(viewId);
+          setIsOverviewOpen(false);
+        }}
+        onOpenSettings={() => {
+          setSettingsInitialTab("account");
+          setIsSettingsModalOpen(true);
+        }}
+      />
     </div>
   );
 }

@@ -95,9 +95,10 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
         socket = null;
         if (get().isAiEnabled) reconnectTimer = setTimeout(() => get().connect(), 3000);
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       cameraStreamer.stop();
-      set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", error: err?.message || "Lỗi" });
+      const msg = err instanceof Error ? err.message : "Lỗi";
+      set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", error: msg });
     }
   },
 
@@ -123,62 +124,34 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
     if (!isWorkTimerRunning || !s.isAiEnabled || !s.isConnected) return;
 
     const nextTotal = s.totalSessionSeconds + 1;
-    let nextFocused = s.focusedSeconds;
-    let nextDistracted = s.distractedSeconds;
-    let nextDistractions = s.distractionCount;
-    let nextPhoneCount = s.phoneCount;
-    let nextPhoneSeconds = s.phoneSeconds;
-    let nextSleepCount = s.sleepCount;
-    let nextLookAwayCount = s.lookAwayCount;
+    let { focusedSeconds: nextFocused, distractedSeconds: nextDistracted, distractionCount: nextDistractions } = s;
+    let { phoneCount: nextPhoneCount, phoneSeconds: nextPhoneSeconds, sleepCount: nextSleepCount, lookAwayCount: nextLookAwayCount } = s;
 
     if (s.status === "FOCUSED") {
       nextFocused += 1;
     } else {
       nextDistracted += 1;
-      const d = s.detail.toLowerCase();
-      const prevD = s.previousDetail.toLowerCase();
-
+      const d = s.detail.toLowerCase(), prevD = s.previousDetail.toLowerCase();
       if (d.includes("điện thoại") || d.includes("phone")) {
         nextPhoneSeconds += 1;
         if (!prevD.includes("điện thoại")) nextPhoneCount += 1;
       }
-      if (d.includes("ngủ") || d.includes("sleep")) {
-        if (!prevD.includes("ngủ")) nextSleepCount += 1;
-      }
-      if (d.includes("ngoài") || s.status === "AFK") {
-        if (s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
-      }
+      if ((d.includes("ngủ") || d.includes("sleep")) && !prevD.includes("ngủ")) nextSleepCount += 1;
+      if ((d.includes("ngoài") || s.status === "AFK") && s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
       if (s.previousStatus === "FOCUSED") nextDistractions += 1;
     }
 
     set({
-      totalSessionSeconds: nextTotal,
-      focusedSeconds: nextFocused,
-      distractedSeconds: nextDistracted,
-      distractionCount: nextDistractions,
-      phoneCount: nextPhoneCount,
-      phoneSeconds: nextPhoneSeconds,
-      sleepCount: nextSleepCount,
-      lookAwayCount: nextLookAwayCount,
-      previousStatus: s.status,
-      previousDetail: s.detail,
+      totalSessionSeconds: nextTotal, focusedSeconds: nextFocused, distractedSeconds: nextDistracted,
+      distractionCount: nextDistractions, phoneCount: nextPhoneCount, phoneSeconds: nextPhoneSeconds,
+      sleepCount: nextSleepCount, lookAwayCount: nextLookAwayCount, previousStatus: s.status, previousDetail: s.detail,
     });
   },
 
-  resetSessionStats: () => {
-    set({
-      distractionCount: 0,
-      phoneCount: 0,
-      phoneSeconds: 0,
-      sleepCount: 0,
-      lookAwayCount: 0,
-      focusedSeconds: 0,
-      distractedSeconds: 0,
-      totalSessionSeconds: 0,
-      previousStatus: get().status,
-      previousDetail: "",
-    });
-  },
+  resetSessionStats: () => set({
+    distractionCount: 0, phoneCount: 0, phoneSeconds: 0, sleepCount: 0, lookAwayCount: 0,
+    focusedSeconds: 0, distractedSeconds: 0, totalSessionSeconds: 0, previousStatus: get().status, previousDetail: "",
+  }),
 
   getFocusScore: () => {
     const { focusedSeconds, totalSessionSeconds } = get();

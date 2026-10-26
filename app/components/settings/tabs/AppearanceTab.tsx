@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Sun, Moon, Globe } from "lucide-react";
+import React from "react";
+import { Globe } from "lucide-react";
 import { useTranslation, Language, translations } from "../../../stores/useLanguageStore";
+
+import { WallpaperSelector } from "./WallpaperSelector";
+import { ThemeColorSelector } from "./ThemeColorSelector";
 
 interface AppearanceTabProps {
   showNotice?: (message: string, icon?: React.ReactNode) => void;
@@ -10,25 +13,6 @@ interface AppearanceTabProps {
 
 export function AppearanceTab({ showNotice }: AppearanceTabProps) {
   const { t, language, setLanguage } = useTranslation();
-  const [isDark, setIsDark] = useState(true);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  const handleToggleTheme = (mode: "light" | "dark") => {
-    if (mode === "dark") {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setIsDark(true);
-      showNotice?.(t.settings.appearance.noticeThemeDark);
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setIsDark(false);
-      showNotice?.(t.settings.appearance.noticeThemeLight);
-    }
-  };
 
   const handleSelectLanguage = (lang: Language) => {
     setLanguage(lang);
@@ -57,47 +41,13 @@ export function AppearanceTab({ showNotice }: AppearanceTabProps) {
         </p>
       </div>
 
-      {/* MỤC 1: CHỦ ĐỀ GIAO DIỆN (THEME) */}
-      <div className="bg-neutral-100/70 dark:bg-[#262626] rounded-2xl p-4 sm:p-5 flex items-center justify-between text-sm">
-        <div>
-          <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-            <Sun size={15} className="text-amber-500" />
-            <span>{t.settings.appearance.themeTitle}</span>
-          </div>
-          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-            {isDark ? t.settings.appearance.themeDarkDesc : t.settings.appearance.themeLightDesc}
-          </div>
-        </div>
+      {/* MỤC 1: BẢNG MÀU CHỦ ĐỀ (THEME PALETTES - PHONG CÁCH TICKTICK) */}
+      <ThemeColorSelector showNotice={showNotice} />
 
-        <div className="flex items-center gap-1 p-1 bg-transparent dark:bg-transparent rounded-xl">
-          <button
-            type="button"
-            onClick={() => handleToggleTheme("light")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
-              !isDark
-                ? "bg-white text-neutral-900 shadow-xs"
-                : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-200/40 dark:hover:bg-neutral-700/40"
-            }`}
-          >
-            <Sun size={14} />
-            <span>{t.settings.appearance.light}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleToggleTheme("dark")}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
-              isDark
-                ? "bg-neutral-700 text-white shadow-xs"
-                : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-200/40 dark:hover:bg-neutral-700/40"
-            }`}
-          >
-            <Moon size={14} />
-            <span>{t.settings.appearance.dark}</span>
-          </button>
-        </div>
-      </div>
+      {/* MỤC 2: HÌNH NỀN BÀN LÀM VIỆC (WALLPAPER CATALOG) */}
+      <WallpaperSelector showNotice={showNotice} />
 
-      {/* MỤC 2: NGÔN NGỮ HIỂN THỊ (LANGUAGE) */}
+      {/* MỤC 3: NGÔN NGỮ HIỂN THỊ (LANGUAGE) */}
       <div className="bg-neutral-100/70 dark:bg-[#262626] rounded-2xl p-4 sm:p-5 flex items-center justify-between text-sm">
         <div>
           <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">

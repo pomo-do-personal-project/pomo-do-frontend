@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { TagDto } from "../../types/api";
 import { useTagStore } from "../../stores/useTagStore";
-import { X, Plus, Trash2, Edit2, Check, Tag } from "lucide-react";
+import { X, Plus, Tag } from "lucide-react";
 import { PRESET_COLORS } from "./TaskTagsDropdown";
+import { TagItemRow } from "./TagItemRow";
 
 interface TagManagerModalProps {
   isOpen: boolean;
@@ -21,12 +22,7 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
   const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0]);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-
-  // Editing state
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editColor, setEditColor] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -67,26 +63,9 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
     }
   };
 
-  const handleStartEdit = (tag: TagDto) => {
-    setEditingTagId(tag.id);
-    setEditName(tag.name);
-    setEditColor(tag.colorHex || PRESET_COLORS[0]);
-  };
-
-  const handleSaveEdit = async (id: string) => {
-    if (!editName.trim() || isUpdating) return;
-    try {
-      setIsUpdating(true);
-      await updateTag(id, {
-        name: editName.trim(),
-        colorHex: editColor,
-      });
-      setEditingTagId(null);
-    } catch {
-      // Handled in store
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleSaveEdit = async (id: string, name: string, color: string) => {
+    await updateTag(id, { name, colorHex: color });
+    setEditingTagId(null);
   };
 
   const handleDeleteTag = async (id: string, name: string) => {
@@ -190,104 +169,19 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
               Chưa có thẻ nào được tạo. Hãy thêm thẻ đầu tiên ở trên!
             </div>
           ) : (
-            tags.map((tag) => {
-              const isEditing = editingTagId === tag.id;
-
-              if (isEditing) {
-                return (
-                  <div
-                    key={tag.id}
-                    className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-2xl border border-neutral-300 dark:border-neutral-600 flex flex-col gap-2 animate-in fade-in duration-150"
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 px-2.5 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded-lg text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleSaveEdit(tag.id)}
-                        disabled={isUpdating || !editName.trim()}
-                        className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                        title="Lưu thay đổi"
-                      >
-                        <Check size={14} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingTagId(null)}
-                        className="p-1.5 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs transition-colors cursor-pointer"
-                        title="Hủy"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 pt-1">
-                      {PRESET_COLORS.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => setEditColor(color)}
-                          style={{ backgroundColor: color }}
-                          className={`w-4 h-4 rounded-full transition-transform cursor-pointer ${
-                            editColor === color
-                              ? "ring-2 ring-offset-1 ring-emerald-500 scale-110"
-                              : "hover:scale-105"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={tag.id}
-                  className="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all group"
-                >
-                  <div
-                    onClick={() => {
-                      if (onSelectTag) {
-                        onSelectTag(tag.name);
-                        onClose();
-                      }
-                    }}
-                    className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
-                  >
-                    <span
-                      style={{ backgroundColor: tag.colorHex || "#10B981" }}
-                      className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
-                    />
-                    <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 truncate">
-                      {tag.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={() => handleStartEdit(tag)}
-                      className="p-1.5 text-neutral-400 hover:text-blue-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors cursor-pointer"
-                      title="Sửa thẻ"
-                    >
-                      <Edit2 size={13} strokeWidth={2} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTag(tag.id, tag.name)}
-                      className="p-1.5 text-neutral-400 hover:text-rose-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors cursor-pointer"
-                      title="Xóa thẻ"
-                    >
-                      <Trash2 size={13} strokeWidth={2} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            tags.map((tag) => (
+              <TagItemRow
+                key={tag.id}
+                tag={tag}
+                isEditing={editingTagId === tag.id}
+                onStartEdit={(t) => setEditingTagId(t.id)}
+                onCancelEdit={() => setEditingTagId(null)}
+                onSaveEdit={handleSaveEdit}
+                onDelete={handleDeleteTag}
+                onSelect={onSelectTag}
+                onClose={onClose}
+              />
+            ))
           )}
         </div>
       </div>

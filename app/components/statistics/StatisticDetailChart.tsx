@@ -9,27 +9,14 @@ import { AiSessionDetailData } from "../../types/aiFocus";
 export type { AiSessionDetailData };
 
 export interface StatisticSessionEntry {
-  sessionId: string;
-  actualMinutes: number;
-  overtimeMinutes: number;
-  durationMinutes: number;
-  isCompleted: boolean;
-  startedAt?: string;
-  aiData?: AiSessionDetailData | null;
+  sessionId: string; actualMinutes: number; overtimeMinutes: number;
+  durationMinutes: number; isCompleted: boolean; startedAt?: string; aiData?: AiSessionDetailData | null;
 }
 
 export interface StatisticItem {
-  id: string;
-  name: string;
-  plannedMinutes: number;
-  actualMinutes: number;
-  overtimeMinutes: number;
-  pomos: number;
-  color: string;
-  sourceType: "task" | "list";
-  aiData?: AiSessionDetailData | null;
-  sessionId?: string;
-  sessions?: StatisticSessionEntry[];
+  id: string; name: string; plannedMinutes: number; actualMinutes: number; overtimeMinutes: number;
+  pomos: number; color: string; sourceType: "task" | "list"; aiData?: AiSessionDetailData | null;
+  sessionId?: string; sessions?: StatisticSessionEntry[];
 }
 
 interface StatisticDetailChartProps {
@@ -68,9 +55,9 @@ export function StatisticDetailChart({
   };
 
   return (
-    <section className="lg:col-span-2 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
+    <section className="lg:col-span-2 min-w-0 max-w-full w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
       {/* Header row */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">
           {t.statistics.detailChart}
         </h2>

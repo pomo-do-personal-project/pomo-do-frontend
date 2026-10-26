@@ -12,45 +12,39 @@ import { ForgotPasswordForm } from "./auth/forms/ForgotPasswordForm";
 import { ResetPasswordForm } from "./auth/forms/ResetPasswordForm";
 import { UserDto } from "../types/api";
 
+type AuthMode = "signup" | "otp-verify" | "signin" | "forgot" | "reset";
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: "signup" | "otp-verify" | "signin" | "forgot" | "reset";
+  initialMode?: AuthMode;
   onAuthSuccess?: (user: UserDto) => void;
   initialEmail?: string;
 }
 
 export function AuthModal({
-  isOpen,
-  onClose,
-  initialMode = "signup",
-  onAuthSuccess,
-  initialEmail,
+  isOpen, onClose, initialMode = "signup", onAuthSuccess, initialEmail,
 }: AuthModalProps) {
   const router = useRouter();
   const { language } = useTranslation();
-  const [authMode, setAuthMode] = useState<
-    "signup" | "otp-verify" | "signin" | "forgot" | "reset"
-  >(initialMode);
-
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState(initialEmail || "");
-  const [pendingSignup, setPendingSignup] = useState({
-    email: initialEmail || "",
-    displayName: "",
-    password: "",
-  });
-
+  const [pendingSignup, setPendingSignup] = useState({ email: initialEmail || "", displayName: "", password: "" });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const switchMode = (mode: AuthMode) => {
+    setAuthMode(mode);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
 
   useEffect(() => {
     if (isOpen) {
       setAuthMode(initialMode);
       setErrorMsg(null);
       setSuccessMsg(null);
-      if (initialEmail) {
-        setEmail(initialEmail);
-      }
+      if (initialEmail) setEmail(initialEmail);
     }
   }, [isOpen, initialMode, initialEmail]);
 
@@ -170,6 +164,15 @@ export function AuthModal({
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
+            onSuccess={(currUser) => {
+              if (onAuthSuccess) onAuthSuccess(currUser);
+              if (currUser?.isAdmin) {
+                router.push(`/${language}/admin/users`);
+                onClose();
+                return;
+              }
+              setTimeout(() => onClose(), 1000);
+            }}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
           />
@@ -180,14 +183,8 @@ export function AuthModal({
             email={pendingSignup.email || email}
             displayName={pendingSignup.displayName}
             password={pendingSignup.password}
-            onSuccess={() => {
-              setAuthMode("signin");
-            }}
-            onEditInfo={() => {
-              setAuthMode("signup");
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onSuccess={() => switchMode("signin")}
+            onEditInfo={() => switchMode("signup")}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
           />
@@ -205,11 +202,7 @@ export function AuthModal({
               }
               setTimeout(() => onClose(), 1000);
             }}
-            onSwitchMode={(mode) => {
-              setAuthMode(mode);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onSwitchMode={switchMode}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
           />
@@ -218,11 +211,7 @@ export function AuthModal({
         {authMode === "forgot" && (
           <ForgotPasswordForm
             initialEmail={email}
-            onSwitchMode={(mode) => {
-              setAuthMode(mode);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onSwitchMode={switchMode}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
           />
@@ -231,9 +220,7 @@ export function AuthModal({
         {authMode === "reset" && (
           <ResetPasswordForm
             initialEmail={email}
-            onSuccess={() => {
-              setAuthMode("signin");
-            }}
+            onSuccess={() => switchMode("signin")}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
           />

@@ -4,6 +4,7 @@ import React from "react";
 import { LayoutDashboard, CheckSquare, Grid2X2, BarChart3 } from "lucide-react";
 import { Logo } from "../../Logo";
 import { ScreenId } from "../types";
+import { useTranslation } from "../../../stores/useLanguageStore";
 
 interface MockSidebarProps {
   activeScreen: ScreenId;
@@ -12,6 +13,9 @@ interface MockSidebarProps {
 export const MockSidebar = React.memo(function MockSidebar({
   activeScreen,
 }: MockSidebarProps) {
+  const { language } = useTranslation();
+  const isVi = language === "vi";
+
   return (
     <div className="w-18 bg-white border-r border-neutral-200/80 flex flex-col items-center justify-between py-4 shrink-0 select-none">
       <div className="flex flex-col items-center gap-3">
@@ -20,7 +24,7 @@ export const MockSidebar = React.memo(function MockSidebar({
         </div>
 
         <div
-          title="1. Đồng hồ Tổng quan (Timer Center)"
+          title={isVi ? "1. Đồng hồ Tổng quan" : "1. Timer Center"}
           className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-default ${
             activeScreen === "timer"
               ? "bg-neutral-900 text-white shadow-xs"
@@ -31,7 +35,7 @@ export const MockSidebar = React.memo(function MockSidebar({
         </div>
 
         <div
-          title="2. Danh sách Công việc (Task Page)"
+          title={isVi ? "2. Danh sách Công việc" : "2. Task Page"}
           className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-default ${
             activeScreen === "task"
               ? "bg-neutral-900 text-white shadow-xs"
@@ -42,7 +46,7 @@ export const MockSidebar = React.memo(function MockSidebar({
         </div>
 
         <div
-          title="3. Ma trận Eisenhower (Matrix Page)"
+          title={isVi ? "3. Ma trận Eisenhower" : "3. Eisenhower Matrix"}
           className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-default ${
             activeScreen === "matrix"
               ? "bg-neutral-900 text-white shadow-xs"
@@ -53,7 +57,7 @@ export const MockSidebar = React.memo(function MockSidebar({
         </div>
 
         <div
-          title="4 & 5. Thống kê & Bản đồ nhiệt (Statistic Page)"
+          title={isVi ? "4 & 5. Thống kê & Bản đồ nhiệt" : "4 & 5. Statistics & Heatmap"}
           className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-default ${
             activeScreen === "stat-focus" || activeScreen === "stat-task"
               ? "bg-neutral-900 text-white shadow-xs"

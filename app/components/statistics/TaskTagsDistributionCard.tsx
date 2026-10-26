@@ -59,7 +59,7 @@ export function TaskTagsDistributionCard({ tasks, tags }: TaskTagsDistributionCa
   }, [tasks, tags, t.statistics.noTagsTasks]);
 
   return (
-    <section className="w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors mb-8">
+    <section className="w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors mb-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2.5">

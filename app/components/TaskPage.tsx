@@ -10,10 +10,11 @@ import { TaskQuickAdd } from "./tasks/TaskQuickAdd";
 import { TaskList } from "./tasks/TaskList";
 import { TaskDetailDrawer } from "./tasks/TaskDetailDrawer";
 import { CalendarTimelineView } from "./calendar/CalendarTimelineView";
-import { AlertTriangle, RotateCcw, Zap, CalendarDays } from "lucide-react";
+import { AlertTriangle, RotateCcw, Zap, CalendarDays, Menu } from "lucide-react";
 import { useResizablePanel } from "../hooks/useResizablePanel";
 import { useFilteredTasks } from "./tasks/hooks/useFilteredTasks";
 import { formatLocalDate } from "../utils/dateUtils";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export * from "./tasks/types";
 
@@ -22,34 +23,29 @@ interface TaskPageProps {
 }
 
 export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
-  const {
-    tasks,
-    selectedTask,
-    isLoading,
-    error,
-    fetchTasks,
-    selectTask,
-    createTask,
-    toggleTaskStatus,
-    deleteTask,
-    clearError,
-  } = useTaskStore();
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
 
+  const { tasks, selectedTask, isLoading, error, fetchTasks, selectTask, createTask, toggleTaskStatus, deleteTask, clearError } = useTaskStore();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [currentCategory, setCurrentCategory] = useState<TaskCategory>("Today");
   const [selectedTag, setSelectedTag] = useState<string>("All");
 
-  const {
-    width: detailWidth,
-    isResizing,
-    panelRef: detailPanelRef,
-    startResizing,
-  } = useResizablePanel({
+  const { width: detailWidth, isResizing, panelRef: detailPanelRef, startResizing } = useResizablePanel({
     storageKey: "pomo-task-detail-width",
     defaultWidth: 384,
     minWidth: 280,
     maxWidth: 750,
   });
+
+  const handleToggleSidebar = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setIsMobileSidebarOpen((prev) => !prev);
+    } else {
+      setIsDesktopSidebarCollapsed((prev) => !prev);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -105,7 +101,7 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-white dark:bg-neutral-950">
+    <div className="flex h-full w-full overflow-hidden bg-transparent">
       <TaskSidebar
         currentCategory={currentCategory}
         onSelectCategory={setCurrentCategory}
@@ -114,19 +110,47 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
         categoryCounts={categoryCounts}
         allTags={allTags}
         totalTasks={tasks.length}
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isDesktopCollapsed={isDesktopSidebarCollapsed}
       />
 
-      <main className="flex-1 flex flex-col p-8 overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2.5">
+      <main className="flex-1 flex flex-col p-3.5 sm:p-6 md:p-8 pb-20 md:pb-8 overflow-y-auto">
+        <div className="flex items-center justify-between mb-5 sm:mb-6">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleToggleSidebar}
+              className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                wallpaperUrl
+                  ? "bg-white/15 border-white/20 text-white"
+                  : "bg-white border-neutral-200 text-neutral-800 shadow-2xs"
+              }`}
+              title={isDesktopSidebarCollapsed ? "Mở thanh danh mục" : "Thu gọn thanh danh mục"}
+              aria-label="Thu gọn hoặc mở danh mục công việc"
+            >
+              <Menu size={18} strokeWidth={2} />
+            </button>
+
+            <h1
+              className={`text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 ${
+                wallpaperUrl ? "text-white drop-shadow-md" : "text-neutral-900 dark:text-white"
+              }`}
+            >
             {currentCategory === "QuickAdd" ? (
               <>
-                <Zap size={26} strokeWidth={2} className="text-amber-500 shrink-0" />
+                <Zap size={26} strokeWidth={2} className="text-amber-500 shrink-0 drop-shadow-sm" />
                 <span>Quick Add (Ý nghĩ phát sinh)</span>
               </>
             ) : currentCategory === "Calendar" ? (
               <>
-                <CalendarDays size={26} strokeWidth={2} className="text-neutral-900 dark:text-white shrink-0" />
+                <CalendarDays
+                  size={26}
+                  strokeWidth={2}
+                  className={`shrink-0 ${
+                    wallpaperUrl ? "text-white drop-shadow-sm" : "text-neutral-700 dark:text-neutral-200"
+                  }`}
+                />
                 <span>Lịch biểu tập trung</span>
               </>
             ) : currentCategory === "Today" ? (
@@ -137,8 +161,14 @@ export function TaskPage({ onNavigateToTimer }: TaskPageProps = {}) {
               currentCategory
             )}
           </h1>
+        </div>
+
           {isLoading && (
-            <span className="text-xs text-neutral-400 animate-pulse font-mono">
+            <span
+              className={`text-xs animate-pulse font-mono ${
+                wallpaperUrl ? "text-white/70" : "text-neutral-500 dark:text-neutral-400"
+              }`}
+            >
               Đang đồng bộ...
             </span>
           )}

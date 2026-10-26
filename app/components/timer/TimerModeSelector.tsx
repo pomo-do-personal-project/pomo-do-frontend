@@ -3,6 +3,7 @@
 import React from "react";
 import { Timer, Coffee, Zap } from "lucide-react";
 import { TimerType, FocusMode, ModeDurationInfo } from "./types";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TimerModeSelectorProps {
   timerType: TimerType;
@@ -19,6 +20,7 @@ export function TimerModeSelector({
   onSelectTab,
   isRunning = false,
 }: TimerModeSelectorProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const isFocus = focusMode === "W";
   const isStopwatch = timerType === "stopwatch";
 
@@ -30,20 +32,34 @@ export function TimerModeSelector({
           : "opacity-100 translate-y-0"
       }`}
     >
-      <div className="flex items-center gap-1.5 p-1 bg-transparent dark:bg-transparent rounded-2xl">
+      <div
+        className={`flex items-center gap-1.5 p-1 rounded-2xl transition-all duration-200 ${
+          wallpaperUrl
+            ? "bg-black/25 backdrop-blur-md border border-white/15 shadow-sm"
+            : "bg-neutral-200/70 border border-neutral-300/60 shadow-xs"
+        }`}
+      >
         {/* Tab 1: Focus */}
         <button
           type="button"
           onClick={() => onSelectTab("focus")}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
             isFocus
-              ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs"
-              : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/40"
+              ? "bg-white text-neutral-900 shadow-sm"
+              : wallpaperUrl
+              ? "text-white/80 hover:text-white hover:bg-white/10"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
           }`}
         >
           <Timer
             size={13}
-            className={isFocus ? "text-rose-500" : "text-neutral-400"}
+            className={
+              isFocus
+                ? "text-rose-500"
+                : wallpaperUrl
+                ? "text-white/60"
+                : "text-neutral-400"
+            }
           />
           <span>Focus ({modeDurations.W.minutes}m)</span>
         </button>
@@ -54,34 +70,54 @@ export function TimerModeSelector({
           onClick={() => onSelectTab("break")}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
             !isFocus
-              ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs"
-              : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/40"
+              ? "bg-white text-neutral-900 shadow-sm"
+              : wallpaperUrl
+              ? "text-white/80 hover:text-white hover:bg-white/10"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
           }`}
         >
           <Coffee
             size={13}
-            className={!isFocus ? "text-teal-500" : "text-neutral-400"}
+            className={
+              !isFocus
+                ? "text-teal-600"
+                : wallpaperUrl
+                ? "text-white/60"
+                : "text-neutral-400"
+            }
           />
           <span>Break ({modeDurations.SB.minutes}m)</span>
         </button>
 
-        {/* Dấu phân cách tinh tế */}
-        <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 mx-0.5" />
+        {/* Dấu phân cách */}
+        <div
+          className={`w-px h-4 mx-0.5 ${
+            wallpaperUrl ? "bg-white/20" : "bg-neutral-300"
+          }`}
+        />
 
-        {/* Tab 3: Stopwatch (Toggle bật/tắt đĩa quay) */}
+        {/* Tab 3: Stopwatch */}
         <button
           type="button"
           onClick={() => onSelectTab("stopwatch")}
-          title={isStopwatch ? "Đang bật Stopwatch (Bấm để quay về Pomo số)" : "Bật chế độ Stopwatch"}
+          title={isStopwatch ? "Đang bật Stopwatch" : "Bật chế độ Stopwatch"}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
             isStopwatch
-              ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs"
-              : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/40"
+              ? "bg-white text-neutral-900 shadow-sm"
+              : wallpaperUrl
+              ? "text-white/80 hover:text-white hover:bg-white/10"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
           }`}
         >
           <Zap
             size={13}
-            className={isStopwatch ? "text-amber-500" : "text-neutral-400"}
+            className={
+              isStopwatch
+                ? "text-amber-500"
+                : wallpaperUrl
+                ? "text-white/60"
+                : "text-neutral-400"
+            }
           />
           <span>Stopwatch</span>
         </button>

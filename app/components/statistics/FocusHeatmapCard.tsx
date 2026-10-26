@@ -55,9 +55,9 @@ export function FocusHeatmapCard({
   const totalHours = (totalFocusMinutes / 60).toFixed(1);
 
   return (
-    <section className="w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors mb-8">
+    <section className="w-full min-w-0 max-w-full bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors mb-8">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
@@ -75,7 +75,7 @@ export function FocusHeatmapCard({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           {/* Quick Stats Pill */}
           <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/70 border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-600 dark:text-neutral-300">
             <span>
@@ -93,7 +93,7 @@ export function FocusHeatmapCard({
               <button
                 key={days}
                 onClick={() => onRangeChange(days)}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all cursor-pointer ${
                   rangeDays === days
                     ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-xs font-bold"
                     : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white"
@@ -107,7 +107,7 @@ export function FocusHeatmapCard({
       </div>
 
       {/* Matrix Heatmap Container */}
-      <div className="relative overflow-x-auto pb-2">
+      <div className="relative w-full max-w-full overflow-x-auto pb-2">
         <div className="min-w-[700px]">
           {/* Hour Labels */}
           <div className="grid grid-cols-[40px_repeat(24,_1fr)] gap-1 mb-1 text-[10px] font-mono text-neutral-400 select-none">

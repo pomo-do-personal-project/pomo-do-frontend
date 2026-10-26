@@ -60,7 +60,7 @@ export function TaskCompletionStatsCard({ tasks }: TaskCompletionStatsCardProps)
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <section className="bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
+    <section className="bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors flex flex-col justify-between">
       {/* Title */}
       <div className="flex items-center gap-2 mb-4">
         <div className="p-2 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">

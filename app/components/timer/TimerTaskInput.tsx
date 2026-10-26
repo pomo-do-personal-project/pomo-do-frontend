@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PenLine, X } from "lucide-react";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TimerTaskInputProps {
   taskName: string;
@@ -14,6 +15,8 @@ export function TimerTaskInput({
   onTaskNameChange,
   isRunning = false,
 }: TimerTaskInputProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
+
   return (
     <div
       className={`w-full max-w-sm mb-5 flex flex-col items-center relative transition-all duration-300 ${
@@ -24,9 +27,9 @@ export function TimerTaskInput({
     >
       <div className="w-full relative flex items-center justify-center">
         <span
-          className={`absolute left-2 text-neutral-400 pointer-events-none transition-opacity duration-200 ${
-            isRunning ? "opacity-0 group-hover:opacity-100" : "opacity-100"
-          }`}
+          className={`absolute left-2 pointer-events-none transition-opacity duration-200 ${
+            wallpaperUrl ? "text-white/60" : "text-neutral-400"
+          } ${isRunning ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}
         >
           <PenLine size={15} strokeWidth={1.75} />
         </span>
@@ -37,10 +40,14 @@ export function TimerTaskInput({
           onChange={(e) => onTaskNameChange(e.target.value)}
           placeholder=""
           aria-label="Tên nhiệm vụ"
-          className={`w-full text-center bg-transparent py-2 px-9 text-base font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none transition-all duration-200 ${
-            isRunning
-              ? "border-b border-transparent group-hover:border-neutral-300/80 dark:group-hover:border-neutral-700/80"
-              : "border-b-2 border-neutral-300/80 dark:border-neutral-700/80 focus:border-neutral-900 dark:focus:border-white"
+          className={`w-full text-center bg-transparent py-2 px-9 text-base font-medium transition-all duration-200 focus:outline-none ${
+            wallpaperUrl
+              ? isRunning
+                ? "text-white placeholder:text-white/40 border-b border-transparent group-hover:border-white/30"
+                : "text-white placeholder:text-white/40 border-b-2 border-white/25 focus:border-white"
+              : isRunning
+              ? "text-neutral-900 placeholder:text-neutral-400 border-b border-transparent group-hover:border-neutral-300"
+              : "text-neutral-900 placeholder:text-neutral-400 border-b-2 border-neutral-300 focus:border-neutral-900"
           }`}
         />
 
@@ -48,9 +55,11 @@ export function TimerTaskInput({
           <button
             type="button"
             onClick={() => onTaskNameChange("")}
-            className={`absolute right-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 cursor-pointer transition-opacity duration-200 ${
-              isRunning ? "opacity-0 group-hover:opacity-100" : "opacity-100"
-            }`}
+            className={`absolute right-1 p-1 cursor-pointer transition-opacity duration-200 ${
+              wallpaperUrl
+                ? "text-white/60 hover:text-white"
+                : "text-neutral-400 hover:text-neutral-700"
+            } ${isRunning ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}
             title="Xóa tên task"
             aria-label="Xóa tên task"
           >
@@ -61,3 +70,4 @@ export function TimerTaskInput({
     </div>
   );
 }
+

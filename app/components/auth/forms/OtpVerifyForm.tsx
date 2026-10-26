@@ -131,11 +131,11 @@ export function OtpVerifyForm({
 
       setSuccess("Đăng ký tài khoản thành công! Vui lòng đăng nhập bằng mật khẩu của bạn.");
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message + (err.errors?.length ? `: ${err.errors.join(", ")}` : ""));
       } else {
-        setError(err?.message || "Mã OTP không chính xác hoặc đã hết hạn.");
+        setError((err instanceof Error ? err.message : String(err)) || "Mã OTP không chính xác hoặc đã hết hạn.");
       }
       setOtpDigits(["", "", "", "", "", ""]);
       otpInputRefs.current[0]?.focus();
@@ -155,8 +155,8 @@ export function OtpVerifyForm({
       setSuccess("Mã OTP mới đã được gửi vào email của bạn!");
       setOtpDigits(["", "", "", "", "", ""]);
       otpInputRefs.current[0]?.focus();
-    } catch (err: any) {
-      setError(err?.message || "Không thể gửi lại mã OTP. Vui lòng thử lại sau.");
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || "Không thể gửi lại mã OTP. Vui lòng thử lại sau.");
     }
   };
 

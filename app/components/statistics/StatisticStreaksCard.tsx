@@ -16,7 +16,7 @@ export function StatisticStreaksCard({
   const { t } = useTranslation();
 
   return (
-    <section className="bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-6 md:p-8 shadow-sm transition-colors flex flex-col items-center justify-center text-center min-h-[240px]">
+    <section className="bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl border-2 border-neutral-300 dark:border-neutral-700 p-4 sm:p-6 md:p-8 shadow-sm transition-colors flex flex-col items-center justify-center text-center min-h-[240px]">
       <h2 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white mb-6">
         {t.statistics.streaks}
       </h2>

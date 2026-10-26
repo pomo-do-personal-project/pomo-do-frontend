@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Circle, Clock, CheckCircle2, ChevronDown, Check } from "lucide-react";
 import { TaskStatus } from "../../types/api";
+import { useTranslation } from "../../stores/useLanguageStore";
 
 interface TaskStatusSelectProps {
   status: TaskStatus;
@@ -12,8 +13,10 @@ interface TaskStatusSelectProps {
 const STATUS_CONFIGS = [
   {
     status: TaskStatus.Todo,
-    label: "Chờ xử lý (Pending)",
-    shortLabel: "Chờ xử lý",
+    labelVi: "Chờ xử lý",
+    labelEn: "Pending",
+    shortLabelVi: "Chờ xử lý",
+    shortLabelEn: "Pending",
     icon: Circle,
     color: "text-neutral-500 dark:text-neutral-400",
     bgColor: "bg-neutral-100 dark:bg-neutral-800",
@@ -21,8 +24,10 @@ const STATUS_CONFIGS = [
   },
   {
     status: TaskStatus.InProgress,
-    label: "Đang làm (In Progress)",
-    shortLabel: "Đang làm",
+    labelVi: "Đang làm",
+    labelEn: "In Progress",
+    shortLabelVi: "Đang làm",
+    shortLabelEn: "In Progress",
     icon: Clock,
     color: "text-amber-600 dark:text-amber-400",
     bgColor: "bg-amber-50 dark:bg-amber-950/40",
@@ -30,8 +35,10 @@ const STATUS_CONFIGS = [
   },
   {
     status: TaskStatus.Completed,
-    label: "Đã hoàn thành (Done)",
-    shortLabel: "Hoàn thành",
+    labelVi: "Đã hoàn thành",
+    labelEn: "Completed",
+    shortLabelVi: "Hoàn thành",
+    shortLabelEn: "Done",
     icon: CheckCircle2,
     color: "text-emerald-600 dark:text-emerald-400",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
@@ -40,6 +47,8 @@ const STATUS_CONFIGS = [
 ];
 
 export function TaskStatusSelect({ status, onChange }: TaskStatusSelectProps) {
+  const { language } = useTranslation();
+  const isVi = language === "vi";
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +64,7 @@ export function TaskStatusSelect({ status, onChange }: TaskStatusSelectProps) {
 
   const currentConfig = STATUS_CONFIGS.find((c) => c.status === status) || STATUS_CONFIGS[0];
   const CurrentIcon = currentConfig.icon;
+  const currentShortLabel = isVi ? currentConfig.shortLabelVi : currentConfig.shortLabelEn;
 
   return (
     <div className="relative shrink-0 flex items-center" ref={dropdownRef}>
@@ -62,22 +72,23 @@ export function TaskStatusSelect({ status, onChange }: TaskStatusSelectProps) {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs ${currentConfig.bgColor} ${currentConfig.borderColor} ${currentConfig.color}`}
-        title="Thay đổi trạng thái công việc"
-        aria-label="Thay đổi trạng thái công việc"
+        title={isVi ? "Thay đổi trạng thái công việc" : "Change task status"}
+        aria-label={isVi ? "Thay đổi trạng thái công việc" : "Change task status"}
       >
         <CurrentIcon size={13} strokeWidth={2.2} className="shrink-0" />
-        <span>{currentConfig.shortLabel}</span>
+        <span>{currentShortLabel}</span>
         <ChevronDown size={12} strokeWidth={2} className="opacity-70 shrink-0 ml-0.5" />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-1.5 w-56 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in zoom-in-95 duration-150">
           <div className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase px-2 py-1 mb-1">
-            Trạng thái công việc
+            {isVi ? "Trạng thái công việc" : "Task Status"}
           </div>
           {STATUS_CONFIGS.map((cfg) => {
             const isSelected = status === cfg.status;
             const Icon = cfg.icon;
+            const itemLabel = isVi ? cfg.labelVi : cfg.labelEn;
 
             return (
               <button
@@ -96,7 +107,7 @@ export function TaskStatusSelect({ status, onChange }: TaskStatusSelectProps) {
                 <div className="flex items-center gap-2">
                   <Icon size={14} strokeWidth={2.2} className={cfg.color} />
                   <span className="text-neutral-800 dark:text-neutral-200 font-medium">
-                    {cfg.label}
+                    {itemLabel}
                   </span>
                 </div>
                 {isSelected && (

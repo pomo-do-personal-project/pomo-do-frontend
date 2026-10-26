@@ -50,11 +50,11 @@ export function ForgotPasswordForm({
       setSuccess(
         msg || "Liên kết đặt lại mật khẩu đã được gửi đến email của bạn! Vui lòng kiểm tra hộp thư."
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message + (err.errors?.length ? `: ${err.errors.join(", ")}` : ""));
       } else {
-        setError(err?.message || "Không thể gửi yêu cầu đặt lại mật khẩu.");
+        setError((err instanceof Error ? err.message : String(err)) || "Không thể gửi yêu cầu đặt lại mật khẩu.");
       }
     } finally {
       setIsSubmitting(false);
