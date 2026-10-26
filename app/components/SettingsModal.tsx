@@ -45,6 +45,17 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
     }
   }, [isOpen, initialTab]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const tabs: { id: SettingsTab; label: string; sub: string; icon: LucideIcon }[] = [
@@ -65,26 +76,33 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
       aria-labelledby="settings-dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
     >
+      {/* Click outside backdrop to close */}
       <div
-        className={`relative w-full ${
+        className="absolute inset-0"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div
+        className={`relative z-10 w-full ${
           isMobileDetailOpen ? "max-w-2xl h-[90vh]" : "max-w-md sm:max-w-lg h-auto max-h-[90vh]"
         } md:max-w-4xl md:h-[88vh] md:max-h-[700px] bg-white dark:bg-[#1e1e1e] border border-neutral-200 dark:border-neutral-800 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden transition-all duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="settings-dialog-title" className="sr-only">{t.nav.settings}</h2>
 
-        {/* Nút đóng modal góc trên bên phải (Desktop hoặc khi ở menu cấp 1 trên mobile) */}
-        {(!isMobileDetailOpen || typeof window === "undefined") && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t.common.close}
-            className="absolute top-4 right-4 z-20 p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-            title={t.common.close}
-          >
-            <X size={20} />
-          </button>
-        )}
+        {/* Nút đóng modal góc trên bên phải (luôn hiện trên Desktop, ẩn trên mobile khi đang xem trang chi tiết) */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t.common.close}
+          className={`absolute top-4 right-4 z-30 p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer ${
+            isMobileDetailOpen ? "hidden md:flex" : "flex"
+          } items-center justify-center`}
+          title={t.common.close}
+        >
+          <X size={20} />
+        </button>
 
         {/* ======================================================== */}
         {/* CỘT TRÁI / MENU CẤP 1 TRÊN MOBILE                         */}
@@ -142,7 +160,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = "account" }: Setti
         {/* CỘT PHẢI / TRANG CHI TIẾT TAB                             */}
         {/* ======================================================== */}
         <main
-          className={`flex-1 p-4 sm:p-8 pr-3 sm:pr-5 overflow-y-auto bg-white dark:bg-[#1e1e1e] flex-col ${
+          className={`flex-1 p-4 sm:p-8 pr-3 sm:pr-8 md:pr-12 overflow-y-auto bg-white dark:bg-[#1e1e1e] flex-col ${
             !isMobileDetailOpen ? "hidden md:flex" : "flex"
           }`}
         >
