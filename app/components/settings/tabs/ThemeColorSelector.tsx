@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { Check, Palette, Sparkles } from "lucide-react";
 import { ThemePalette } from "../../../types/theme";
-import { THEME_PALETTES, getPaletteDisplayName } from "../../../constants/themePalettes";
+import { getPaletteDisplayName } from "../../../constants/themePalettes";
 import { applyThemePalette, getActiveThemePalette } from "../../../lib/themeManager";
 import { useTranslation } from "../../../stores/useLanguageStore";
+import { usePaletteStore } from "../../../stores/usePaletteStore";
 
 interface ThemeColorSelectorProps {
   showNotice?: (message: string, icon?: React.ReactNode) => void;
@@ -14,6 +15,8 @@ interface ThemeColorSelectorProps {
 export function ThemeColorSelector({ showNotice }: ThemeColorSelectorProps) {
   const { language } = useTranslation();
   const [selectedId, setSelectedId] = useState<string>("terracotta");
+  const palettes = usePaletteStore((s) => s.palettes);
+  const activePalettes = palettes.filter((p) => p.isActive !== false);
 
   useEffect(() => {
     const current = getActiveThemePalette();
@@ -52,7 +55,7 @@ export function ThemeColorSelector({ showNotice }: ThemeColorSelectorProps) {
 
       {/* Grid of Color Swatches */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
-        {THEME_PALETTES.map((palette) => {
+        {activePalettes.map((palette) => {
           const isSelected = selectedId === palette.id;
           const displayName = getPaletteDisplayName(palette, language);
           return (

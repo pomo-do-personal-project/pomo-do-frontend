@@ -20,4 +20,6 @@ export interface ThemePalette {
   swatchColor: string;
   isDark: boolean;
   colors: ThemeColors;
+  isActive?: boolean;
+  isCustom?: boolean;
 }

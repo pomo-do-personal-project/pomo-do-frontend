@@ -143,7 +143,7 @@ export function DigitalTimePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700/80 rounded-2xl shadow-2xl p-4 z-40 animate-in fade-in zoom-in-95 duration-150 select-none">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700/80 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150 select-none">
           <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-3">
             <span className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Clock size={13} className="text-rose-500" />
@@ -151,6 +151,8 @@ export function DigitalTimePicker({
             </span>
             <button
               type="button"
+              aria-label="Đóng thời lượng ước tính"
+              data-testid="close-time-picker"
               onClick={() => {
                 setIsOpen(false);
                 flushSave();
@@ -170,6 +172,31 @@ export function DigitalTimePicker({
             onAdjustMinutes={adjustMinutes}
             onWheel={handleWheel}
           />
+
+          {/* Mốc thời gian ước tính nhanh (Quick Presets) */}
+          <div className="flex items-center justify-between gap-1 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+            {[1, 15, 25, 45, 60].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                data-testid={`preset-${preset}m`}
+                onClick={() => {
+                  const h = Math.floor(preset / 60);
+                  const m = preset % 60;
+                  handleUpdate(h, m);
+                  onChange(preset);
+                }}
+                className={`flex-1 py-1 px-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer text-center ${
+                  totalMinutes === preset
+                    ? "bg-rose-500 text-white border-rose-500 shadow-xs"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-transparent hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                }`}
+                title={`Đặt ${preset} phút`}
+              >
+                {preset < 60 ? `${preset}m` : `${preset / 60}h`}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

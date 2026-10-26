@@ -45,7 +45,20 @@ export function getActiveThemePalette(): ThemePalette {
   if (typeof localStorage === "undefined") return THEME_PALETTES[0];
   const savedId = localStorage.getItem(THEME_PALETTE_KEY);
   if (!savedId) return THEME_PALETTES[0];
-  return THEME_PALETTES.find((p) => p.id === savedId) || THEME_PALETTES[0];
+
+  const sys = THEME_PALETTES.find((p) => p.id === savedId);
+  if (sys) return sys;
+
+  try {
+    const raw = localStorage.getItem("pomodo_color_series_store");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const custom = parsed?.state?.palettes?.find((p: ThemePalette) => p.id === savedId);
+      if (custom) return custom;
+    }
+  } catch {}
+
+  return THEME_PALETTES[0];
 }
 
 export function initThemePalette() {

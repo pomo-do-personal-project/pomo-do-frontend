@@ -28,7 +28,7 @@ export default function Home() {
   const router = useRouter();
   const { t, language } = useTranslation();
   const [activeView, setActiveView] = useState("dashboard");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<

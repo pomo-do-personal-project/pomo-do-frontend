@@ -81,6 +81,7 @@ export function DigitalTimeStepper({
       >
         <button
           type="button"
+          data-testid="inc-minute-btn"
           onClick={() => {
             setActiveUnit("mm");
             onAdjustMinutes(minutes < 5 ? 1 : 5);
@@ -91,12 +92,13 @@ export function DigitalTimeStepper({
           <ChevronUp size={16} strokeWidth={2.5} />
         </button>
 
-        <span className="font-mono text-2xl font-black text-neutral-900 dark:text-white px-2">
+        <span data-testid="minute-value" className="font-mono text-2xl font-black text-neutral-900 dark:text-white px-2">
           {format2(minutes)}
         </span>
 
         <button
           type="button"
+          data-testid="dec-minute-btn"
           onClick={() => {
             setActiveUnit("mm");
             onAdjustMinutes(minutes <= 5 ? -1 : -5);

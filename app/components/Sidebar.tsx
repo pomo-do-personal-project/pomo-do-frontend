@@ -48,10 +48,8 @@ export function Sidebar({
   React.useEffect(() => { setMounted(true); }, []);
 
   const topItems: NavItem[] = [
-    { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
-    { id: "task", label: t.nav.tasks, icon: CheckSquare },
-    { id: "matrix", label: t.nav.matrix, icon: Grid2X2 },
-    { id: "statistic", label: t.nav.statistics, icon: BarChart3 },
+    { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard }, { id: "task", label: t.nav.tasks, icon: CheckSquare },
+    { id: "matrix", label: t.nav.matrix, icon: Grid2X2 }, { id: "statistic", label: t.nav.statistics, icon: BarChart3 },
   ];
 
   const isUserLoggedIn = mounted && isAuthenticated && !!user;
@@ -106,6 +104,7 @@ export function Sidebar({
           return (
             <div key={item.id} className="relative group flex justify-center">
               <button
+                data-testid={`nav-${item.id}`}
                 onClick={() => { setShowUserMenu(false); onSelectItem?.(item.id); }}
                 aria-label={item.label}
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
@@ -132,6 +131,7 @@ export function Sidebar({
       >
         <div className="relative group flex justify-center">
           <button
+            data-testid="sidebar-account-btn"
             onClick={handleAccountClick}
             aria-label={isUserLoggedIn ? `User ${user?.displayName || user?.email}` : "Sign in / Register"}
             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden border-2 ${
@@ -206,6 +206,7 @@ export function Sidebar({
 
                 {/* 3. Settings */}
                 <button
+                  data-testid="user-menu-settings"
                   type="button"
                   onClick={() => { setShowUserMenu(false); onSelectItem?.("settings"); }}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/10 flex items-center gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer text-left"
@@ -230,6 +231,7 @@ export function Sidebar({
 
                 {/* 5. Log out */}
                 <button
+                  data-testid="user-menu-logout"
                   type="button"
                   onClick={handleLogout}
                   className="w-full px-2.5 py-2 rounded-xl hover:bg-rose-500/10 text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer text-left group"

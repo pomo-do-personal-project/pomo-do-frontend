@@ -52,3 +52,5 @@ skills-lock.json
 !README.md
 
 certificates
+test-results/
+playwright-report/

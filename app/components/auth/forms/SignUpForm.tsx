@@ -74,7 +74,7 @@ export function SignUpForm({
           type="text"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="Tên hiển thị (vd: Minh Ngo)"
+          placeholder="Tên hiển thị"
           className="w-full pl-10 pr-4 py-3 bg-transparent border-2 border-neutral-800 dark:border-neutral-200 rounded-2xl text-sm font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-all"
         />
       </div>

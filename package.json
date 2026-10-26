@@ -6,8 +6,7 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test:record": "playwright test e2e/happy-case.spec.ts --headed"
+    "lint": "eslint"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.1.1",
@@ -20,7 +19,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

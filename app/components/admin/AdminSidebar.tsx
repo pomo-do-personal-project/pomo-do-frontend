@@ -8,6 +8,7 @@ import {
   Users,
   Bell,
   Sparkles,
+  Palette,
   LogOut,
   X,
 } from "lucide-react";
@@ -59,6 +60,11 @@ export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
       label: "Kho tài nguyên",
       icon: Sparkles,
       href: `/${language}/admin/assets`,
+    },
+    {
+      label: "Bảng màu chủ đề",
+      icon: Palette,
+      href: `/${language}/admin/palettes`,
     },
   ];
 

@@ -56,17 +56,35 @@ export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
   };
 
   const handleCreateAndAssignTag = async () => {
-    if (!newTagName.trim()) return;
+    const trimmed = newTagName.trim();
+    if (!trimmed) return;
     try {
       setIsCreating(true);
       setErrorMsg(null);
-      const created = await createTag({ name: newTagName.trim(), colorHex: selectedColor });
+      const existing = allTags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+      if (existing) {
+        if (!currentTagIds.includes(existing.id)) {
+          await onUpdateTags([...currentTagIds, existing.id]);
+        }
+        setNewTagName("");
+        setSearchTerm("");
+        return;
+      }
+      const created = await createTag({ name: trimmed, colorHex: selectedColor });
       if (created) {
         await onUpdateTags([...currentTagIds, created.id]);
       }
       setNewTagName("");
       setSearchTerm("");
     } catch (err: unknown) {
+      await fetchTags();
+      const existing = useTagStore.getState().tags.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+      if (existing && !currentTagIds.includes(existing.id)) {
+        await onUpdateTags([...currentTagIds, existing.id]);
+        setNewTagName("");
+        setSearchTerm("");
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Không thể tạo thẻ tag";
       setErrorMsg(msg);
     } finally {

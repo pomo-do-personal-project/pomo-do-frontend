@@ -62,9 +62,10 @@ export function useTaskDetailActions({
     } = usePomodoroStore.getState();
 
     const { settings } = useSettingsStore.getState();
+    const latestTask = useTaskStore.getState().tasks.find((t) => t.id === task.id) || task;
     const durationMinutes =
-      task.estimatedMinutes && task.estimatedMinutes > 0
-        ? task.estimatedMinutes
+      latestTask.estimatedMinutes && latestTask.estimatedMinutes > 0
+        ? latestTask.estimatedMinutes
         : (settings.focusDuration || 25);
     const durationSeconds = durationMinutes * 60;
 

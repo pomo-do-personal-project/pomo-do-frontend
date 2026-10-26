@@ -113,7 +113,7 @@ export function TaskDetailDrawer({
 
       {/* Header: Title & Matrix Priority Selector */}
       <div
-        className={`relative pb-3 mb-6 pointer-events-auto border-b ${
+        className={`relative z-30 pb-3 mb-6 pointer-events-auto border-b ${
           wallpaperUrl ? "border-white/20" : "border-neutral-200"
         }`}
       >
@@ -166,7 +166,7 @@ export function TaskDetailDrawer({
 
       {/* Detail Frame (Status, Due Date & Time, Estimation) */}
       <div
-        className={`p-4 rounded-2xl mb-6 flex flex-col gap-3.5 pointer-events-auto backdrop-blur-md ${
+        className={`p-4 rounded-2xl mb-6 flex flex-col gap-3.5 pointer-events-auto backdrop-blur-md relative z-20 ${
           wallpaperUrl
             ? "border border-white/15 bg-white/10"
             : "border border-neutral-200 bg-neutral-50/80"
@@ -222,7 +222,7 @@ export function TaskDetailDrawer({
       </div>
 
       {/* Tags Section */}
-      <div className="mb-6 pointer-events-auto">
+      <div className="mb-6 pointer-events-auto relative z-10">
         <TaskTagsSection task={task} onUpdateTags={(tagIds) => handleAutoSave({ tagIds })} />
       </div>
 
