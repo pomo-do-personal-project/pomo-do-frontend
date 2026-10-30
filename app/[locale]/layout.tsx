@@ -60,9 +60,9 @@ export async function generateMetadata({
       description,
       images: [
         {
-          url: "/favicon.ico",
-          width: 64,
-          height: 64,
+          url: "/logo.png",
+          width: 512,
+          height: 512,
           alt: "Pomo-Do Tomato Icon",
         },
       ],
@@ -71,9 +71,18 @@ export async function generateMetadata({
       card: "summary",
       title,
       description,
+      images: ["/logo.png"],
     },
     icons: {
-      icon: "/favicon.ico",
+      icon: [
+        { url: "/icon.svg", type: "image/svg+xml" },
+        { url: "/icon.png", sizes: "512x512", type: "image/png" },
+        { url: "/favicon.ico", sizes: "any" },
+      ],
+      apple: [
+        { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+      shortcut: ["/favicon.ico"],
     },
   };
 }
