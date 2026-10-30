@@ -111,9 +111,10 @@ export async function apiClient<T>(
     }
   }
 
-  const defaultHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const defaultHeaders: Record<string, string> = {};
+  if (!(restOptions.body instanceof FormData)) {
+    defaultHeaders["Content-Type"] = "application/json";
+  }
 
   // Tự động gắn Authorization Bearer token nếu có trong store (Fallback chống chặn 3rd-party cookie)
   try {

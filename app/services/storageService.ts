@@ -1,41 +1,51 @@
-import { supabase } from "../lib/supabaseClient";
+import { apiClient } from "../lib/apiClient";
 
 export const storageService = {
   /**
-   * Tải ảnh trực tiếp lên Supabase Storage bucket workspace-assets
+   * Tải ảnh trực tiếp lên AWS S3 thông qua Backend API an toàn (xác thực quyền Admin)
    */
   async uploadWorkspaceAsset(file: Blob | File, fileName: string): Promise<string> {
-    const cleanName = fileName
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "_")
-      .slice(0, 30);
-    const filePath = `wallpapers/${Date.now()}_${cleanName || "asset"}.jpg`;
+    const formData = new FormData();
+    formData.append("file", file, fileName || "wallpaper.jpg");
+    formData.append("fileName", fileName);
 
-    const { error } = await supabase.storage
-      .from("workspace-assets")
-      .upload(filePath, file, {
-        contentType: file.type || "image/jpeg",
-        upsert: true,
-      });
+    const res = await apiClient<{ publicUrl: string }>("/api/admin/assets/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-    if (error) {
-      throw new Error(`Upload Supabase Storage thất bại: ${error.message}`);
+    if (!res.data?.publicUrl) {
+      throw new Error(res.message || "Tải ảnh lên AWS S3 thất bại: Không nhận được URL phản hồi.");
     }
 
-    const { data: publicData } = supabase.storage
-      .from("workspace-assets")
-      .getPublicUrl(filePath);
-
-    return publicData.publicUrl;
+    return res.data.publicUrl;
   },
 
   /**
-   * Tải ảnh từ một URL từ xa (ví dụ AI URL), chuyển thành Blob và đẩy vào Supabase Storage.
-   * Áp dụng dual-strategy: fetch trực tiếp hoặc fallback qua Canvas Blob nếu fetch bị chặn.
+   * Tải ảnh từ URL từ xa (AI URL hoặc link ngoài).
+   * Gửi remoteUrl lên Backend để backend stream trực tiếp lên S3 (loại bỏ hoàn toàn lỗi CORS).
+   * Có fallback chuyển qua Canvas Blob nếu backend yêu cầu gửi file nhị phân.
    */
   async uploadFromUrl(imageUrl: string, fileName: string): Promise<string> {
-    let blob: Blob | null = null;
+    try {
+      // 1. Thử gửi remoteUrl trực tiếp cho Backend xử lý từ server
+      const res = await apiClient<{ publicUrl: string }>("/api/admin/assets/upload-url", {
+        method: "POST",
+        body: JSON.stringify({
+          remoteUrl: imageUrl,
+          fileName,
+        }),
+      });
 
+      if (res.data?.publicUrl) {
+        return res.data.publicUrl;
+      }
+    } catch {
+      // Fallback sang phía client nếu backend không tải được URL từ xa
+    }
+
+    // 2. Client-side fetch / canvas fallback
+    let blob: Blob | null = null;
     try {
       const response = await fetch(imageUrl);
       if (response.ok) {
