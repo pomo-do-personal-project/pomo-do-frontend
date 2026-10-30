@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getApiBaseUrl } from "../lib/apiUrl";
 
 interface NetworkState {
   isServerOnline: boolean;
@@ -7,9 +8,6 @@ interface NetworkState {
   setServerOnline: (status: boolean) => void;
   checkHealth: () => Promise<boolean>;
 }
-
-const rawBase = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
-const API_BASE_URL = rawBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
 
 export const useNetworkStore = create<NetworkState>((set) => ({
   isServerOnline: true, // Mặc định online
@@ -26,13 +24,13 @@ export const useNetworkStore = create<NetworkState>((set) => ({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-      const res = await fetch(`${API_BASE_URL}/api/tasks`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/tasks`, {
         method: "HEAD",
         credentials: "include",
         signal: controller.signal,
       }).catch(async () => {
         // Fallback test GET nhẹ nếu HEAD bị 405 Method Not Allowed
-        return await fetch(`${API_BASE_URL}/api/tasks`, {
+        return await fetch(`${getApiBaseUrl()}/api/tasks`, {
           method: "GET",
           credentials: "include",
           signal: controller.signal,

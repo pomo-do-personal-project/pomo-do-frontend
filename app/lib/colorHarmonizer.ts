@@ -1,3 +1,4 @@
+import { getAiHttpUrl } from "./apiUrl";
 import { ThemeColors } from "../types/theme";
 
 export interface ThemeCluster {
@@ -132,7 +133,7 @@ export function generateContrastLockedPalette(hue: number, sat: number): ThemeCo
 export async function extractThemeWithAi(
   imageInput: string | File
 ): Promise<ThemeAnalysisResult> {
-  const aiUrl = process.env.NEXT_PUBLIC_AI_API_URL || "http://localhost:8001";
+  const aiUrl = getAiHttpUrl();
   try {
     let response: Response;
     if (typeof window !== "undefined" && imageInput instanceof File) {

@@ -1,8 +1,6 @@
 import { ApiResponse } from "../types/api";
 import { useNetworkStore } from "../stores/useNetworkStore";
-
-const rawBase = process.env.NEXT_PUBLIC_API_URL || "https://localhost:7051";
-const API_BASE_URL = rawBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
+import { getApiBaseUrl } from "./apiUrl";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -43,7 +41,7 @@ async function executeRefreshToken(): Promise<boolean> {
       const { useAuthStore } = await import("../stores/useAuthStore");
       const currentRefreshToken = useAuthStore.getState().refreshTokenString;
 
-      const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+      const refreshRes = await fetch(`${getApiBaseUrl()}/api/auth/refresh-token`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -97,7 +95,7 @@ export async function apiClient<T>(
       : endpoint.startsWith("/")
       ? `/api${endpoint}`
       : `/api/${endpoint}`;
-    url = `${API_BASE_URL}${cleanEndpoint}`;
+    url = `${getApiBaseUrl()}${cleanEndpoint}`;
   }
 
   if (params) {

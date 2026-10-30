@@ -5,8 +5,7 @@ import { useAiOverlayStore } from "../lib/aiOverlay";
 
 export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState, AiEventCode } from "../types/aiFocus";
 
-const WS_URL = process.env.NEXT_PUBLIC_AI_WS_URL || "ws://localhost:8001/ws";
-const HTTP_URL = process.env.NEXT_PUBLIC_AI_API_URL || WS_URL.replace("wss://", "https://").replace("ws://", "http://").replace(/\/ws\/?$/, "");
+import { getAiWsUrl, getAiHttpUrl } from "../lib/apiUrl";
 
 let socket: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
@@ -91,7 +90,7 @@ export const useAiFocusStore = create<AiFocusState>()((set, get) => ({
 
     set({ isConnecting: true, error: null });
     try {
-      socket = new WebSocket(WS_URL);
+      socket = new WebSocket(getAiWsUrl());
       socket.onopen = async () => {
         set({ isConnected: true, isConnecting: false, error: null, status: "AFK", detail: "Đã kết nối AI" });
 
@@ -295,7 +294,7 @@ export const useAiFocusStore = create<AiFocusState>()((set, get) => ({
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1200);
-      const res = await fetch(`${HTTP_URL}/analyze_session`, {
+      const res = await fetch(`${getAiHttpUrl()}/analyze_session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
