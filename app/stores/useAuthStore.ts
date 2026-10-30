@@ -200,10 +200,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "pomo-auth-storage",
       storage: createJSONStorage(() => localStorage),
+      // Chỉ lưu thông tin người dùng hiển thị; KHÔNG bao giờ lưu token vào localStorage để triệt tiêu lỗ hổng XSS
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshTokenString: state.refreshTokenString,
         isAuthenticated: state.isAuthenticated,
       }),
     }

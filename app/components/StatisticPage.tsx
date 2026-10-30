@@ -75,7 +75,7 @@ export function StatisticPage() {
     let fromUtc: string | undefined;
 
     if (timeRange === "Today") {
-      const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
       fromUtc = todayStart.toISOString();
     } else if (timeRange === "Week") {
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

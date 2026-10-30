@@ -143,9 +143,13 @@ export function FocusHeatmapCard({
                 return (
                   <div
                     key={hour}
+                    tabIndex={0}
+                    aria-label={`${cell.dayName} ${cell.hourLabel}: ${cell.totalMinutes} ${t.statistics.minutesUnit}, ${cell.completedCount} phiên hoàn thành${cell.averageAiScore > 0 ? `, AI ${cell.averageAiScore}%` : ""}`}
                     onMouseEnter={() => setHoveredCell(cell)}
                     onMouseLeave={() => setHoveredCell(null)}
-                    className={`aspect-square rounded-sm md:rounded-md border cursor-pointer transition-all duration-150 hover:scale-115 hover:z-10 ${getCellColor(
+                    onFocus={() => setHoveredCell(cell)}
+                    onBlur={() => setHoveredCell(null)}
+                    className={`aspect-square rounded-sm md:rounded-md border cursor-pointer transition-all duration-150 hover:scale-115 hover:z-10 focus:scale-115 focus:z-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${getCellColor(
                       cell.level
                     )}`}
                   />

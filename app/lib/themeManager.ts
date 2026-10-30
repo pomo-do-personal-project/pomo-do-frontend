@@ -4,6 +4,15 @@ import { THEME_PALETTES } from "../constants/themePalettes";
 const THEME_PALETTE_KEY = "pomodo_theme_palette";
 const THEME_COLORS_KEY = "pomodo_theme_colors";
 
+function isValidCssColor(val: unknown): boolean {
+  if (typeof val !== "string") return false;
+  const s = val.trim();
+  if (/^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(s)) return true;
+  if (/^(rgb|rgba|hsl|hsla)\([^;{}<>"']+\)$/i.test(s)) return true;
+  if (/^[a-zA-Z]{3,20}$/.test(s)) return true;
+  return false;
+}
+
 export function applyThemePalette(palette: ThemePalette | null) {
   if (typeof document === "undefined") return;
 
@@ -22,14 +31,22 @@ export function applyThemePalette(palette: ThemePalette | null) {
     return;
   }
 
-  // Áp dụng bộ màu 60-30-10 của Theme Palette lên các biến CSS toàn cục
-  root.style.setProperty("--canvas-bg", palette.colors.canvasBg);
-  root.style.setProperty("--surface-bg", palette.colors.surfaceBg);
-  root.style.setProperty("--surface-elevated", palette.colors.surfaceElevated);
-  root.style.setProperty("--border-subtle", palette.colors.borderSubtle);
-  root.style.setProperty("--text-muted", palette.colors.textMuted);
-  root.style.setProperty("--text-highlight", palette.colors.textHighlight);
-  root.style.setProperty("--accent-primary", palette.colors.accentPrimary);
+  // Áp dụng bộ màu 60-30-10 của Theme Palette lên các biến CSS toàn cục sau khi kiểm tra định dạng an toàn
+  const safeSet = (prop: string, val: string | undefined, fallback: string) => {
+    if (val && isValidCssColor(val)) {
+      root.style.setProperty(prop, val);
+    } else if (fallback) {
+      root.style.setProperty(prop, fallback);
+    }
+  };
+
+  safeSet("--canvas-bg", palette.colors.canvasBg, palette.isDark ? "#0d0e12" : "#f8fafc");
+  safeSet("--surface-bg", palette.colors.surfaceBg, palette.isDark ? "#16171b" : "#ffffff");
+  safeSet("--surface-elevated", palette.colors.surfaceElevated, palette.isDark ? "#222328" : "#f1f5f9");
+  safeSet("--border-subtle", palette.colors.borderSubtle, palette.isDark ? "#2b2d35" : "#e2e8f0");
+  safeSet("--text-muted", palette.colors.textMuted, palette.isDark ? "#9ca3af" : "#64748b");
+  safeSet("--text-highlight", palette.colors.textHighlight, palette.isDark ? "#f3f4f6" : "#0f172a");
+  safeSet("--accent-primary", palette.colors.accentPrimary, "#10b981");
 
   if (palette.isDark) {
     root.classList.add("dark");

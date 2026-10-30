@@ -98,13 +98,20 @@ export function StatisticDetailChart({
 
           <div className="inline-flex items-center gap-1 px-2 py-1 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
             <button
-              onClick={() =>
-                onSetTimeRange((prev) => (prev === "Today" ? "Week" : prev === "Week" ? "Month" : "Today"))
-              }
-              className="hover:text-neutral-900 dark:hover:text-white cursor-pointer px-1 transition-colors flex items-center gap-1.5"
+              type="button"
+              aria-label="Chu kỳ trước"
+              onClick={() => onSetTimeRange((prev) => (prev === "Today" ? "Month" : prev === "Month" ? "Week" : "Today"))}
+              className="hover:text-neutral-900 dark:hover:text-white cursor-pointer p-0.5 transition-colors flex items-center"
             >
               <ChevronLeft size={13} strokeWidth={2} />
-              <span>{rangeLabels[timeRange]}</span>
+            </button>
+            <span className="px-1 select-none">{rangeLabels[timeRange]}</span>
+            <button
+              type="button"
+              aria-label="Chu kỳ tiếp theo"
+              onClick={() => onSetTimeRange((prev) => (prev === "Today" ? "Week" : prev === "Week" ? "Month" : "Today"))}
+              className="hover:text-neutral-900 dark:hover:text-white cursor-pointer p-0.5 transition-colors flex items-center"
+            >
               <ChevronRight size={13} strokeWidth={2} />
             </button>
           </div>

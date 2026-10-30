@@ -87,6 +87,7 @@ export function SignInForm({
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
         >
           {showPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}

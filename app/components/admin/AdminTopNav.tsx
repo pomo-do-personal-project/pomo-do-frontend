@@ -21,10 +21,10 @@ export function AdminTopNav({ onMenuToggle }: AdminTopNavProps) {
     try {
       setIsLoggingOut(true);
       await logout();
-      router.push(`/${language}`);
+      router.push(`/${language}/preview`);
     } catch (err: unknown) {
       console.error("Logout failed:", err);
-      window.location.href = `/${language}`;
+      window.location.href = `/${language}/preview`;
     } finally {
       setIsLoggingOut(false);
     }
@@ -47,8 +47,10 @@ export function AdminTopNav({ onMenuToggle }: AdminTopNavProps) {
         <div className="flex items-center gap-3">
           {onMenuToggle && (
             <button
+              type="button"
               onClick={onMenuToggle}
-              className="lg:hidden p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200"
+              aria-label="Mở menu quản trị"
+              className="lg:hidden p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 cursor-pointer"
             >
               <Menu size={18} />
             </button>

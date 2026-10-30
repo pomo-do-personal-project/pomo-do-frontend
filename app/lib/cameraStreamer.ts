@@ -7,11 +7,16 @@ class CameraStreamer {
   private stream: MediaStream | null = null;
   private video: HTMLVideoElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
-  private timer: NodeJS.Timeout | null = null;
+  private ctx: CanvasRenderingContext2D | null = null;
+  private nextFrameTimer: ReturnType<typeof setTimeout> | null = null;
+  private safetyTimer: ReturnType<typeof setTimeout> | null = null;
+  private onFrameCallback: ((frameBase64: string) => void) | null = null;
+  private minIntervalMs = 42;
+  private lastSendTime = 0;
   private isStreaming = false;
   private isWaitingForServer = false;
 
-  public async start(onFrame: (frameBase64: string) => void, fps = 6): Promise<boolean> {
+  public async start(onFrame: (frameBase64: string) => void, fps = 24): Promise<boolean> {
     if (this.isStreaming) return true;
 
     try {
@@ -23,7 +28,7 @@ class CameraStreamer {
         video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
-          frameRate: { max: 12 },
+          frameRate: { ideal: 30, max: 30 },
           facingMode: "user",
         },
         audio: false,
@@ -35,43 +40,22 @@ class CameraStreamer {
       this.video.muted = true;
       await this.video.play();
 
-      // Tối ưu tỉ lệ 4:3 sắc nét (440x330): Khớp hoàn hảo khung widget (350px), siêu nhẹ (~15KB) giúp triệt tiêu độ trễ mạng
+      // Khung hình 400x300 (tỉ lệ 4:3 khớp với yolov8s_fast.onnx 320x416)
       this.canvas = document.createElement("canvas");
-      this.canvas.width = 440;
-      this.canvas.height = 330;
+      this.canvas.width = 400;
+      this.canvas.height = 300;
 
       const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return false;
+      this.ctx = ctx;
 
+      this.onFrameCallback = onFrame;
+      this.minIntervalMs = Math.max(25, Math.round(1000 / fps));
       this.isStreaming = true;
       this.isWaitingForServer = false;
-      const intervalMs = Math.round(1000 / fps);
+      this.lastSendTime = 0;
 
-      this.timer = setInterval(() => {
-        if (!this.isStreaming || !this.video || !this.canvas) return;
-
-        // Cơ chế Backpressure: Chỉ gửi frame mới khi server Render đã xử lý xong frame trước
-        if (this.isWaitingForServer) return;
-
-        if (this.video.readyState >= 2) {
-          try {
-            this.isWaitingForServer = true;
-            ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-            // Chất lượng 0.65 cân bằng tuyệt đối giữa độ nét cao và độ trễ siêu thấp
-            const dataUrl = this.canvas.toDataURL("image/jpeg", 0.65);
-            onFrame(dataUrl);
-
-            // Timeout an toàn: Nếu sau 700ms server chưa phản hồi thì tự cho phép gửi frame kế tiếp
-            setTimeout(() => {
-              this.isWaitingForServer = false;
-            }, 700);
-          } catch (e) {
-            this.isWaitingForServer = false;
-            console.error("[CameraStreamer] Lỗi chụp frame:", e);
-          }
-        }
-      }, intervalMs);
-
+      this.scheduleNextFrame(0);
       return true;
     } catch (err) {
       console.error("[CameraStreamer] Không thể khởi động Camera:", err);
@@ -80,17 +64,68 @@ class CameraStreamer {
     }
   }
 
-  // Báo cho CameraStreamer biết server đã phản hồi xong, sẵn sàng gửi frame mới
+  private scheduleNextFrame(delayMs: number): void {
+    if (!this.isStreaming) return;
+    if (this.nextFrameTimer) {
+      clearTimeout(this.nextFrameTimer);
+      this.nextFrameTimer = null;
+    }
+    this.nextFrameTimer = setTimeout(() => {
+      this.nextFrameTimer = null;
+      this.captureAndSend();
+    }, Math.max(0, delayMs));
+  }
+
+  private captureAndSend(): void {
+    if (!this.isStreaming || !this.video || !this.canvas || !this.ctx || !this.onFrameCallback) return;
+    if (this.isWaitingForServer) return;
+
+    if (this.video.readyState >= 2) {
+      try {
+        this.isWaitingForServer = true;
+        this.lastSendTime = performance.now();
+        this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+        const dataUrl = this.canvas.toDataURL("image/jpeg", 0.55);
+        this.onFrameCallback(dataUrl);
+
+        if (this.safetyTimer) clearTimeout(this.safetyTimer);
+        this.safetyTimer = setTimeout(() => {
+          this.notifyServerReady();
+        }, 300);
+      } catch (e) {
+        this.isWaitingForServer = false;
+        console.error("[CameraStreamer] Lỗi chụp frame:", e);
+        this.scheduleNextFrame(this.minIntervalMs);
+      }
+    } else {
+      this.scheduleNextFrame(16);
+    }
+  }
+
+  // Báo cho CameraStreamer biết server đã phản hồi xong, gửi ngay frame kế tiếp không chờ đợi
   public notifyServerReady(): void {
+    if (this.safetyTimer) {
+      clearTimeout(this.safetyTimer);
+      this.safetyTimer = null;
+    }
     this.isWaitingForServer = false;
+    if (!this.isStreaming) return;
+    const elapsed = performance.now() - this.lastSendTime;
+    const remaining = Math.max(0, this.minIntervalMs - elapsed);
+    this.scheduleNextFrame(remaining);
   }
 
   public stop(): void {
     this.isStreaming = false;
     this.isWaitingForServer = false;
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    this.onFrameCallback = null;
+    if (this.nextFrameTimer) {
+      clearTimeout(this.nextFrameTimer);
+      this.nextFrameTimer = null;
+    }
+    if (this.safetyTimer) {
+      clearTimeout(this.safetyTimer);
+      this.safetyTimer = null;
     }
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop());
@@ -101,10 +136,16 @@ class CameraStreamer {
       this.video = null;
     }
     this.canvas = null;
+    this.ctx = null;
   }
 
   public get active(): boolean {
     return this.isStreaming;
+  }
+
+  // MediaStream gốc của webcam để hiển thị trực tiếp trên trình duyệt (không qua server, không trễ)
+  public getStream(): MediaStream | null {
+    return this.stream;
   }
 }
 

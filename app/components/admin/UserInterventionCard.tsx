@@ -19,12 +19,14 @@ export function UserInterventionCard({
 }: UserInterventionCardProps) {
   const [showReasonBox, setShowReasonBox] = useState(false);
   const [reason, setReason] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleConfirmSuspend = async () => {
     if (!reason.trim()) {
-      alert("Vui lòng nhập lý do khóa tài khoản.");
+      setErrorMsg("Vui lòng nhập lý do khóa tài khoản.");
       return;
     }
+    setErrorMsg("");
     await onUpdateStatus(true, reason.trim());
     setShowReasonBox(false);
     setReason("");
@@ -68,20 +70,30 @@ export function UserInterventionCard({
       {/* Reason Box when suspending */}
       {showReasonBox && !user.isSuspended && (
         <div className="p-4 rounded-2xl bg-neutral-100 dark:bg-[#1C1D21] space-y-3">
-          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
+          <label htmlFor="suspend-reason" className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
             Nhập lý do khóa tài khoản:
           </label>
           <textarea
+            id="suspend-reason"
             rows={3}
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => {
+              setReason(e.target.value);
+              if (errorMsg) setErrorMsg("");
+            }}
             placeholder="Ghi rõ lý do khóa (ví dụ: Spam, hành vi bất thường, yêu cầu người dùng...)"
             className="w-full p-3 bg-white dark:bg-[#151619] border-0 rounded-xl text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-rose-500 resize-none"
           />
+          {errorMsg && (
+            <p className="text-rose-500 text-xs font-medium">{errorMsg}</p>
+          )}
           <div className="flex items-center justify-end gap-2.5">
             <button
               type="button"
-              onClick={() => setShowReasonBox(false)}
+              onClick={() => {
+                setShowReasonBox(false);
+                setErrorMsg("");
+              }}
               className="px-4 py-2 text-xs font-semibold rounded-xl text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-all cursor-pointer"
             >
               Hủy bỏ

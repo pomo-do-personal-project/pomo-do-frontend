@@ -2,10 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { TaskCategory } from "./types";
-import { CalendarDays, FastForward, Zap, Calendar, LucideIcon, Plus, X } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
 import { useTagStore } from "../../stores/useTagStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { TagManagerModal } from "./TagManagerModal";
+import { SidebarTagRow } from "./SidebarTagRow";
+import { TagEditModal } from "./TagEditModal";
+import { ConfirmModal } from "../ui/ConfirmModal";
+import { SidebarCategoryNav } from "./SidebarCategoryNav";
 
 interface TaskSidebarProps {
   currentCategory: TaskCategory;
@@ -25,18 +29,6 @@ interface TaskSidebarProps {
   isDesktopCollapsed?: boolean;
 }
 
-const CATEGORY_ITEMS: {
-  id: TaskCategory;
-  label: string;
-  icon: LucideIcon;
-  color: string;
-}[] = [
-  { id: "Today", label: "Hôm nay", icon: CalendarDays, color: "text-neutral-900 dark:text-white" },
-  { id: "Upcoming", label: "Sắp tới", icon: FastForward, color: "text-blue-500" },
-  { id: "QuickAdd", label: "Quick Add", icon: Zap, color: "text-amber-500 font-bold" },
-  { id: "Calendar", label: "Lịch biểu", icon: Calendar, color: "text-neutral-400" },
-];
-
 export function TaskSidebar({
   currentCategory,
   onSelectCategory,
@@ -51,14 +43,17 @@ export function TaskSidebar({
 }: TaskSidebarProps) {
   const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
-  const { tags: storedTags, fetchTags } = useTagStore();
+  const [editingTag, setEditingTag] = useState<{ id: string; name: string; colorHex?: string } | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
+  const { tags: storedTags, fetchTags, updateTag, deleteTag } = useTagStore();
 
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
 
   const displayTags = useMemo(() => {
-    const list: { name: string; colorHex?: string }[] = storedTags.map((t) => ({
+    const list: { id?: string; name: string; colorHex?: string }[] = storedTags.map((t) => ({
+      id: t.id,
       name: t.name,
       colorHex: t.colorHex,
     }));
@@ -80,9 +75,25 @@ export function TaskSidebar({
     onCloseMobile?.();
   };
 
+  const handleSaveEditTag = async (id: string, newName: string, colorHex: string) => {
+    await updateTag(id, { name: newName, colorHex });
+    if (selectedTag === editingTag?.name) {
+      onSelectTag(newName);
+    }
+    setEditingTag(null);
+  };
+
+  const handleConfirmDeleteTag = async () => {
+    if (!tagToDelete) return;
+    await deleteTag(tagToDelete.id);
+    if (selectedTag === tagToDelete.name) {
+      onSelectTag("All");
+    }
+    setTagToDelete(null);
+  };
+
   return (
     <>
-      {/* Mobile & Tablet Backdrop Overlay (< lg) */}
       {isOpenMobile && (
         <div
           className="fixed inset-0 z-40 bg-black/45 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
@@ -124,49 +135,12 @@ export function TaskSidebar({
           )}
         </div>
 
-        <nav className="flex flex-col gap-1 mb-6">
-          {CATEGORY_ITEMS.map((item) => {
-            const IconComponent = item.icon;
-            const isActive = currentCategory === item.id;
-            const count = categoryCounts[item.id] || 0;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectCat(item.id)}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
-                  isActive
-                    ? item.id === "QuickAdd"
-                      ? "bg-amber-500 text-white font-bold shadow-md ring-1 ring-amber-400/50"
-                      : wallpaperUrl
-                      ? "bg-white/20 text-white font-semibold shadow-xs backdrop-blur-md ring-1 ring-white/25"
-                      : "bg-white text-neutral-900 font-semibold shadow-xs border border-neutral-200/80"
-                    : wallpaperUrl
-                    ? "text-white/80 hover:text-white hover:bg-white/10"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <IconComponent size={16} strokeWidth={1.75} className="shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                <span
-                  className={`text-[11px] font-mono px-1.5 py-0.5 rounded-md ${
-                    isActive
-                      ? wallpaperUrl
-                        ? "bg-black/20 text-white"
-                        : "bg-neutral-100 text-neutral-700 font-bold"
-                      : wallpaperUrl
-                      ? "bg-white/10 text-white/70"
-                      : "bg-neutral-200/60 text-neutral-600"
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        <SidebarCategoryNav
+          currentCategory={currentCategory}
+          categoryCounts={categoryCounts}
+          wallpaperUrl={wallpaperUrl}
+          onSelectCategory={handleSelectCat}
+        />
 
         {/* Tags / Custom Lists Filter */}
         <div className="flex items-center justify-between px-2 mb-2">
@@ -195,7 +169,7 @@ export function TaskSidebar({
         <nav className="flex flex-col gap-1 overflow-y-auto flex-1">
           <button
             onClick={() => handleSelectT("All")}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
+            className={`flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
               selectedTag === "All"
                 ? wallpaperUrl
                   ? "bg-white/20 text-white font-semibold backdrop-blur-md ring-1 ring-white/25 shadow-2xs"
@@ -205,34 +179,33 @@ export function TaskSidebar({
                 : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60"
             }`}
           >
-            <span
-              className={`w-2.5 h-2.5 rounded-sm shrink-0 ${
-                wallpaperUrl ? "bg-white/50" : "bg-neutral-400"
-              }`}
-            />
-            <span className="truncate">Tất cả ({totalTasks})</span>
+            <div className="flex items-center gap-2.5 truncate">
+              <span
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  wallpaperUrl ? "bg-white/50" : "bg-neutral-400"
+                }`}
+              />
+              <span className="truncate">Tất cả ({totalTasks})</span>
+            </div>
+            {selectedTag === "All" && (
+              <Check
+                size={14}
+                strokeWidth={2.5}
+                className={wallpaperUrl ? "text-emerald-400" : "text-emerald-600"}
+              />
+            )}
           </button>
 
           {displayTags.map((tag) => (
-            <button
+            <SidebarTagRow
               key={tag.name}
-              onClick={() => handleSelectT(tag.name)}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all text-left cursor-pointer ${
-                selectedTag === tag.name
-                  ? wallpaperUrl
-                    ? "bg-white/20 text-white font-semibold backdrop-blur-md ring-1 ring-white/25 shadow-2xs"
-                    : "bg-white text-neutral-900 font-semibold border border-neutral-200/80 shadow-2xs"
-                  : wallpaperUrl
-                  ? "text-white/80 hover:text-white hover:bg-white/10"
-                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60"
-              }`}
-            >
-              <span
-                style={{ backgroundColor: tag.colorHex || "#10B981" }}
-                className="w-2.5 h-2.5 rounded-sm shrink-0 shadow-2xs"
-              />
-              <span className="truncate flex-1">{tag.name}</span>
-            </button>
+              tag={tag}
+              isSelected={selectedTag === tag.name}
+              wallpaperUrl={wallpaperUrl}
+              onSelect={handleSelectT}
+              onEdit={(t) => setEditingTag(t)}
+              onDelete={(t) => setTagToDelete(t)}
+            />
           ))}
         </nav>
       </aside>
@@ -241,6 +214,24 @@ export function TaskSidebar({
         isOpen={isTagManagerOpen}
         onClose={() => setIsTagManagerOpen(false)}
         onSelectTag={onSelectTag}
+      />
+
+      <TagEditModal
+        isOpen={Boolean(editingTag)}
+        tag={editingTag}
+        onClose={() => setEditingTag(null)}
+        onSave={handleSaveEditTag}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(tagToDelete)}
+        title="Xóa thẻ phân loại"
+        message={`Bạn có chắc chắn muốn xóa thẻ "${tagToDelete?.name}"? Các công việc gắn thẻ này sẽ không bị xóa.`}
+        confirmText="Xóa thẻ"
+        cancelText="Giữ lại"
+        danger={true}
+        onConfirm={handleConfirmDeleteTag}
+        onCancel={() => setTagToDelete(null)}
       />
     </>
   );

@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Trash2, CalendarClock } from "lucide-react";
 import { NotificationTemplate } from "./notificationTemplates";
+import { ConfirmModal } from "../ui/ConfirmModal";
 
 interface NotificationTemplatesListProps {
   templates: NotificationTemplate[];
@@ -17,6 +18,7 @@ export function NotificationTemplatesList({
   onDeleteTemplate,
   searchQuery = "",
 }: NotificationTemplatesListProps) {
+  const [templateToDelete, setTemplateToDelete] = useState<NotificationTemplate | null>(null);
   const filtered = templates.filter((t) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -99,9 +101,7 @@ export function NotificationTemplatesList({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Bạn có chắc muốn xóa lịch gửi "${tpl.title}"?`)) {
-                            onDeleteTemplate(tpl.id);
-                          }
+                          setTemplateToDelete(tpl);
                         }}
                         className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                         title="Xóa lịch gửi tự động này"
@@ -116,6 +116,22 @@ export function NotificationTemplatesList({
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal
+        isOpen={!!templateToDelete}
+        title="Xóa lịch gửi thông báo"
+        message={`Bạn có chắc muốn xóa lịch gửi "${templateToDelete?.title}"? Lịch gửi tự động này sẽ không còn được thực thi.`}
+        confirmText="Xóa lịch gửi"
+        cancelText="Giữ lại"
+        danger={true}
+        onConfirm={() => {
+          if (templateToDelete && onDeleteTemplate) {
+            onDeleteTemplate(templateToDelete.id);
+            setTemplateToDelete(null);
+          }
+        }}
+        onCancel={() => setTemplateToDelete(null)}
+      />
     </div>
   );
 }

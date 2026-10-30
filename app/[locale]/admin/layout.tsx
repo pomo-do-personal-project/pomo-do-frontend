@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useTranslation } from "../../stores/useLanguageStore";
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import { AdminTopNav } from "../../components/admin/AdminTopNav";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { ShieldAlert, ArrowLeft, LogIn } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -15,9 +15,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { language } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -30,16 +32,24 @@ export default function AdminLayout({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
+      const redirectUrl = pathname ? encodeURIComponent(pathname) : "";
+      router.push(`/${language}?auth=signin${redirectUrl ? `&redirect=${redirectUrl}` : ""}`);
+    }
+  }, [mounted, isAuthenticated, pathname, language, router]);
+
+  if (!mounted || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-neutral-400 text-xs">
-        Đang xác thực quyền quản trị...
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-neutral-400 text-xs gap-3">
+        <div className="w-6 h-6 border-2 border-neutral-700 border-t-amber-500 rounded-full animate-spin" />
+        <span>Đang kiểm tra quyền quản trị...</span>
       </div>
     );
   }
 
-  // Client-side Guard: Chỉ cho phép tài khoản có đặc quyền IsAdmin
-  if (!isAuthenticated || !user?.isAdmin) {
+  // Client-side Guard: Đã đăng nhập nhưng không có đặc quyền IsAdmin
+  if (!user?.isAdmin) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center justify-center p-6 text-center select-none">
         <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20">
@@ -49,15 +59,27 @@ export default function AdminLayout({
           Truy cập bị từ chối
         </h2>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mb-6 leading-relaxed">
-          Khu vực này chỉ dành cho Quản trị viên hệ thống Pomo-do. Tài khoản của bạn không có đặc quyền truy cập.
+          Tài khoản <span className="font-semibold text-neutral-700 dark:text-neutral-300">{user?.email || "hiện tại"}</span> không có đặc quyền Quản trị viên. Vui lòng đăng nhập bằng tài khoản quản trị được cấp phép.
         </p>
-        <Link
-          href={`/${language}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:opacity-90 transition-all shadow-xs"
-        >
-          <ArrowLeft size={14} />
-          <span>Quay lại Trang chủ</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/${language}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:opacity-90 transition-all shadow-xs"
+          >
+            <ArrowLeft size={14} />
+            <span>Quay lại Trang chủ</span>
+          </Link>
+          <button
+            onClick={async () => {
+              await logout();
+              router.push(`/${language}?auth=signin`);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:opacity-90 transition-all shadow-xs cursor-pointer"
+          >
+            <LogIn size={14} />
+            <span>Đổi tài khoản khác</span>
+          </button>
+        </div>
       </div>
     );
   }

@@ -21,15 +21,17 @@ export function TimerModeSelector({
   isRunning = false,
 }: TimerModeSelectorProps) {
   const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
-  const isFocus = focusMode === "W";
   const isStopwatch = timerType === "stopwatch";
+  const isFocus = !isStopwatch && focusMode === "W";
+  const isBreak = !isStopwatch && focusMode !== "W";
+  const breakMinutes = focusMode === "LB" ? modeDurations.LB.minutes : modeDurations.SB.minutes;
+
+  const disabledTitle = "Đang có phiên chạy - vui lòng tạm dừng hoặc hoàn thành trước khi chuyển chế độ";
 
   return (
     <div
       className={`flex items-center justify-center w-full max-w-md mb-2 transition-all duration-300 ${
-        isRunning
-          ? "opacity-0 -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto"
-          : "opacity-100 translate-y-0"
+        isRunning ? "opacity-90" : "opacity-100"
       }`}
     >
       <div
@@ -42,13 +44,18 @@ export function TimerModeSelector({
         {/* Tab 1: Focus */}
         <button
           type="button"
-          onClick={() => onSelectTab("focus")}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          onClick={() => !isRunning && onSelectTab("focus")}
+          disabled={isRunning && !isFocus}
+          title={isRunning && !isFocus ? disabledTitle : isFocus ? "Đang ở chế độ Focus" : "Chuyển sang Focus"}
+          aria-disabled={isRunning && !isFocus}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
             isFocus
-              ? "bg-white text-neutral-900 shadow-sm"
+              ? "bg-white text-neutral-900 shadow-sm cursor-default"
+              : isRunning
+              ? "opacity-35 cursor-not-allowed text-neutral-400"
               : wallpaperUrl
-              ? "text-white/80 hover:text-white hover:bg-white/10"
-              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
+              ? "text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50 cursor-pointer"
           }`}
         >
           <Timer
@@ -62,31 +69,42 @@ export function TimerModeSelector({
             }
           />
           <span>Focus ({modeDurations.W.minutes}m)</span>
+          {isRunning && isFocus && (
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse ml-0.5" />
+          )}
         </button>
 
         {/* Tab 2: Break */}
         <button
           type="button"
-          onClick={() => onSelectTab("break")}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
-            !isFocus
-              ? "bg-white text-neutral-900 shadow-sm"
+          onClick={() => !isRunning && onSelectTab("break")}
+          disabled={isRunning && !isBreak}
+          title={isRunning && !isBreak ? disabledTitle : isBreak ? "Đang ở chế độ Break" : "Chuyển sang Break"}
+          aria-disabled={isRunning && !isBreak}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
+            isBreak
+              ? "bg-white text-neutral-900 shadow-sm cursor-default"
+              : isRunning
+              ? "opacity-35 cursor-not-allowed text-neutral-400"
               : wallpaperUrl
-              ? "text-white/80 hover:text-white hover:bg-white/10"
-              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
+              ? "text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50 cursor-pointer"
           }`}
         >
           <Coffee
             size={13}
             className={
-              !isFocus
+              isBreak
                 ? "text-teal-600"
                 : wallpaperUrl
                 ? "text-white/60"
                 : "text-neutral-400"
             }
           />
-          <span>Break ({modeDurations.SB.minutes}m)</span>
+          <span>Break ({breakMinutes}m)</span>
+          {isRunning && isBreak && (
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse ml-0.5" />
+          )}
         </button>
 
         {/* Dấu phân cách */}
@@ -99,14 +117,24 @@ export function TimerModeSelector({
         {/* Tab 3: Stopwatch */}
         <button
           type="button"
-          onClick={() => onSelectTab("stopwatch")}
-          title={isStopwatch ? "Đang bật Stopwatch" : "Bật chế độ Stopwatch"}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          onClick={() => !isRunning && onSelectTab("stopwatch")}
+          disabled={isRunning && !isStopwatch}
+          title={
+            isRunning && !isStopwatch
+              ? disabledTitle
+              : isStopwatch
+              ? "Đang ở chế độ Stopwatch"
+              : "Chuyển sang Stopwatch"
+          }
+          aria-disabled={isRunning && !isStopwatch}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
             isStopwatch
-              ? "bg-white text-neutral-900 shadow-sm"
+              ? "bg-white text-neutral-900 shadow-sm cursor-default"
+              : isRunning
+              ? "opacity-35 cursor-not-allowed text-neutral-400"
               : wallpaperUrl
-              ? "text-white/80 hover:text-white hover:bg-white/10"
-              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50"
+              ? "text-white/80 hover:text-white hover:bg-white/10 cursor-pointer"
+              : "text-neutral-600 hover:text-neutral-900 hover:bg-white/50 cursor-pointer"
           }`}
         >
           <Zap
@@ -120,6 +148,9 @@ export function TimerModeSelector({
             }
           />
           <span>Stopwatch</span>
+          {isRunning && isStopwatch && (
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+          )}
         </button>
       </div>
     </div>

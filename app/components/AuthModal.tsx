@@ -48,11 +48,28 @@ export function AuthModal({
     }
   }, [isOpen, initialMode, initialEmail]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen && authMode !== "otp-verify") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, authMode, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="absolute inset-0" onClick={onClose} />
+      <div
+        className="absolute inset-0"
+        onClick={() => {
+          if (authMode !== "otp-verify") {
+            onClose();
+          }
+        }}
+      />
 
       <div
         role="dialog"
@@ -74,11 +91,7 @@ export function AuthModal({
         {authMode === "otp-verify" && (
           <button
             type="button"
-            onClick={() => {
-              setAuthMode("signup");
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onClick={() => switchMode("signup")}
             className="absolute top-5 left-5 flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} strokeWidth={2} />
@@ -90,11 +103,7 @@ export function AuthModal({
         {(authMode === "forgot" || authMode === "reset") && (
           <button
             type="button"
-            onClick={() => {
-              setAuthMode("signin");
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onClick={() => switchMode("signin")}
             className="absolute top-5 left-5 flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} strokeWidth={2} />
@@ -167,7 +176,7 @@ export function AuthModal({
             onSuccess={(currUser) => {
               if (onAuthSuccess) onAuthSuccess(currUser);
               if (currUser?.isAdmin) {
-                router.push(`/${language}/admin/users`);
+                router.push(`/${language}/admin`);
                 onClose();
                 return;
               }
@@ -183,7 +192,10 @@ export function AuthModal({
             email={pendingSignup.email || email}
             displayName={pendingSignup.displayName}
             password={pendingSignup.password}
-            onSuccess={() => switchMode("signin")}
+            onSuccess={() => {
+              switchMode("signin");
+              setSuccessMsg("Xác thực email thành công! Vui lòng đăng nhập.");
+            }}
             onEditInfo={() => switchMode("signup")}
             setError={setErrorMsg}
             setSuccess={setSuccessMsg}
@@ -196,7 +208,7 @@ export function AuthModal({
             onSuccess={(currUser) => {
               if (onAuthSuccess) onAuthSuccess(currUser);
               if (currUser?.isAdmin) {
-                router.push(`/${language}/admin/users`);
+                router.push(`/${language}/admin`);
                 onClose();
                 return;
               }

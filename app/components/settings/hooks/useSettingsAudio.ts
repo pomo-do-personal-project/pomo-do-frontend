@@ -21,10 +21,10 @@ import { useSettingsStore } from "../../../stores/useSettingsStore";
 
 export function useSettingsAudio() {
   // 1. Bộ phát âm thanh chuông kết thúc phiên (Ringtone)
-  const playRingtone = (type: RingtoneType, vol = 80) => {
+  const playRingtone = (type: RingtoneType, vol = 80, ignoreCustomUrl = false) => {
     try {
       const customAlarmUrl = useSettingsStore.getState().settings.alarmSoundUrl;
-      if (customAlarmUrl) {
+      if (customAlarmUrl && !ignoreCustomUrl) {
         const audio = new Audio(customAlarmUrl);
         audio.volume = Math.max(0.05, Math.min(1, vol / 100));
         audio.play().catch(() => {});

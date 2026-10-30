@@ -12,25 +12,23 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 export function clearAllUserData(): void {
   // 1. Reset Auth Store & Xóa storage auth
   useAuthStore.getState().setUser(null);
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("pomo-auth-storage");
-  }
 
   // 2. Reset Task Store & Xóa cache task
   useTaskStore.getState().resetTaskStore();
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("pomo-tasks-cache");
-  }
 
   // 3. Reset Pomodoro Store & Xóa cache pomodoro
   usePomodoroStore.getState().resetPomodoroStore();
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("pomo-pomodoro-cache");
-  }
 
   // 4. Reset Settings Store & Xóa cache settings
   useSettingsStore.getState().resetSettingsStore();
+
+  // 5. Xóa sạch 100% toàn bộ LocalStorage và SessionStorage
   if (typeof window !== "undefined") {
-    localStorage.removeItem("pomo-settings-cache");
+    const savedLang = localStorage.getItem("pomo-language");
+    localStorage.clear();
+    sessionStorage.clear();
+    if (savedLang) {
+      localStorage.setItem("pomo-language", savedLang);
+    }
   }
 }

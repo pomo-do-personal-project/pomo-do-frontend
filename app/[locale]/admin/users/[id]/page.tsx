@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Calendar, Activity, RefreshCw, Check } from "lucide-react";
+import { ArrowLeft, Calendar, Activity, RefreshCw, Check, AlertCircle } from "lucide-react";
 import { AdminUserSummary } from "../../../../types/admin";
 import { adminService } from "../../../../services/adminService";
 import { useTranslation } from "../../../../stores/useLanguageStore";
@@ -20,7 +20,7 @@ export default function AdminUserDetailPage() {
   const [user, setUser] = useState<AdminUserSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const loadUser = useCallback(async () => {
     if (!userId) return;
@@ -61,11 +61,15 @@ export default function AdminUserDetailPage() {
           : prev
       );
 
-      setToastMessage(isSuspended ? "Đã khóa tài khoản thành công." : "Đã mở khóa tài khoản thành công.");
-      setTimeout(() => setToastMessage(null), 3500);
+      setToast({
+        message: isSuspended ? "Đã khóa tài khoản thành công." : "Đã mở khóa tài khoản thành công.",
+        type: "success",
+      });
+      setTimeout(() => setToast(null), 3500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Không thể cập nhật trạng thái người dùng.";
-      alert(msg);
+      setToast({ message: msg, type: "error" });
+      setTimeout(() => setToast(null), 4000);
     } finally {
       setIsSubmitting(false);
     }
@@ -127,10 +131,17 @@ export default function AdminUserDetailPage() {
         </button>
       </div>
 
-      {toastMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
-          <Check size={16} />
-          <span>{toastMessage}</span>
+      {toast && (
+        <div
+          role="alert"
+          className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200 ${
+            toast.type === "error"
+              ? "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400"
+              : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+          }`}
+        >
+          {toast.type === "error" ? <AlertCircle size={16} /> : <Check size={16} />}
+          <span>{toast.message}</span>
         </div>
       )}
 

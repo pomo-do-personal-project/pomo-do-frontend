@@ -1,5 +1,5 @@
 import { FocusSessionDto, FocusSessionMode, TaskDto } from "../../types/api";
-import { StatisticItem, AiSessionDetailData } from "./StatisticDetailChart";
+import { StatisticItem, StatisticSessionEntry, AiSessionDetailData } from "./StatisticDetailChart";
 
 const PALETTE = [
   "#3b82f6", // blue-500
@@ -11,6 +11,64 @@ const PALETTE = [
   "#f97316", // orange-500
   "#6366f1", // indigo-500
 ];
+
+function computeGradeFromScore(score: number): "S" | "A" | "B" | "C" | "D" {
+  if (score >= 95) return "S";
+  if (score >= 85) return "A";
+  if (score >= 70) return "B";
+  if (score >= 50) return "C";
+  return "D";
+}
+
+function aggregateSessionsAiData(sessions: StatisticSessionEntry[]): AiSessionDetailData | null {
+  const aiSessions = sessions.filter(
+    (s) => s.aiData && (s.aiData.score !== undefined || s.aiData.fb !== undefined)
+  );
+  if (aiSessions.length === 0) return null;
+  if (aiSessions.length === 1) return aiSessions[0].aiData!;
+
+  const totalWeight = aiSessions.reduce((sum, s) => sum + (s.actualMinutes > 0 ? s.actualMinutes : 1), 0);
+  const weightedScore = Math.round(
+    aiSessions.reduce((sum, s) => {
+      const sc = typeof s.aiData?.score === "number" ? s.aiData.score : 85;
+      const w = s.actualMinutes > 0 ? s.actualMinutes : 1;
+      return sum + sc * w;
+    }, 0) / totalWeight
+  );
+
+  const phoneCount = aiSessions.reduce(
+    (sum, s) => sum + (s.aiData?.phoneCount ?? (typeof s.aiData?.ph === "number" ? s.aiData.ph : 0)),
+    0
+  );
+  const sleepCount = aiSessions.reduce(
+    (sum, s) => sum + (s.aiData?.sleepCount ?? (typeof s.aiData?.sl === "number" ? s.aiData.sl : 0)),
+    0
+  );
+  const lookAwayCount = aiSessions.reduce(
+    (sum, s) => sum + (s.aiData?.lookAwayCount ?? (typeof s.aiData?.lk === "number" ? s.aiData.lk : 0)),
+    0
+  );
+  const focusedSeconds = aiSessions.reduce(
+    (sum, s) => sum + (typeof s.aiData?.focusedSeconds === "number" ? s.aiData.focusedSeconds : 0),
+    0
+  );
+  const totalSeconds = aiSessions.reduce(
+    (sum, s) => sum + (typeof s.aiData?.totalSeconds === "number" ? s.aiData.totalSeconds : 0),
+    0
+  );
+
+  const latestAi = aiSessions[0].aiData!;
+  return {
+    ...latestAi,
+    score: weightedScore,
+    grade: computeGradeFromScore(weightedScore),
+    phoneCount,
+    sleepCount,
+    lookAwayCount,
+    focusedSeconds,
+    totalSeconds,
+  };
+}
 
 // Chuyển đổi mảng FocusSessionDto từ backend sang danh sách StatisticItem phục vụ biểu đồ
 export function mapHistoryToStatisticItems(
@@ -91,13 +149,13 @@ export function mapHistoryToStatisticItems(
       }
       existing.actualMinutes += session.actualMinutes;
       existing.overtimeMinutes += session.overtimeMinutes;
-      if (!existing.aiData && aiData) existing.aiData = aiData;
       if (session.isCompleted) existing.pomos += 1;
       if (existing.sessions) {
         existing.sessions.push(sessionEntry);
       } else {
         existing.sessions = [sessionEntry];
       }
+      existing.aiData = aggregateSessionsAiData(existing.sessions);
     }
   });
 

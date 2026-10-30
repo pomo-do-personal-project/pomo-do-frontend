@@ -104,7 +104,9 @@ export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
 
             {onClose && (
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Đóng menu quản trị"
                 className="lg:hidden p-1.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer"
               >
                 <X size={18} />

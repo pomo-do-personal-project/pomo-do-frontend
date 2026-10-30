@@ -11,6 +11,7 @@ import { NotificationTemplatesList } from "../../../components/admin/Notificatio
 import { NotificationSentList, SentNotificationItem } from "../../../components/admin/NotificationSentList";
 import { UserEmailModal } from "../../../components/admin/UserEmailModal";
 import { scheduledNotificationStorage } from "../../../components/admin/scheduledNotificationStorage";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 export default function AdminNotificationsPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function AdminNotificationsPage() {
   const [templates, setTemplates] = useState<NotificationTemplate[]>(PRESET_NOTIFICATION_TEMPLATES);
   const [availableUsers, setAvailableUsers] = useState<AdminUserSummary[]>([]);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isUnpinConfirmOpen, setIsUnpinConfirmOpen] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
   const [compose, setCompose] = useState({
@@ -88,7 +90,7 @@ export default function AdminNotificationsPage() {
           }),
           isAutomated: true,
         }));
-        setTemplates(serverTemplates);
+        setTemplates([...serverTemplates, ...PRESET_NOTIFICATION_TEMPLATES]);
       }
 
       if (usersData.status === "fulfilled" && usersData.value?.items) {
@@ -105,13 +107,17 @@ export default function AdminNotificationsPage() {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  const handleDeactivate = async () => {
-    if (!confirm("Bạn có chắc chắn muốn gỡ ghim thông báo này?")) return;
+  const handleDeactivate = () => {
+    setIsUnpinConfirmOpen(true);
+  };
+
+  const executeDeactivate = async () => {
     try {
       setIsDeactivating(true);
       await adminService.updateBroadcast({ message: activeBroadcast?.message || "", type: activeBroadcast?.type || "info", isActive: false });
       setSuccessToast("Đã gỡ ghim thông báo thành công!");
       await loadData();
+      setIsUnpinConfirmOpen(false);
       setTimeout(() => setSuccessToast(null), 3500);
     } finally {
       setIsDeactivating(false);
@@ -119,7 +125,7 @@ export default function AdminNotificationsPage() {
   };
 
   const handleViewItem = (item: SentNotificationItem) => {
-    try { sessionStorage.setItem(`notif_${item.id}`, JSON.stringify(item)); } catch {}
+    try { sessionStorage.setItem(`notif_${item.id}`, JSON.stringify(item)); } catch { }
     router.push(`/${language}/admin/notifications/${item.id}`);
   };
 
@@ -140,7 +146,7 @@ export default function AdminNotificationsPage() {
   };
 
   const handleDeleteTemplate = async (id: string) => {
-    try { await adminService.deleteScheduledNotification(id); } catch {}
+    try { await adminService.deleteScheduledNotification(id); } catch { }
     scheduledNotificationStorage.removeScheduled(id);
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   };
@@ -161,17 +167,15 @@ export default function AdminNotificationsPage() {
           <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#1C1D21] p-1 rounded-xl">
             <button
               type="button" onClick={() => setActiveTab("sent")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "sent" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === "sent" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                }`}
             >
               Thông báo đã gửi ({sentItems.length})
             </button>
             <button
               type="button" onClick={() => setActiveTab("templates")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === "templates" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === "templates" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                }`}
             >
               Thông báo cài sẵn ({templates.length})
             </button>
@@ -218,6 +222,17 @@ export default function AdminNotificationsPage() {
           loadData();
           setTimeout(() => setSuccessToast(null), 4000);
         }}
+      />
+
+      <ConfirmModal
+        isOpen={isUnpinConfirmOpen}
+        title="Gỡ ghim thông báo phát sóng"
+        message="Bạn có chắc chắn muốn gỡ ghim thông báo này? Biểu ngữ thông báo sẽ không còn hiển thị cho người dùng trên toàn hệ thống."
+        confirmText="Gỡ ghim ngay"
+        cancelText="Hủy bỏ"
+        danger={true}
+        onConfirm={executeDeactivate}
+        onCancel={() => setIsUnpinConfirmOpen(false)}
       />
     </div>
   );

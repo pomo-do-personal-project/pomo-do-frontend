@@ -44,17 +44,24 @@ export default function Home() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
 
+  const [mounted, setMounted] = useState(false);
+
   // Khởi tạo bảng màu chủ đề đã lưu (nếu có)
   useEffect(() => {
     initThemePalette();
+    setMounted(true);
   }, []);
 
-  // Tự động chuyển hướng sang trang Admin nếu có quyền Admin
+  // Tự động điều hướng: Chưa đăng nhập -> Landing Preview; Admin -> Admin Portal
   useEffect(() => {
-    if (isAuthenticated && user?.isAdmin) {
+    if (mounted && !isAuthenticated) {
+      router.replace(`/${language}/preview`);
+    } else if (mounted && isAuthenticated && user?.isAdmin) {
       router.replace(`/${language}/admin/users`);
     }
-  }, [isAuthenticated, user?.isAdmin, language, router]);
+  }, [mounted, isAuthenticated, user?.isAdmin, language, router]);
+
+  if (!mounted || !isAuthenticated) return null;
 
   return (
     <div
@@ -83,6 +90,7 @@ export default function Home() {
           }
           if (viewId === "logout") {
             await logout();
+            router.push(`/${language}/preview`);
             return;
           }
           if (viewId === "settings") {
@@ -100,9 +108,8 @@ export default function Home() {
 
       {/* Main Page Content Wrapper */}
       <div
-        className={`flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden min-h-screen relative z-10 transition-all duration-300 ease-in-out pb-16 md:pb-0 ${
-          isSidebarOpen ? "md:ml-16 ml-0" : "ml-0"
-        } ${isOverviewOpen && activeView === "dashboard" ? "mr-0 md:mr-80 lg:mr-96" : "mr-0"}`}
+        className={`flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden min-h-screen relative z-10 transition-all duration-300 ease-in-out pb-16 md:pb-0 ${isSidebarOpen ? "md:ml-16 ml-0" : "ml-0"
+          } ${isOverviewOpen && activeView === "dashboard" ? "mr-0 md:mr-80 lg:mr-96" : "mr-0"}`}
       >
         {/* Offline Network & Broadcast Banners */}
         <OfflineBanner />
@@ -123,11 +130,10 @@ export default function Home() {
                 onClick={() => setIsSidebarOpen(true)}
                 title={t.nav.expandSidebar}
                 aria-label={t.nav.expandSidebar}
-                className={`hidden md:flex p-2 rounded-xl transition-all duration-200 cursor-pointer group ${
-                  wallpaperUrl
-                    ? "text-white/80 hover:text-white hover:bg-white/10"
-                    : "text-neutral-500 hover:text-neutral-900 hover:bg-black/5"
-                }`}
+                className={`hidden md:flex p-2 rounded-xl transition-all duration-200 cursor-pointer group ${wallpaperUrl
+                  ? "text-white/80 hover:text-white hover:bg-white/10"
+                  : "text-neutral-500 hover:text-neutral-900 hover:bg-black/5"
+                  }`}
               >
                 <ChevronsRight
                   size={18}
@@ -157,13 +163,12 @@ export default function Home() {
                 onClick={() => setIsOverviewOpen((prev) => !prev)}
                 title={isOverviewOpen ? t.overviewPanel.closePanel : t.nav.openOverview}
                 aria-label={isOverviewOpen ? t.overviewPanel.closePanel : t.nav.openOverview}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                  isOverviewOpen
-                    ? "bg-neutral-900 text-white shadow-xs"
-                    : wallpaperUrl
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${isOverviewOpen
+                  ? "bg-neutral-900 text-white shadow-xs"
+                  : wallpaperUrl
                     ? "text-white/80 hover:text-white hover:bg-white/10"
                     : "text-neutral-500 hover:text-neutral-900 hover:bg-black/5"
-                }`}
+                  }`}
               >
                 {isOverviewOpen ? (
                   <PanelRightClose size={18} strokeWidth={1.75} className="shrink-0" />
@@ -178,9 +183,8 @@ export default function Home() {
         {/* 2. Main Content Landmark */}
         <main className="flex-1 flex flex-col min-w-0 min-h-0 w-full max-w-full">
           <div
-            className={`flex-1 flex items-center justify-center p-2 sm:p-4 overflow-y-auto ${
-              activeView === "dashboard" ? "" : "hidden"
-            }`}
+            className={`flex-1 flex items-center justify-center p-2 sm:p-4 overflow-y-auto ${activeView === "dashboard" ? "" : "hidden"
+              }`}
           >
             <TimerCenter />
           </div>

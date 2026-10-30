@@ -219,4 +219,24 @@ export const createTaskSlice: StateCreator<
       return false;
     }
   },
+
+  restoreTask: async (id: string) => {
+    try {
+      const restored = await taskService.restoreTask(id);
+      if (restored) {
+        set((state) => ({
+          tasks: [restored, ...state.tasks.filter((t) => t.id !== id)],
+          selectedTask: restored,
+        }));
+        return restored;
+      }
+      await get().fetchTasks();
+      return null;
+    } catch (err: unknown) {
+      set({
+        error: (err instanceof Error ? err.message : String(err)) || "Không thể khôi phục công việc",
+      });
+      return null;
+    }
+  },
 });

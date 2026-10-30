@@ -22,6 +22,7 @@ export function TimelineTaskCard({
   onToggleStatus,
   onNavigateToTimer,
 }: TimelineTaskCardProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const isCompleted = task.status === TaskStatus.Completed;
 
   const getPriorityBadge = (p: Priority) => {
@@ -67,8 +68,12 @@ export function TimelineTaskCard({
       onClick={() => onSelect(task)}
       className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
         isSelected
-          ? "bg-neutral-100/90 dark:bg-neutral-800/90 border-neutral-400 dark:border-neutral-600 shadow-md"
-          : "bg-white/70 dark:bg-neutral-900/50 border-neutral-200/80 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-white dark:hover:bg-neutral-800/40 shadow-xs"
+          ? wallpaperUrl
+            ? "bg-white/95 border-white shadow-xl backdrop-blur-md"
+            : "bg-neutral-100/90 dark:bg-neutral-800/90 border-neutral-400 dark:border-neutral-600 shadow-md"
+          : wallpaperUrl
+            ? "bg-white/85 backdrop-blur-md border-white/40 shadow-sm hover:bg-white hover:border-white/60"
+            : "bg-white/70 dark:bg-neutral-900/50 border-neutral-200/80 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-white dark:hover:bg-neutral-800/40 shadow-xs"
       }`}
     >
       {/* Left: Checkbox & Info */}
@@ -104,22 +109,40 @@ export function TimelineTaskCard({
             <span
               className={`text-sm font-semibold truncate ${
                 isCompleted
-                  ? "line-through text-neutral-400 dark:text-neutral-500"
-                  : "text-neutral-900 dark:text-white"
+                  ? "line-through text-neutral-500 dark:text-neutral-400 opacity-70"
+                  : wallpaperUrl
+                    ? "text-neutral-950 font-bold"
+                    : "text-neutral-900 dark:text-white"
               }`}
             >
               {task.title}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-[11px] text-neutral-400 dark:text-neutral-500 flex-wrap">
+          <div
+            className={`flex items-center gap-3 text-[11px] flex-wrap ${
+              wallpaperUrl
+                ? "text-neutral-600 font-medium"
+                : "text-neutral-400 dark:text-neutral-500"
+            }`}
+          >
             <span className="flex items-center gap-1">
               <Clock size={11} />
               <span>{task.estimatedMinutes || 25}m</span>
             </span>
             <span>•</span>
             <span>
-              Tiến độ: <strong className="text-neutral-700 dark:text-neutral-300">{completedPomos}/{totalPomos}</strong> Pomo
+              Tiến độ:{" "}
+              <strong
+                className={
+                  wallpaperUrl
+                    ? "text-neutral-900 font-bold"
+                    : "text-neutral-700 dark:text-neutral-300"
+                }
+              >
+                {completedPomos}/{totalPomos}
+              </strong>{" "}
+              Pomo
             </span>
             {task.tags && task.tags.length > 0 && (
               <>

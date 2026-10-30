@@ -164,18 +164,19 @@ export function OtpVerifyForm({
     <div className="flex flex-col gap-5 py-1">
       {/* 6 PIN Slots */}
       <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-        {otpDigits.map((digit, idx) => (
+        {otpDigits.map((digit, index) => (
           <input
-            key={idx}
+            key={index}
             ref={(el) => {
-              otpInputRefs.current[idx] = el;
+              otpInputRefs.current[index] = el;
             }}
             type="text"
             inputMode="numeric"
             maxLength={1}
+            aria-label={`Chữ số OTP thứ ${index + 1}`}
             value={digit}
-            onChange={(e) => handleOtpChange(idx, e.target.value)}
-            onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+            onChange={(e) => handleOtpChange(index, e.target.value)}
+            onKeyDown={(e) => handleOtpKeyDown(index, e)}
             onPaste={handleOtpPaste}
             className={`w-11 h-14 sm:w-13 sm:h-16 text-center text-xl sm:text-2xl font-mono font-bold rounded-2xl border-2 transition-all select-all ${
               digit

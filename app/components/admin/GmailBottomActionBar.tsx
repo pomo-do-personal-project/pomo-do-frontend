@@ -4,10 +4,8 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   ChevronDown,
   Trash2,
-  Paperclip,
   Link2,
   Smile,
-  Image as ImageIcon,
   Clock,
   PenLine,
   MoreVertical,
@@ -22,7 +20,6 @@ interface GmailBottomActionBarProps {
   showUrlField: boolean;
   setShowUrlField: React.Dispatch<React.SetStateAction<boolean>>;
   onInsertEmoji: (emoji: string) => void;
-  onAddAttachment: (file: File) => void;
   onInsertSignature: () => void;
   onSubmit: () => void;
   onReset: () => void;
@@ -36,7 +33,6 @@ export function GmailBottomActionBar({
   showUrlField,
   setShowUrlField,
   onInsertEmoji,
-  onAddAttachment,
   onInsertSignature,
   onSubmit,
   onReset,
@@ -47,8 +43,6 @@ export function GmailBottomActionBar({
 
   const scheduleRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const imgRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -63,17 +57,8 @@ export function GmailBottomActionBar({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      onAddAttachment(e.target.files[0]);
-      e.target.value = "";
-    }
-  };
-
   return (
     <div className="relative px-4 sm:px-5 py-3 bg-[#f2f6fc]/80 dark:bg-[#1C1D21] border-t border-neutral-200/60 dark:border-neutral-800 flex items-center justify-between select-none shrink-0">
-      <input type="file" ref={fileRef} onChange={handleFile} className="hidden" />
-      <input type="file" ref={imgRef} accept="image/*" onChange={handleFile} className="hidden" />
 
       <GmailEmojiPicker isOpen={isEmojiOpen} onClose={() => setIsEmojiOpen(false)} onSelectEmoji={onInsertEmoji} />
 
@@ -99,10 +84,8 @@ export function GmailBottomActionBar({
 
         {/* Action Icons */}
         <button type="button" onClick={() => setShowFormatBar((p) => !p)} title="Định dạng" className={`p-2 rounded-full cursor-pointer text-xs sm:text-sm font-bold shrink-0 ${showFormatBar ? "bg-[#d3e3fd] text-[#0b57d0]" : "text-neutral-600 dark:text-neutral-400 hover:bg-black/5"}`}>Aa</button>
-        <button type="button" onClick={() => fileRef.current?.click()} title="Đính kèm tệp" className="p-2 rounded-full text-neutral-600 dark:text-neutral-400 hover:bg-black/5 cursor-pointer shrink-0"><Paperclip size={17} /></button>
         <button type="button" onClick={() => setShowUrlField((p) => !p)} title="Chèn liên kết" className={`p-2 rounded-full cursor-pointer shrink-0 ${showUrlField ? "bg-[#d3e3fd] text-[#0b57d0]" : "text-neutral-600 dark:text-neutral-400 hover:bg-black/5"}`}><Link2 size={17} /></button>
         <button type="button" onClick={() => setIsEmojiOpen(!isEmojiOpen)} title="Biểu tượng cảm xúc" className="p-2 rounded-full text-neutral-600 dark:text-neutral-400 hover:bg-black/5 cursor-pointer shrink-0"><Smile size={17} /></button>
-        <button type="button" onClick={() => imgRef.current?.click()} title="Chèn ảnh" className="p-2 rounded-full text-neutral-600 dark:text-neutral-400 hover:bg-black/5 cursor-pointer shrink-0"><ImageIcon size={17} /></button>
         <button type="button" onClick={() => setScheduleOption(scheduleOption === "scheduled" ? "immediate" : "scheduled")} title="Lên lịch gửi" className={`p-2 rounded-full cursor-pointer shrink-0 ${scheduleOption === "scheduled" ? "bg-[#d3e3fd] text-[#0b57d0]" : "text-neutral-600 dark:text-neutral-400 hover:bg-black/5"}`}><Clock size={17} /></button>
         <button type="button" onClick={onInsertSignature} title="Chèn chữ ký" className="p-2 rounded-full text-neutral-600 dark:text-neutral-400 hover:bg-black/5 cursor-pointer shrink-0"><PenLine size={17} /></button>
 

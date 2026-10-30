@@ -13,8 +13,9 @@ interface AccountTabProps {
 export function AccountTab({ showNotice }: AccountTabProps) {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const userFullName = user?.displayName || (user as { fullName?: string } | null)?.fullName || "";
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState(user?.displayName || "minh ngô");
+  const [editName, setEditName] = useState(userFullName);
 
   const handleSaveName = () => {
     if (!editName.trim()) return;
@@ -22,7 +23,7 @@ export function AccountTab({ showNotice }: AccountTabProps) {
       user: s.user ? { ...s.user, displayName: editName.trim() } : null,
     }));
     setIsEditingName(false);
-    showNotice(t.settings.account.displayName);
+    showNotice("Đã cập nhật tên hiển thị!");
   };
 
   return (
@@ -31,7 +32,7 @@ export function AccountTab({ showNotice }: AccountTabProps) {
       <div className="flex flex-col items-center justify-center pt-2 pb-1">
         <div className="relative group cursor-pointer">
           <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-neutral-950 font-bold text-3xl flex items-center justify-center shadow-md select-none">
-            {user?.displayName ? user.displayName.charAt(0).toUpperCase() : "M"}
+            {userFullName ? userFullName.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : "U")}
           </div>
           <div
             onClick={() =>
@@ -77,12 +78,12 @@ export function AccountTab({ showNotice }: AccountTabProps) {
           ) : (
             <>
               <h3 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
-                {user?.displayName || "minh ngô"}
+                {userFullName}
               </h3>
               <button
                 type="button"
                 onClick={() => {
-                  setEditName(user?.displayName || "minh ngô");
+                  setEditName(userFullName);
                   setIsEditingName(true);
                 }}
                 title={t.settings.account.displayName}
@@ -105,7 +106,7 @@ export function AccountTab({ showNotice }: AccountTabProps) {
         <div className="flex items-center justify-between text-sm">
           <span className="text-neutral-500 dark:text-neutral-400 font-medium">{t.settings.account.email}</span>
           <span className="text-neutral-800 dark:text-neutral-200 font-medium select-all">
-            {user?.email || "ngoquangminhtpm@gmail.com"}
+            {user?.email || ""}
           </span>
         </div>
 
@@ -132,7 +133,7 @@ export function AccountTab({ showNotice }: AccountTabProps) {
       <div className="bg-neutral-100/70 dark:bg-[#262626] rounded-2xl p-4 flex items-center justify-between text-sm">
         <span className="text-neutral-500 dark:text-neutral-400 font-medium">{t.settings.account.googleAccount}</span>
         <span className="text-neutral-800 dark:text-neutral-200 font-medium">
-          {user?.displayName || "minh ngô"}
+          {userFullName}
         </span>
       </div>
 

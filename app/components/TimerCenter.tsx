@@ -30,6 +30,7 @@ export function TimerCenter() {
   const [showZeroConfirm, setShowZeroConfirm] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completedSessionData, setCompletedSessionData] = useState<CompletedSessionData | null>(null);
+  const [completedPomoCount, setCompletedPomoCount] = useState(0);
 
   const { settings, fetchSettings } = useSettingsStore();
   const { onTimerTick, resetSessionStats, analyzeAndFinalizeSession, isAiEnabled } = useAiFocusStore();
@@ -59,8 +60,8 @@ export function TimerCenter() {
   const modeDurations: Record<FocusMode, ModeDurationInfo> = useMemo(() => ({
     W: { label: "W", fullName: "Focus", minutes: activeFocusMinutes },
     SB: { label: "SB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
-    LB: { label: "LB", fullName: "Break", minutes: settings.shortBreakDuration || 5 },
-  }), [activeFocusMinutes, settings.shortBreakDuration]);
+    LB: { label: "LB", fullName: "Long Break", minutes: settings.longBreakDuration || 15 },
+  }), [activeFocusMinutes, settings.shortBreakDuration, settings.longBreakDuration]);
 
   useEffect(() => {
     if (isAuthenticated) fetchSettings();
@@ -80,47 +81,49 @@ export function TimerCenter() {
 
   useEffect(() => {
     if (!isRunning && elapsedSeconds === 0) {
-      const targetDuration = modeDurations[focusMode].minutes * 60;
+      const targetDuration = timerType === "stopwatch" ? 0 : modeDurations[focusMode].minutes * 60;
       if (seconds !== targetDuration) resetTimer(targetDuration);
     }
-  }, [modeDurations, focusMode, isRunning, elapsedSeconds, seconds, resetTimer]);
+  }, [modeDurations, focusMode, timerType, isRunning, elapsedSeconds, seconds, resetTimer]);
 
   const handleSelectTab = (tab: "focus" | "break" | "stopwatch") => {
-    const isSw = tab === "stopwatch";
-    const nextMode = tab === "focus" ? "W" : "SB";
-    if (isSw) setTimerType(timerType === "stopwatch" ? "pomo" : "stopwatch");
-    else setFocusMode(nextMode);
-    resetTimer(modeDurations[isSw ? focusMode : nextMode].minutes * 60);
+    if (isRunning) return;
+    if (tab === "stopwatch") {
+      const nextType = timerType === "stopwatch" ? "pomo" : "stopwatch";
+      setTimerType(nextType);
+      setFocusMode("W");
+      resetTimer(nextType === "stopwatch" ? 0 : modeDurations.W.minutes * 60);
+    } else {
+      const nextMode: FocusMode = tab === "focus" ? "W" : "SB";
+      setTimerType("pomo");
+      setFocusMode(nextMode);
+      resetTimer(modeDurations[nextMode].minutes * 60);
+    }
+  };
+
+  const initWorkSession = async (targetMode: FocusMode = focusMode) => {
+    resetSessionStats();
+    await startSession({
+      taskId: matchedTask?.id || null,
+      mode: timerType === "pomo" ? FocusSessionMode.Pomo : FocusSessionMode.Stopwatch,
+      durationMinutes: modeDurations[targetMode].minutes,
+    });
+    if (matchedTask && matchedTask.status === TaskStatus.Todo) {
+      updateTask(matchedTask.id, { ...matchedTask, status: TaskStatus.InProgress, tagIds: matchedTask.tags?.map((t) => t.id) });
+    }
   };
 
   const handleTogglePlay = async () => {
     if (!isRunning) {
-      if (!currentSession && elapsedSeconds === 0) {
-        resetSessionStats();
-        await startSession({
-          taskId: matchedTask?.id || null,
-          mode: timerType === "pomo" ? FocusSessionMode.Pomo : FocusSessionMode.Stopwatch,
-          durationMinutes: modeDurations[focusMode].minutes,
-        });
-
-        if (matchedTask && (matchedTask.status === TaskStatus.Todo || matchedTask.status === TaskStatus.Completed)) {
-          updateTask(matchedTask.id, {
-            ...matchedTask,
-            status: TaskStatus.InProgress,
-            tagIds: matchedTask.tags?.map((t) => t.id),
-          });
-        }
-      }
+      if (!currentSession && elapsedSeconds === 0) await initWorkSession(focusMode);
       setIsRunning(true);
-    } else {
-      setIsRunning(false);
-    }
+    } else setIsRunning(false);
   };
 
   const handleReset = async () => {
     setIsRunning(false);
     if (currentSession?.id) await cancelSession(currentSession.id, elapsedSeconds);
-    resetTimer(modeDurations[focusMode].minutes * 60);
+    resetTimer(timerType === "stopwatch" ? 0 : modeDurations[focusMode].minutes * 60);
   };
 
   const executeSaveSession = async () => {
@@ -154,38 +157,41 @@ export function TimerCenter() {
     }
 
     const isW = focusMode === "W";
-    const nextMode: FocusMode = isW ? "SB" : "W";
+    let nextCount = completedPomoCount;
+    if (isW) {
+      nextCount = completedPomoCount + 1;
+      setCompletedPomoCount(nextCount);
+    }
+    const nextMode: FocusMode = isW ? (nextCount % 4 === 0 ? "LB" : "SB") : "W";
     setFocusMode(nextMode);
-    resetTimer(modeDurations[nextMode].minutes * 60);
+    resetTimer(timerType === "stopwatch" && nextMode === "W" ? 0 : modeDurations[nextMode].minutes * 60);
+    if (!isW && isAutoFocus) {
+      await initWorkSession("W");
+    }
     setIsRunning(isW ? isAutoBreak : isAutoFocus);
   };
 
   const { isAutoBreak, isAutoFocus } = useTimerAutoSwitch({
     isRunning, setIsRunning, focusMode, setFocusMode, isOvertime,
-    modeDurations, resetTimer, playRingtone, playTickSound, onTimerTick,
-    tickTimer, executeSaveSession, autoStartBreaksSetting: settings.autoStartBreaks,
+    modeDurations, resetTimer, playRingtone, playTickSound, playOvertimeAlert, onTimerTick,
+    tickTimer, executeSaveSession,
+    startAutoFocusSession: () => initWorkSession("W"),
+    autoStartBreaksSetting: settings.autoStartBreaks,
   });
 
   const handleConfirmTaskStatus = async (isCompleted: boolean) => {
     if (isCompleted && matchedTask) {
-      await updateTask(matchedTask.id, {
-        ...matchedTask,
-        status: TaskStatus.Completed,
-        tagIds: matchedTask.tags?.map((t) => t.id),
-      });
+      await updateTask(matchedTask.id, { ...matchedTask, status: TaskStatus.Completed, tagIds: matchedTask.tags?.map((t) => t.id) });
       setTaskName("");
     }
     setShowCompleteModal(false);
   };
-
-  const handleCloseCompleteModal = () => {
-    setShowCompleteModal(false);
-  };
+  const handleCloseCompleteModal = () => setShowCompleteModal(false);
 
   const handleStartBreak = () => {
     setShowCompleteModal(false);
-    setFocusMode("SB");
-    resetTimer(modeDurations["SB"].minutes * 60);
+    const breakMode: FocusMode = completedPomoCount > 0 && completedPomoCount % 4 === 0 ? "LB" : "SB";
+    setFocusMode(breakMode); resetTimer(modeDurations[breakMode].minutes * 60);
     setIsRunning(true);
   };
 
@@ -218,7 +224,7 @@ export function TimerCenter() {
         onTogglePlay={handleTogglePlay} onReset={handleReset} onManualComplete={handleManualComplete}
       />
 
-      <div className={`w-full max-w-sm flex justify-center transition-opacity duration-300 ${isRunning ? "opacity-30 group-hover:opacity-100" : "opacity-100"}`}>
+      <div className={`w-full max-w-sm flex justify-center transition-opacity duration-300 ${isRunning ? "opacity-40 hover:opacity-100 focus-within:opacity-100 active:opacity-100" : "opacity-100"}`}>
         <AiFocusWidget isTimerRunning={isRunning && focusMode === "W"} />
       </div>
 

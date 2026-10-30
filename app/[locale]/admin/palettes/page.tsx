@@ -7,6 +7,7 @@ import { ThemePalette } from "../../../types/theme";
 import { PaletteStatsBar } from "../../../components/admin/palettes/PaletteStatsBar";
 import { PaletteCard } from "../../../components/admin/palettes/PaletteCard";
 import { PaletteEditorModal } from "../../../components/admin/palettes/PaletteEditorModal";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 export default function AdminPalettesPage() {
   const { palettes, addPalette, updatePalette, deletePalette, toggleActive, resetToDefault } =
@@ -16,6 +17,8 @@ export default function AdminPalettesPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "custom">("all");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [paletteToEdit, setPaletteToEdit] = useState<ThemePalette | null>(null);
+  const [paletteToDelete, setPaletteToDelete] = useState<ThemePalette | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -63,15 +66,11 @@ export default function AdminPalettesPage() {
 
   const handleDelete = (id: string) => {
     const target = palettes.find((p) => p.id === id);
-    if (!window.confirm(`Bạn có chắc muốn xóa bảng màu "${target?.nameVi || target?.name}"?`)) return;
-    deletePalette(id);
-    showToast("Đã xóa bảng màu thành công!");
+    if (target) setPaletteToDelete(target);
   };
 
   const handleReset = () => {
-    if (!window.confirm("Khôi phục toàn bộ Color Series về 10 bộ màu mặc định chuẩn TickTick?")) return;
-    resetToDefault();
-    showToast("Đã khôi phục các bộ màu về mặc định!");
+    setIsResetConfirmOpen(true);
   };
 
   return (
@@ -184,6 +183,40 @@ export default function AdminPalettesPage() {
         onClose={() => setIsEditorOpen(false)}
         paletteToEdit={paletteToEdit}
         onSave={handleSave}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!paletteToDelete}
+        title="Xóa bộ màu Color Series"
+        message={`Bạn có chắc muốn xóa bảng màu "${paletteToDelete?.nameVi || paletteToDelete?.name}"? Các thành viên đang dùng bảng màu này sẽ được đưa về màu mặc định.`}
+        confirmText="Xóa bảng màu"
+        cancelText="Giữ lại"
+        danger={true}
+        onConfirm={() => {
+          if (paletteToDelete) {
+            deletePalette(paletteToDelete.id);
+            setPaletteToDelete(null);
+            showToast("Đã xóa bảng màu thành công!");
+          }
+        }}
+        onCancel={() => setPaletteToDelete(null)}
+      />
+
+      {/* Reset Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isResetConfirmOpen}
+        title="Khôi phục cài đặt gốc Color Series"
+        message="Khôi phục toàn bộ Color Series về 10 bộ màu mặc định chuẩn TickTick? Mọi tùy chỉnh màu sắc cá nhân sẽ bị hoàn tác."
+        confirmText="Khôi phục gốc"
+        cancelText="Hủy bỏ"
+        danger={false}
+        onConfirm={() => {
+          resetToDefault();
+          setIsResetConfirmOpen(false);
+          showToast("Đã khôi phục các bộ màu về mặc định!");
+        }}
+        onCancel={() => setIsResetConfirmOpen(false)}
       />
     </div>
   );

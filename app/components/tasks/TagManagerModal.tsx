@@ -7,6 +7,7 @@ import { useTagStore } from "../../stores/useTagStore";
 import { X, Plus, Tag } from "lucide-react";
 import { PRESET_COLORS } from "./TaskTagsDropdown";
 import { TagItemRow } from "./TagItemRow";
+import { ConfirmModal } from "../ui/ConfirmModal";
 
 interface TagManagerModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -69,10 +71,7 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
   };
 
   const handleDeleteTag = async (id: string, name: string) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa thẻ "${name}"? Các công việc đang gắn thẻ này sẽ không bị xóa.`)) {
-      await deleteTag(id);
-      if (editingTagId === id) setEditingTagId(null);
-    }
+    setTagToDelete({ id, name });
   };
 
   return createPortal(
@@ -184,6 +183,23 @@ export function TagManagerModal({ isOpen, onClose, onSelectTag }: TagManagerModa
             ))
           )}
         </div>
+
+        <ConfirmModal
+          isOpen={!!tagToDelete}
+          title="Xóa thẻ phân loại"
+          message={`Bạn có chắc chắn muốn xóa thẻ "${tagToDelete?.name}"? Các công việc đang gắn thẻ này sẽ không bị xóa.`}
+          confirmText="Xóa thẻ"
+          cancelText="Giữ lại"
+          danger={true}
+          onConfirm={async () => {
+            if (tagToDelete) {
+              await deleteTag(tagToDelete.id);
+              if (editingTagId === tagToDelete.id) setEditingTagId(null);
+              setTagToDelete(null);
+            }
+          }}
+          onCancel={() => setTagToDelete(null)}
+        />
       </div>
     </div>,
     document.body

@@ -14,9 +14,11 @@ interface UseTimerAutoSwitchProps {
   resetTimer: (secs: number) => void;
   playRingtone: (ringtone: RingtoneType, volume: number) => void;
   playTickSound: (volume: number) => void;
+  playOvertimeAlert?: (volume?: number) => void;
   onTimerTick: (isWork: boolean) => void;
   tickTimer: (mins: number) => void;
   executeSaveSession: () => Promise<void>;
+  startAutoFocusSession?: () => Promise<void>;
   autoStartBreaksSetting?: boolean;
 }
 
@@ -30,9 +32,11 @@ export function useTimerAutoSwitch({
   resetTimer,
   playRingtone,
   playTickSound,
+  playOvertimeAlert,
   onTimerTick,
   tickTimer,
   executeSaveSession,
+  startAutoFocusSession,
   autoStartBreaksSetting,
 }: UseTimerAutoSwitchProps) {
   const [localSettingsVersion, setLocalSettingsVersion] = useState(0);
@@ -102,16 +106,35 @@ export function useTimerAutoSwitch({
   }, [isRunning]);
 
   const isAutoSwitchingRef = useRef(false);
+  const overtimeAlertPlayedRef = useRef(false);
+  const playOvertimeAlertRef = useRef(playOvertimeAlert);
+  playOvertimeAlertRef.current = playOvertimeAlert;
+  const startAutoFocusSessionRef = useRef(startAutoFocusSession);
+  startAutoFocusSessionRef.current = startAutoFocusSession;
+
+  useEffect(() => {
+    if (!isOvertime) {
+      overtimeAlertPlayedRef.current = false;
+    }
+  }, [isOvertime]);
 
   // Auto transition when reaching overtime
   useEffect(() => {
     if (!isRunning || isAutoSwitchingRef.current) return;
 
     if (focusMode === "W" && isOvertime) {
-      isAutoSwitchingRef.current = true;
-      executeSaveSessionRef.current().finally(() => {
-        setTimeout(() => { isAutoSwitchingRef.current = false; }, 1000);
-      });
+      if (isAutoBreak) {
+        isAutoSwitchingRef.current = true;
+        executeSaveSessionRef.current().finally(() => {
+          setTimeout(() => { isAutoSwitchingRef.current = false; }, 1000);
+        });
+      } else if (!overtimeAlertPlayedRef.current) {
+        overtimeAlertPlayedRef.current = true;
+        if (typeof window !== "undefined" && localStorage.getItem("pomodo_sound_enabled") !== "false") {
+          const soundVol = Number(localStorage.getItem("pomodo_sound_volume") || "80");
+          playOvertimeAlertRef.current?.(soundVol);
+        }
+      }
     } else if (focusMode !== "W" && isOvertime) {
       isAutoSwitchingRef.current = true;
       const nextDuration = modeDurationsRef.current["W"].minutes * 60;
@@ -127,10 +150,17 @@ export function useTimerAutoSwitch({
         }
       }
 
-      setIsRunning(isAutoFocus);
-      setTimeout(() => { isAutoSwitchingRef.current = false; }, 1000);
+      if (isAutoFocus) {
+        Promise.resolve(startAutoFocusSessionRef.current?.()).finally(() => {
+          setIsRunning(true);
+          setTimeout(() => { isAutoSwitchingRef.current = false; }, 1000);
+        });
+      } else {
+        setIsRunning(false);
+        setTimeout(() => { isAutoSwitchingRef.current = false; }, 1000);
+      }
     }
-  }, [isOvertime, isRunning, focusMode, isAutoFocus, resetTimer, setFocusMode, setIsRunning]);
+  }, [isOvertime, isRunning, focusMode, isAutoBreak, isAutoFocus, resetTimer, setFocusMode, setIsRunning]);
 
   return { isAutoBreak, isAutoFocus };
 }

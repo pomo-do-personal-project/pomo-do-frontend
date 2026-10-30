@@ -24,12 +24,12 @@ export function useFilteredTasks(
       Today: tasks.filter((t) => {
         if (t.isQuickAdd) return false;
         if (!t.dueDate) return true;
-        return parseTaskDueDate(t.dueDate).dateStr === todayStr;
+        return parseTaskDueDate(t.dueDate).dateStr <= todayStr;
       }).length,
       Upcoming: tasks.filter((t) => {
         if (t.isQuickAdd) return false;
         if (!t.dueDate) return false;
-        return parseTaskDueDate(t.dueDate).dateStr !== todayStr;
+        return parseTaskDueDate(t.dueDate).dateStr > todayStr;
       }).length,
       QuickAdd: tasks.filter((t) => t.isQuickAdd).length,
       Calendar: tasks.length,
@@ -44,12 +44,12 @@ export function useFilteredTasks(
         if (!t.isQuickAdd) return false;
       } else if (currentCategory === "Today") {
         if (t.isQuickAdd) return false;
-        if (t.dueDate && parseTaskDueDate(t.dueDate).dateStr !== todayStr) {
+        if (t.dueDate && parseTaskDueDate(t.dueDate).dateStr > todayStr) {
           return false;
         }
       } else if (currentCategory === "Upcoming") {
         if (t.isQuickAdd) return false;
-        if (!t.dueDate || parseTaskDueDate(t.dueDate).dateStr === todayStr) {
+        if (!t.dueDate || parseTaskDueDate(t.dueDate).dateStr <= todayStr) {
           return false;
         }
       }

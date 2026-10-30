@@ -105,17 +105,22 @@ export function PaletteEditorModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
-      <div className="relative z-10 w-full max-w-2xl bg-white dark:bg-[#16171b] rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-7 flex flex-col max-h-[92vh] overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="palette-editor-modal-title"
+        className="relative z-10 w-full max-w-2xl bg-white dark:bg-[#16171b] rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-7 flex flex-col max-h-[92vh] overflow-y-auto"
+      >
         <div className="flex items-center justify-between pb-4 border-b border-neutral-100 dark:border-neutral-800">
           <div>
-            <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
+            <h2 id="palette-editor-modal-title" className="text-lg font-bold text-neutral-900 dark:text-white">
               {paletteToEdit ? "Chỉnh Sửa Color Series" : "Tạo Mới Color Series"}
             </h2>
             <p className="text-xs text-neutral-500 mt-0.5">
               Cấu hình bảng màu 60-30-10 phong cách TickTick chuẩn WCAG AA
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer">
+          <button type="button" onClick={onClose} aria-label="Đóng" className="p-2 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer">
             <X size={18} />
           </button>
         </div>

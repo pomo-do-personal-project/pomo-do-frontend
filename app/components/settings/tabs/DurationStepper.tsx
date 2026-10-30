@@ -48,7 +48,7 @@ export function DurationStepper({
         className="w-10 text-right font-mono font-bold text-sm bg-transparent border-none text-neutral-900 dark:text-white focus:outline-none p-0 select-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
 
-      <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div className="flex flex-col opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
         <button
           type="button"
           onClick={() => handleChange(val + 1)}

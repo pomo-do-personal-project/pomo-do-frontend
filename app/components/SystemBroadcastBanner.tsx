@@ -11,22 +11,35 @@ export function SystemBroadcastBanner() {
 
   useEffect(() => {
     let isMounted = true;
-    adminService
-      .getActiveBroadcast()
-      .then((data) => {
-        if (isMounted && data && data.isActive) {
-          const dismissedId = sessionStorage.getItem("dismissed_broadcast_time");
-          if (dismissedId !== data.updatedAt) {
-            setBroadcast(data);
+
+    const fetchBroadcast = () => {
+      adminService
+        .getActiveBroadcast()
+        .then((data) => {
+          if (isMounted) {
+            if (data && data.isActive) {
+              const dismissedTime = sessionStorage.getItem("dismissed_broadcast_time");
+              if (dismissedTime !== data.updatedAt) {
+                setBroadcast(data);
+                setIsDismissed(false);
+              }
+            } else {
+              setBroadcast(null);
+            }
           }
-        }
-      })
-      .catch(() => {
-        // Silent fail if network unavailable
-      });
+        })
+        .catch(() => {
+          // Silent fail if network unavailable
+        });
+    };
+
+    fetchBroadcast();
+    // Poll every 60s for emergency announcements or maintenance updates
+    const interval = setInterval(fetchBroadcast, 60000);
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -44,11 +57,11 @@ export function SystemBroadcastBanner() {
     },
     warning: {
       icon: AlertTriangle,
-      bg: "bg-amber-600 text-white",
+      bg: "bg-amber-700 text-white",
     },
     maintenance: {
       icon: Wrench,
-      bg: "bg-rose-600 text-white",
+      bg: "bg-rose-700 text-white",
     },
   };
 
@@ -57,11 +70,13 @@ export function SystemBroadcastBanner() {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`w-full ${config.bg} px-4 py-2 flex items-center justify-between text-xs font-medium z-40 transition-all shadow-xs`}
     >
-      <div className="max-w-6xl mx-auto flex items-center gap-2.5 min-w-0">
-        <Icon size={14} className="shrink-0" />
-        <div className="truncate text-xs">
+      <div className="max-w-6xl mx-auto flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+        <Icon size={14} className="shrink-0 mt-0.5 self-start sm:self-center" />
+        <div className="break-words text-xs leading-normal">
           {broadcast.message.includes(" - ") ? (
             <>
               <strong className="font-bold mr-1.5">{broadcast.message.split(" - ")[0]}:</strong>
@@ -76,7 +91,7 @@ export function SystemBroadcastBanner() {
       <button
         onClick={handleDismiss}
         aria-label="Đóng thông báo"
-        className="w-5 h-5 rounded flex items-center justify-center hover:bg-black/20 text-white/90 hover:text-white transition-colors shrink-0 ml-2 cursor-pointer"
+        className="w-5 h-5 rounded flex items-center justify-center hover:bg-black/20 text-white/90 hover:text-white transition-colors shrink-0 cursor-pointer"
       >
         <X size={13} />
       </button>

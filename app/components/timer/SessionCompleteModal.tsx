@@ -127,7 +127,7 @@ export function SessionCompleteModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-emerald-500" />
-                Điểm tập trung AI:
+                Điểm tự phản tư AI (Cá nhân):
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-neutral-900 dark:text-white">
@@ -143,6 +143,9 @@ export function SessionCompleteModal({
                 {aiAnalysis.conclusion}
               </p>
             )}
+            <div className="text-[10px] text-neutral-400 border-t border-neutral-200/40 dark:border-neutral-700/40 pt-1.5">
+              Chỉ số tham khảo cá nhân giúp bạn tối ưu thói quen học tập, không dùng để xếp hạng cạnh tranh.
+            </div>
           </div>
         )}
 

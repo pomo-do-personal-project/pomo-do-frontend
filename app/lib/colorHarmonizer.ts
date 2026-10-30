@@ -197,5 +197,8 @@ export function applyHarmonizedColors(colors: ThemeColors) {
   root.style.setProperty("--text-highlight", colors.textHighlight);
   root.style.setProperty("--accent-primary", colors.accentPrimary);
 
+  // Khi kích hoạt hình nền ảnh, giao diện luôn ở dark theme để chữ trắng tương phản tốt
+  root.classList.add("dark");
+  localStorage.setItem("theme", "dark");
   localStorage.setItem("pomodo_theme_colors", JSON.stringify(colors));
 }

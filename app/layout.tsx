@@ -38,18 +38,19 @@ export const metadata: Metadata = {
       "Tối ưu hóa năng suất cá nhân với đồng hồ Pomodoro thông minh, quản lý công việc toàn diện và Ma trận Eisenhower 4 góc.",
     images: [
       {
-        url: "/favicon.ico",
-        width: 64,
-        height: 64,
-        alt: "Pomo-Do Tomato Icon",
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Pomo-Do Productivity Dashboard Preview",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Pomo-Do | Pomodoro & Task Management System",
     description:
       "Tối ưu hóa năng suất với đồng hồ Pomodoro, quản lý công việc và ma trận Eisenhower.",
+    images: ["/og-image.jpg"],
   },
   icons: {
     icon: "/favicon.ico",

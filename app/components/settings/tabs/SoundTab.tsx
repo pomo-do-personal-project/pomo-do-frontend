@@ -64,7 +64,7 @@ export function SoundTab({ showNotice }: SoundTabProps) {
     }
   };
 
-  const handleSelectAlarm = async (url: string, name: string) => {
+  const handleSelectAlarm = async (url: string | null, name: string) => {
     const success = await updateSettings({ alarmSoundUrl: url });
     if (success) {
       const localizedName = formatLocalizedAssetName(name, language);
@@ -124,11 +124,34 @@ export function SoundTab({ showNotice }: SoundTabProps) {
           </div>
         ) : (
           <div className="space-y-2 pt-1">
+            <div
+              onClick={() =>
+                handleSelectAlarm(
+                  null,
+                  language === "vi" ? "Mặc định (Chuông hệ thống)" : "Default (System Chime)"
+                )
+              }
+              className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                !settings.alarmSoundUrl
+                  ? "border-amber-500 bg-white dark:bg-neutral-800 shadow-xs ring-1 ring-amber-500/30"
+                  : "border-neutral-200/80 dark:border-neutral-700/80 bg-neutral-50 dark:bg-neutral-800/40 hover:border-neutral-300"
+              }`}
+            >
+              <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+                {language === "vi" ? "Mặc định (Chuông hệ thống)" : "Default (System Chime)"}
+              </span>
+              {!settings.alarmSoundUrl && (
+                <div className="p-1 rounded-full bg-amber-500 text-white shadow-xs">
+                  <Check size={12} strokeWidth={3} />
+                </div>
+              )}
+            </div>
+
             {alarms.map((alarm) => (
               <AudioOptionCard
                 key={alarm.id}
                 asset={alarm}
-                isSelected={settings.alarmSoundUrl === alarm.url || (!settings.alarmSoundUrl && alarm.isDefault)}
+                isSelected={settings.alarmSoundUrl === alarm.url}
                 isPlaying={playingId === alarm.id}
                 onSelect={() => handleSelectAlarm(alarm.url, alarm.name)}
                 onTogglePlay={(e) => {

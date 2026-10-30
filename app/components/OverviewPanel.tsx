@@ -66,13 +66,13 @@ export function OverviewPanel({ isOpen, onClose }: OverviewPanelProps) {
             ? "bg-neutral-950/85 border-l border-white/15 text-white"
             : "bg-white/98 border-l border-neutral-200 text-neutral-900"
         } ${
-          isOpen ? "w-full max-w-[340px] sm:w-96 visible translate-x-0" : "w-0 overflow-hidden invisible border-none translate-x-full"
+          isOpen ? "w-80 md:w-80 lg:w-96 max-w-full visible translate-x-0" : "w-0 overflow-hidden invisible border-none translate-x-full"
         }`}
       >
-        <div className="w-full sm:w-96 flex-1 flex flex-col p-5 sm:p-6 overflow-y-auto">
+        <div className="w-full min-w-0 max-w-full flex-1 flex flex-col p-4 sm:p-5 overflow-y-auto overflow-x-hidden">
         {/* Panel Header */}
         <div
-          className={`h-14 flex items-center justify-between border-b mb-6 shrink-0 -mt-6 ${
+          className={`h-14 flex items-center justify-between border-b mb-5 shrink-0 ${
             wallpaperUrl ? "border-white/15" : "border-neutral-200"
           }`}
         >

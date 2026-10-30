@@ -43,6 +43,7 @@ export function UserEmailModal({
   const [scheduledTime, setScheduledTime] = useState(initialScheduledTime);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recipients, setRecipients] = useState<EmailRecipient[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedUserIds = selectedUsers.map((u) => u.id).join(",");
 
@@ -53,6 +54,7 @@ export function UserEmailModal({
     setCategory(initialCategory || "info");
     setScheduleOption(initialScheduleOption || "immediate");
     setScheduledTime(initialScheduledTime || "");
+    setErrorMessage(null);
     setRecipients(selectedUsers.map((u) => ({
       id: u.id, email: u.email, name: u.displayName, avatarUrl: u.avatarUrl
     })));
@@ -69,8 +71,9 @@ export function UserEmailModal({
   };
 
   const handleSend = async () => {
+    setErrorMessage(null);
     if (!title.trim() || !content.trim()) {
-      alert("Vui lòng nhập đầy đủ tiêu đề và nội dung.");
+      setErrorMessage("Vui lòng nhập đầy đủ tiêu đề và nội dung.");
       return;
     }
 
@@ -80,7 +83,7 @@ export function UserEmailModal({
 
       if (scheduleOption === "scheduled") {
         if (!scheduledTime.trim()) {
-          alert("Vui lòng chọn thời gian lên lịch gửi tự động.");
+          setErrorMessage("Vui lòng chọn thời gian lên lịch gửi tự động.");
           return;
         }
 
@@ -88,23 +91,23 @@ export function UserEmailModal({
         const emailList = recipients.map((r) => r.email);
         const scheduledUtc = new Date(scheduledTime.trim()).toISOString();
 
-        try {
-          await adminService.createScheduledNotification({
-            title: title.trim(), content: fullContent, category, scope,
-            recipientEmails: emailList.length > 0 ? emailList : undefined,
-            scheduledAtUtc: scheduledUtc,
+        await adminService.createScheduledNotification({
+          title: title.trim(), content: fullContent, category, scope,
+          recipientEmails: emailList.length > 0 ? emailList : undefined,
+          scheduledAtUtc: scheduledUtc,
+        });
+
+        if (onSaveSchedule) {
+          onSaveSchedule({
+            title: title.trim(), content: fullContent, category, scheduledTime: scheduledTime.trim(),
+            scope, recipients: emailList,
           });
-        } catch { }
-
-        scheduledNotificationStorage.saveScheduled({
-          title: title.trim(), content: fullContent, category, scheduledTime: scheduledTime.trim(),
-          scope, recipients: emailList,
-        });
-
-        onSaveSchedule?.({
-          title: title.trim(), content: fullContent, category, scheduledTime: scheduledTime.trim(),
-          scope, recipients: emailList,
-        });
+        } else {
+          scheduledNotificationStorage.saveScheduled({
+            title: title.trim(), content: fullContent, category, scheduledTime: scheduledTime.trim(),
+            scope, recipients: emailList,
+          });
+        }
 
         onSendSuccess?.(`Đã lên lịch gửi tự động lúc ${new Date(scheduledTime).toLocaleString("vi-VN")}!`);
         handleReset();
@@ -121,7 +124,7 @@ export function UserEmailModal({
           onClose();
           return;
         }
-        alert("Vui lòng nhập hoặc chọn ít nhất 1 người nhận.");
+        setErrorMessage("Vui lòng nhập hoặc chọn ít nhất 1 người nhận.");
         return;
       }
 
@@ -140,7 +143,7 @@ export function UserEmailModal({
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Không thể gửi. Vui lòng thử lại sau.";
-      alert(msg);
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -154,8 +157,8 @@ export function UserEmailModal({
   const modalClass = isMaximized
     ? "fixed inset-4 sm:inset-8 max-w-5xl mx-auto rounded-2xl"
     : isMinimized
-    ? "fixed bottom-0 right-4 sm:right-8 w-[280px] sm:w-[320px] h-[40px] rounded-t-xl"
-    : "fixed bottom-0 right-4 sm:right-8 w-[580px] max-w-[96vw] h-[640px] sm:h-[660px] max-h-[92vh] rounded-t-2xl";
+      ? "fixed bottom-0 right-4 sm:right-8 w-[280px] sm:w-[320px] h-[40px] rounded-t-xl"
+      : "fixed bottom-0 right-4 sm:right-8 w-[580px] max-w-[96vw] h-[640px] sm:h-[660px] max-h-[92vh] rounded-t-2xl";
 
   return (
     <>
@@ -171,6 +174,18 @@ export function UserEmailModal({
             onToggleMaximize={() => { setIsMaximized((prev) => !prev); setIsMinimized(false); }}
           />
         </div>
+        {errorMessage && !isMinimized && (
+          <div className="mx-4 mt-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-between shrink-0 animate-in fade-in">
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-rose-400 hover:text-rose-600 ml-2 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {!isMinimized && (
           <GmailComposeCard
             className="w-full flex-1 min-h-0 flex flex-col bg-white dark:bg-[#151619] border-0 rounded-none shadow-none overflow-hidden"

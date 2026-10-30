@@ -44,7 +44,7 @@ export function NotificationEmailReportCard({
             <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span>{t.settings.notifications.emailReportDesc}</span>
               <strong className="text-neutral-800 dark:text-neutral-200 font-semibold bg-neutral-200/50 dark:bg-neutral-800 px-2 py-0.5 rounded-md">
-                {userEmail || "minhtest204@gmail.com"}
+                {userEmail || ""}
               </strong>
             </div>
           </div>

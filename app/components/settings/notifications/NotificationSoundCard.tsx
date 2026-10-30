@@ -5,6 +5,7 @@ import { RingtoneType } from "../hooks/useSettingsAudio";
 import { Volume2, VolumeX, Play, Briefcase, Coffee, Bell, Sparkles, Zap, Music, LucideIcon } from "lucide-react";
 
 import { useTranslation } from "../../../stores/useLanguageStore";
+import { useSettingsStore } from "../../../stores/useSettingsStore";
 
 interface NotificationSoundCardProps {
   soundEnabled: boolean;
@@ -15,7 +16,7 @@ interface NotificationSoundCardProps {
   onVolumeChange: (volume: number) => void;
   onSelectFocusRingtone: (ringtone: RingtoneType) => void;
   onSelectBreakRingtone: (ringtone: RingtoneType) => void;
-  onPlayRingtone: (type: RingtoneType, volume: number) => void;
+  onPlayRingtone: (type: RingtoneType, volume: number, ignoreCustomUrl?: boolean) => void;
 }
 
 export function NotificationSoundCard({
@@ -30,6 +31,7 @@ export function NotificationSoundCard({
   onPlayRingtone,
 }: NotificationSoundCardProps) {
   const { t } = useTranslation();
+  const updateSettings = useSettingsStore((s) => s.updateSettings);
 
   const ringtoneOptions = [
     { id: "bell", label: t.settings.notifications.ringtones.bell, icon: Bell },
@@ -85,8 +87,8 @@ export function NotificationSoundCard({
                 max="100"
                 value={soundVolume}
                 onChange={(e) => onVolumeChange(Number(e.target.value))}
-                onMouseUp={() => onPlayRingtone(focusRingtone, soundVolume)}
-                onTouchEnd={() => onPlayRingtone(focusRingtone, soundVolume)}
+                onMouseUp={() => onPlayRingtone(focusRingtone, soundVolume, true)}
+                onTouchEnd={() => onPlayRingtone(focusRingtone, soundVolume, true)}
                 className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
               />
             </div>
@@ -101,7 +103,7 @@ export function NotificationSoundCard({
               </span>
               <button
                 type="button"
-                onClick={() => onPlayRingtone(focusRingtone, soundVolume)}
+                onClick={() => onPlayRingtone(focusRingtone, soundVolume, true)}
                 className="px-2.5 py-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 dark:border-transparent"
               >
                 <Play size={11} fill="currentColor" />
@@ -118,8 +120,9 @@ export function NotificationSoundCard({
                     key={`focus-${r.id}`}
                     type="button"
                     onClick={() => {
+                      updateSettings({ alarmSoundUrl: null });
                       onSelectFocusRingtone(r.id as RingtoneType);
-                      onPlayRingtone(r.id as RingtoneType, soundVolume);
+                      onPlayRingtone(r.id as RingtoneType, soundVolume, true);
                     }}
                     className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                       isSelected
@@ -148,7 +151,7 @@ export function NotificationSoundCard({
               </span>
               <button
                 type="button"
-                onClick={() => onPlayRingtone(breakRingtone, soundVolume)}
+                onClick={() => onPlayRingtone(breakRingtone, soundVolume, true)}
                 className="px-2.5 py-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-neutral-200 dark:border-transparent"
               >
                 <Play size={11} fill="currentColor" />
@@ -165,8 +168,9 @@ export function NotificationSoundCard({
                     key={`break-${r.id}`}
                     type="button"
                     onClick={() => {
+                      updateSettings({ alarmSoundUrl: null });
                       onSelectBreakRingtone(r.id as RingtoneType);
-                      onPlayRingtone(r.id as RingtoneType, soundVolume);
+                      onPlayRingtone(r.id as RingtoneType, soundVolume, true);
                     }}
                     className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                       isSelected

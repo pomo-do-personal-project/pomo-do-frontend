@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "../../stores/useLanguageStore";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { AuthModal } from "../../components/AuthModal";
@@ -17,6 +18,7 @@ import { PreviewCTA } from "../../components/preview/sections/PreviewCTA";
 import { PreviewFooter } from "../../components/preview/sections/PreviewFooter";
 
 export default function LandingPreviewPage() {
+  const router = useRouter();
   const { language, setLanguage } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [mounted, setMounted] = useState(false);
@@ -201,6 +203,9 @@ export default function LandingPreviewPage() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authModalMode}
+        onAuthSuccess={() => {
+          router.push(`/${language}`);
+        }}
       />
     </div>
   );

@@ -77,10 +77,14 @@ export const usePomodoroStore = create<PomodoroState>()(
       setIsRunning: (isRunning) => set({ isRunning }),
 
       tickTimer: () => {
-        const { isRunning, isOvertime, seconds, overtimeSeconds, elapsedSeconds } = get();
+        const { isRunning, timerType, isOvertime, seconds, overtimeSeconds, elapsedSeconds } = get();
         if (!isRunning) return;
 
         const nextElapsed = elapsedSeconds + 1;
+        if (timerType === "stopwatch") {
+          set({ seconds: seconds + 1, elapsedSeconds: nextElapsed });
+          return;
+        }
 
         if (!isOvertime) {
           if (seconds <= 1) {

@@ -2,19 +2,28 @@
 
 import React, { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useTranslation } from "../../stores/useLanguageStore";
 import { UserDto } from "../../types/api";
 
 interface GoogleAuthButtonProps {
-  text?: "continue_with" | "signin_with" | "signup_with";
+  text?: string;
   onSuccess?: (user: UserDto) => void;
   setError?: (msg: string | null) => void;
   setSuccess?: (msg: string | null) => void;
 }
 
+const GOOGLE_LABEL_MAP: Record<string, string> = {
+  continue_with: "Tiếp tục với Google",
+  signin_with: "Đăng nhập với Google",
+  signup_with: "Đăng ký với Google",
+};
+
 export function GoogleAuthButton({
+  text,
   setError,
   setSuccess,
 }: GoogleAuthButtonProps) {
+  const { language } = useTranslation();
   const [isVerifying, setIsVerifying] = useState(false);
 
   // Xử lý khi người dùng click nút đăng nhập Google qua Supabase
@@ -27,7 +36,7 @@ export function GoogleAuthButton({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/vi/auth/callback`,
+          redirectTo: `${window.location.origin}/${language}/auth/callback`,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
@@ -77,7 +86,7 @@ export function GoogleAuthButton({
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
               />
             </svg>
-            <span>Tiếp tục với Google</span>
+            <span>{(text && GOOGLE_LABEL_MAP[text]) || text || "Tiếp tục với Google"}</span>
           </>
         )}
       </button>

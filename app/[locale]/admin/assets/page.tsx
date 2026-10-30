@@ -7,6 +7,8 @@ import { AssetFilterBar } from "../../../components/admin/assets/AssetFilterBar"
 import { AssetGrid } from "../../../components/admin/assets/AssetGrid";
 import { AssetModal } from "../../../components/admin/assets/AssetModal";
 import { AdminThemeStudioModal } from "../../../components/admin/assets/AdminThemeStudioModal";
+import { Check, AlertCircle } from "lucide-react";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 export default function AdminAssetsPage() {
   const [assets, setAssets] = useState<SystemAssetDto[]>([]);
@@ -14,6 +16,8 @@ export default function AdminAssetsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 16;
   const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -82,20 +86,32 @@ export default function AdminAssetsPage() {
   }) => {
     if (assetToEdit) {
       await assetService.updateAsset(assetToEdit.id, data);
+      setToast({ message: "Đã cập nhật tài nguyên thành công.", type: "success" });
+      setTimeout(() => setToast(null), 3000);
     } else {
       await assetService.createAsset(data);
+      setToast({ message: "Đã thêm tài nguyên mới vào kho.", type: "success" });
+      setTimeout(() => setToast(null), 3000);
     }
     await loadAssets();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa tài nguyên này khỏi kho hệ thống?")) return;
+  const handleDelete = (id: string) => {
+    setAssetToDelete(id);
+  };
+
+  const executeDeleteAsset = async () => {
+    if (!assetToDelete) return;
     try {
-      await assetService.deleteAsset(id);
+      await assetService.deleteAsset(assetToDelete);
+      setToast({ message: "Đã xóa tài nguyên thành công.", type: "success" });
+      setTimeout(() => setToast(null), 3000);
+      setAssetToDelete(null);
       await loadAssets();
     } catch (err) {
       console.error("Failed to delete asset:", err);
-      alert("Không thể xóa tài nguyên.");
+      setToast({ message: "Không thể xóa tài nguyên hệ thống.", type: "error" });
+      setTimeout(() => setToast(null), 4000);
     }
   };
 
@@ -130,6 +146,20 @@ export default function AdminAssetsPage() {
           Quản lý thư viện hình nền bàn làm việc, chuông báo Pomodoro và âm thanh môi trường thư giãn.
         </p>
       </div>
+
+      {toast && (
+        <div
+          role="alert"
+          className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200 ${
+            toast.type === "error"
+              ? "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400"
+              : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+          }`}
+        >
+          {toast.type === "error" ? <AlertCircle size={16} /> : <Check size={16} />}
+          <span>{toast.message}</span>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <AssetFilterBar
@@ -200,6 +230,17 @@ export default function AdminAssetsPage() {
         isOpen={isThemeStudioOpen}
         onClose={() => setIsThemeStudioOpen(false)}
         onPublished={loadAssets}
+      />
+
+      <ConfirmModal
+        isOpen={!!assetToDelete}
+        title="Xóa tài nguyên hệ thống"
+        message="Bạn có chắc chắn muốn xóa tài nguyên này khỏi kho hệ thống? Người dùng đang sử dụng tài nguyên này sẽ tự động chuyển về tài nguyên mặc định."
+        confirmText="Xóa tài nguyên"
+        cancelText="Giữ lại"
+        danger={true}
+        onConfirm={executeDeleteAsset}
+        onCancel={() => setAssetToDelete(null)}
       />
     </div>
   );

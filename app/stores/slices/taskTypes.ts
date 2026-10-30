@@ -27,6 +27,7 @@ export interface TaskSliceActions {
   moveTaskPriority: (id: string, newPriority: Priority) => Promise<boolean>;
   toggleTaskStatus: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<boolean>;
+  restoreTask: (id: string) => Promise<TaskDto | null>;
 }
 
 export interface SubtaskSliceActions {

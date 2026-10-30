@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
 import { MatrixQuadrant, PRIORITY_MAP } from "./TaskPage";
 import { QUADRANTS } from "./matrix/types";
 import { MatrixQuadrantCard } from "./matrix/MatrixQuadrantCard";
+import { ConfirmModal } from "./ui/ConfirmModal";
 
 export function MatrixPage() {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const {
     tasks,
     isLoading,
@@ -21,6 +24,7 @@ export function MatrixPage() {
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [activeInputQuadrant, setActiveInputQuadrant] = useState<MatrixQuadrant | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   // Drag and Drop States
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
@@ -53,9 +57,7 @@ export function MatrixPage() {
 
   const handleDeleteTask = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Bạn có chắc chắn muốn xóa công việc này?")) {
-      await deleteTask(id);
-    }
+    setTaskToDelete(id);
   };
 
   // Drag Handlers
@@ -100,11 +102,25 @@ export function MatrixPage() {
   return (
     <div className="flex-1 flex flex-col p-3.5 sm:p-6 md:p-8 pb-20 md:pb-8 overflow-y-auto w-full transition-colors">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
-          Eisenhower Matrix
-        </h1>
+        <div>
+          <h1
+            className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${wallpaperUrl ? "text-white drop-shadow-md" : "text-neutral-900 dark:text-white"
+              }`}
+          >
+            Eisenhower Matrix
+          </h1>
+          <p
+            className={`text-xs mt-0.5 ${wallpaperUrl ? "text-white/80 drop-shadow-xs" : "text-neutral-500 dark:text-neutral-400"
+              }`}
+          >
+            Phân loại công việc theo mức độ Khẩn cấp &amp; Quan trọng
+          </p>
+        </div>
         {isLoading && (
-          <span className="text-xs text-neutral-400 animate-pulse font-mono">
+          <span
+            className={`text-xs animate-pulse font-mono ${wallpaperUrl ? "text-white/70" : "text-neutral-500 dark:text-neutral-400"
+              }`}
+          >
             Đang đồng bộ...
           </span>
         )}
@@ -125,6 +141,7 @@ export function MatrixPage() {
             }
             onAddTask={handleAddTask}
             onToggleTask={toggleTaskStatus}
+            onMoveTask={moveTaskPriority}
             onDeleteTask={handleDeleteTask}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
@@ -134,6 +151,22 @@ export function MatrixPage() {
           />
         ))}
       </div>
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        title="Xóa công việc khỏi ma trận"
+        message="Bạn có chắc chắn muốn xóa công việc này? Công việc sẽ được chuyển vào mục Thùng rác."
+        confirmText="Xóa công việc"
+        cancelText="Giữ lại"
+        danger={true}
+        onConfirm={async () => {
+          if (taskToDelete) {
+            await deleteTask(taskToDelete);
+            setTaskToDelete(null);
+          }
+        }}
+        onCancel={() => setTaskToDelete(null)}
+      />
     </div>
   );
 }

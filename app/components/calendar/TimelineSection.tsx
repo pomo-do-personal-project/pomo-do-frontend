@@ -5,6 +5,7 @@ import { Sun, CloudSun, Moon } from "lucide-react";
 import { TaskDto } from "../../types/api";
 import { TimeOfDay } from "./types";
 import { TimelineTaskCard } from "./TimelineTaskCard";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 interface TimelineSectionProps {
   timeOfDay: TimeOfDay;
@@ -29,6 +30,8 @@ export function TimelineSection({
   onToggleStatus,
   onNavigateToTimer,
 }: TimelineSectionProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
+
   const getIcon = () => {
     switch (timeOfDay) {
       case "morning":
@@ -46,16 +49,30 @@ export function TimelineSection({
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           {getIcon()}
-          <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
+          <span
+            className={`text-xs font-bold uppercase tracking-wider ${
+              wallpaperUrl ? "text-white drop-shadow-sm font-extrabold" : "text-neutral-800 dark:text-neutral-200"
+            }`}
+          >
             {title}
           </span>
-          <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+          <span
+            className={`text-[11px] ${
+              wallpaperUrl ? "text-white/70" : "text-neutral-400 dark:text-neutral-500"
+            }`}
+          >
             ({timeRange})
           </span>
         </div>
 
         {isGoldenHour && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+          <span
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+              wallpaperUrl
+                ? "bg-amber-400/20 border-amber-400/40 text-amber-300 font-bold shadow-xs"
+                : "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+            }`}
+          >
             Khung giờ vàng
           </span>
         )}
@@ -63,7 +80,13 @@ export function TimelineSection({
 
       {/* Task List in this window */}
       {tasks.length === 0 ? (
-        <div className="p-4 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center text-xs text-neutral-400 dark:text-neutral-600">
+        <div
+          className={`p-4 rounded-2xl border border-dashed text-center text-xs transition-colors ${
+            wallpaperUrl
+              ? "border-white/30 bg-black/25 backdrop-blur-xs text-white/80"
+              : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-600"
+          }`}
+        >
           Chưa có công việc nào được lên lịch cho buổi này
         </div>
       ) : (

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Tag, Plus, X } from "lucide-react";
 import { TaskDto } from "../../types/api";
 import { useTagStore } from "../../stores/useTagStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useTranslation } from "../../stores/useLanguageStore";
 import { TaskTagsDropdown, PRESET_COLORS } from "./TaskTagsDropdown";
 
@@ -13,6 +14,7 @@ interface TaskTagsSectionProps {
 }
 
 export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
+  const wallpaperUrl = useSettingsStore((s) => s.settings.wallpaperUrl);
   const { t } = useTranslation();
   const { tags: allTags, fetchTags, createTag } = useTagStore();
 
@@ -98,7 +100,11 @@ export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+      <div
+        className={`flex items-center gap-1.5 text-xs font-semibold ${
+          wallpaperUrl ? "text-white/70" : "text-neutral-500 dark:text-neutral-400"
+        }`}
+      >
         <Tag size={14} className="text-emerald-500 shrink-0" />
         <span>Thẻ tag phân loại</span>
       </div>
@@ -128,7 +134,11 @@ export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
             </span>
           ))
         ) : (
-          <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
+          <span
+            className={`text-xs italic ${
+              wallpaperUrl ? "text-white/40" : "text-neutral-400 dark:text-neutral-500"
+            }`}
+          >
             Chưa có thẻ phân loại
           </span>
         )}
@@ -137,7 +147,11 @@ export function TaskTagsSection({ task, onUpdateTags }: TaskTagsSectionProps) {
           <button
             type="button"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium bg-neutral-200/80 dark:bg-neutral-700/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors cursor-pointer border border-transparent shadow-2xs"
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium transition-colors cursor-pointer border shadow-2xs ${
+              wallpaperUrl
+                ? "bg-white/15 text-white hover:bg-white/25 border-white/15"
+                : "bg-neutral-200/80 dark:bg-neutral-700/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-600 border-transparent"
+            }`}
           >
             <Plus size={13} />
             <span>Gán thẻ</span>

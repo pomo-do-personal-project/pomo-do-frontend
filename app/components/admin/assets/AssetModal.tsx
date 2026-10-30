@@ -93,14 +93,21 @@ export function AssetModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="relative w-full max-w-md bg-white dark:bg-[#18191c] rounded-2xl shadow-xl border border-neutral-200/80 dark:border-neutral-800 p-6 flex flex-col gap-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="asset-modal-title"
+        className="relative w-full max-w-md bg-white dark:bg-[#18191c] rounded-2xl shadow-xl border border-neutral-200/80 dark:border-neutral-800 p-6 flex flex-col gap-4"
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-neutral-900 dark:text-white">
+          <h3 id="asset-modal-title" className="text-base font-bold text-neutral-900 dark:text-white">
             {assetToEdit ? "Chỉnh sửa tài nguyên" : "Thêm tài nguyên mới"}
           </h3>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Đóng"
             className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
           >
             <X size={18} />
@@ -173,9 +180,8 @@ export function AssetModal({
                   key={c}
                   type="button"
                   onClick={() => setCategory(category === c ? "" : c)}
-                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                    category === c ? "bg-emerald-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
-                  }`}
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${category === c ? "bg-emerald-600 text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                    }`}
                 >
                   {c}
                 </button>

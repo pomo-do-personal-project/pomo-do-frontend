@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { AiFocusStatus, AiFocusState, AiSessionAnalysis } from "../types/aiFocus";
+import { AiFocusStatus, AiFocusState, AiSessionAnalysis, AiEventCode } from "../types/aiFocus";
 import { cameraStreamer } from "../lib/cameraStreamer";
+import { useAiOverlayStore } from "../lib/aiOverlay";
 
-export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState } from "../types/aiFocus";
+export type { AiFocusStatus, AiSensitivity, AiSessionAnalysis, AiFocusState, AiEventCode } from "../types/aiFocus";
 
 const WS_URL = process.env.NEXT_PUBLIC_AI_WS_URL || "ws://localhost:8001/ws";
 const HTTP_URL = process.env.NEXT_PUBLIC_AI_API_URL || WS_URL.replace("wss://", "https://").replace("ws://", "http://").replace(/\/ws\/?$/, "");
@@ -10,19 +11,26 @@ const HTTP_URL = process.env.NEXT_PUBLIC_AI_API_URL || WS_URL.replace("wss://", 
 let socket: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
 
-export const useAiFocusStore = create<AiFocusState>((set, get) => ({
+let screenAddedResolver: ((success: boolean) => void) | null = null;
+
+export const useAiFocusStore = create<AiFocusState>()((set, get) => ({
   isConnected: false,
   isAiEnabled: false,
   isConnecting: false,
   error: null,
 
   status: "DISCONNECTED",
+  eventCode: "NORMAL",
   detail: "Chưa kết nối AI",
   isFocused: false,
   activeScreen: null,
   totalScreens: 0,
   image: null,
   showCameraPreview: true,
+  sensitivity: "relaxed",
+  deskReadingMode: false,
+  blurBackground: typeof window !== "undefined" ? localStorage.getItem("ai_blur_background") === "true" : false,
+  blurredImage: null,
 
   distractionCount: 0,
   phoneCount: 0,
@@ -33,9 +41,42 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
   distractedSeconds: 0,
   totalSessionSeconds: 0,
   previousStatus: "DISCONNECTED",
+  previousEventCode: "NORMAL",
   previousDetail: "",
 
   toggleCameraPreview: () => set((s) => ({ showCameraPreview: !s.showCameraPreview })),
+
+  setSensitivity: (level: "relaxed" | "standard" | "strict") => {
+    set({ sensitivity: level });
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(JSON.stringify({ action: "set_sensitivity", level }));
+      } catch {}
+    }
+  },
+
+  setDeskReadingMode: (enabled: boolean) => {
+    set({ deskReadingMode: enabled });
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(JSON.stringify({ action: "set_desk_reading_mode", enabled }));
+      } catch {}
+    }
+  },
+
+  setBlurBackground: (enabled: boolean) => {
+    set({ blurBackground: enabled, ...(enabled ? {} : { blurredImage: null }) });
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ai_blur_background", String(enabled));
+      } catch {}
+    }
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(JSON.stringify({ action: "set_blur_background", enabled }));
+      } catch {}
+    }
+  },
 
   toggleAiEnabled: () => {
     const nextState = !get().isAiEnabled;
@@ -54,12 +95,21 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
       socket.onopen = async () => {
         set({ isConnected: true, isConnecting: false, error: null, status: "AFK", detail: "Đã kết nối AI" });
 
-        // Tự động yêu cầu quyền camera trình duyệt và bắt đầu truyền frames
+        // Gửi thiết lập độ nhạy, chế độ đọc sách và làm mờ nền hiện tại
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          try {
+            socket.send(JSON.stringify({ action: "set_sensitivity", level: get().sensitivity }));
+            socket.send(JSON.stringify({ action: "set_desk_reading_mode", enabled: get().deskReadingMode }));
+            socket.send(JSON.stringify({ action: "set_blur_background", enabled: get().blurBackground }));
+          } catch {}
+        }
+
+        // Tự động yêu cầu quyền camera trình duyệt và bắt đầu truyền frames (24 FPS phản hồi tức thì)
         const cameraOk = await cameraStreamer.start((frameBase64) => {
           if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ action: "frame", image: frameBase64 }));
           }
-        }, 5);
+        }, 24);
 
         if (!cameraOk) {
           set({ error: "Vui lòng cấp quyền truy cập Camera trên trình duyệt" });
@@ -70,16 +120,39 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
           const data = JSON.parse(event.data);
           if (data.event === "focus_update") {
             cameraStreamer.notifyServerReady();
+            useAiOverlayStore.getState().setData({
+              faceBox: data.face_box || null,
+              phoneBoxes: Array.isArray(data.phone_boxes) ? data.phone_boxes : [],
+              hands: Array.isArray(data.hands) ? data.hands : [],
+              hasFace: Boolean(data.has_face),
+              hasPhone: Boolean(data.has_phone),
+              hasCall: Boolean(data.has_call),
+              isFocused: Boolean(data.is_focused),
+              detail: data.detail || "",
+              activeScreen: data.active_screen ?? null,
+            });
+            const eventCode: AiEventCode = (data.event_code as AiEventCode) || (
+              data.status === "FOCUSED" ? "NORMAL" :
+              data.detail?.toLowerCase().includes("điện thoại") ? "PHONE_DETECTED" :
+              data.detail?.toLowerCase().includes("ngủ") ? "SLEEPING" :
+              data.status === "AFK" ? "AFK" : "LOOK_AWAY"
+            );
             set({
               status: (data.status as AiFocusStatus) || "AFK",
+              eventCode,
               detail: data.detail || "",
               isFocused: Boolean(data.is_focused),
               activeScreen: data.active_screen ?? null,
               totalScreens: Number(data.total_screens || 0),
-              image: data.image || get().image,
+              image: "live",
+              blurredImage: data.blurred_image || null,
             });
           } else if (data.event === "screen_added") {
             set({ totalScreens: Number(data.total_screens || 0) });
+            if (screenAddedResolver) {
+              screenAddedResolver(Boolean(data.success));
+              screenAddedResolver = null;
+            }
           } else if (data.event === "screens_reset") {
             set({ totalScreens: 0, activeScreen: null });
           }
@@ -91,7 +164,7 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
       };
       socket.onclose = () => {
         cameraStreamer.stop();
-        set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt" });
+        set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", eventCode: "NORMAL", detail: "AI đang tắt" });
         socket = null;
         if (get().isAiEnabled) reconnectTimer = setTimeout(() => get().connect(), 3000);
       };
@@ -106,12 +179,32 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
     cameraStreamer.stop();
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     if (socket) { try { socket.close(); } catch {} socket = null; }
-    set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", detail: "AI đang tắt", image: null });
+    set({ isConnected: false, isConnecting: false, status: "DISCONNECTED", eventCode: "NORMAL", detail: "AI đang tắt", image: null });
   },
 
   addScreen: async () => {
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
-    try { socket.send(JSON.stringify({ action: "add_screen" })); return true; } catch { return false; }
+    return new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => {
+        if (screenAddedResolver) {
+          screenAddedResolver = null;
+          resolve(false);
+        }
+      }, 3000);
+
+      screenAddedResolver = (success: boolean) => {
+        clearTimeout(timer);
+        resolve(success);
+      };
+
+      try {
+        socket?.send(JSON.stringify({ action: "add_screen" }));
+      } catch {
+        clearTimeout(timer);
+        screenAddedResolver = null;
+        resolve(false);
+      }
+    });
   },
 
   resetScreens: async () => {
@@ -131,26 +224,48 @@ export const useAiFocusStore = create<AiFocusState>((set, get) => ({
       nextFocused += 1;
     } else {
       nextDistracted += 1;
-      const d = s.detail.toLowerCase(), prevD = s.previousDetail.toLowerCase();
-      if (d.includes("điện thoại") || d.includes("phone")) {
-        nextPhoneSeconds += 1;
-        if (!prevD.includes("điện thoại")) nextPhoneCount += 1;
+      const ec = s.eventCode;
+      const prevEc = s.previousEventCode;
+
+      switch (ec) {
+        case "PHONE_DETECTED":
+          nextPhoneSeconds += 1;
+          if (prevEc !== "PHONE_DETECTED") nextPhoneCount += 1;
+          break;
+        case "SLEEPING":
+          if (prevEc !== "SLEEPING") nextSleepCount += 1;
+          break;
+        case "AFK":
+        case "LOOK_AWAY":
+          if (s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
+          break;
+        default: {
+          const d = s.detail.toLowerCase(), prevD = s.previousDetail.toLowerCase();
+          if (d.includes("điện thoại") || d.includes("phone")) {
+            nextPhoneSeconds += 1;
+            if (!prevD.includes("điện thoại")) nextPhoneCount += 1;
+          }
+          if ((d.includes("ngủ") || d.includes("sleep")) && !prevD.includes("ngủ")) nextSleepCount += 1;
+          if ((d.includes("ngoài") || s.status === "AFK") && s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
+          break;
+        }
       }
-      if ((d.includes("ngủ") || d.includes("sleep")) && !prevD.includes("ngủ")) nextSleepCount += 1;
-      if ((d.includes("ngoài") || s.status === "AFK") && s.previousStatus === "FOCUSED") nextLookAwayCount += 1;
+
       if (s.previousStatus === "FOCUSED") nextDistractions += 1;
     }
 
     set({
       totalSessionSeconds: nextTotal, focusedSeconds: nextFocused, distractedSeconds: nextDistracted,
       distractionCount: nextDistractions, phoneCount: nextPhoneCount, phoneSeconds: nextPhoneSeconds,
-      sleepCount: nextSleepCount, lookAwayCount: nextLookAwayCount, previousStatus: s.status, previousDetail: s.detail,
+      sleepCount: nextSleepCount, lookAwayCount: nextLookAwayCount,
+      previousStatus: s.status, previousEventCode: s.eventCode, previousDetail: s.detail,
     });
   },
 
   resetSessionStats: () => set({
     distractionCount: 0, phoneCount: 0, phoneSeconds: 0, sleepCount: 0, lookAwayCount: 0,
-    focusedSeconds: 0, distractedSeconds: 0, totalSessionSeconds: 0, previousStatus: get().status, previousDetail: "",
+    focusedSeconds: 0, distractedSeconds: 0, totalSessionSeconds: 0,
+    previousStatus: get().status, previousEventCode: get().eventCode, previousDetail: "",
   }),
 
   getFocusScore: () => {
